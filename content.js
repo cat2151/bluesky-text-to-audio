@@ -7,7 +7,10 @@ const processedPosts = new WeakSet();
 function getPostText(postEl) {
   const textEl = postEl.querySelector('[data-testid="postText"]');
   if (textEl) return textEl.innerText;
-  return postEl.innerText || '';
+  // フォールバック: 注入したplayボタンを除外してテキストを取得
+  const clone = postEl.cloneNode(true);
+  clone.querySelectorAll('[data-bta-play]').forEach(el => el.remove());
+  return clone.innerText || '';
 }
 
 // ---- playボタンを追加 ----
@@ -17,6 +20,7 @@ function addPlayButton(postEl) {
 
   const btn = document.createElement('button');
   btn.type = 'button';
+  btn.setAttribute('data-bta-play', '');
   btn.textContent = '▶ play';
   btn.style.cssText = `
     display: inline-flex;
@@ -52,14 +56,28 @@ function scanPosts() {
 
 // ---- MutationObserverで新規投稿を監視 ----
 function init() {
+  // 既存の投稿を一度だけ全走査
   scanPosts();
-  let timer = null;
-  const observer = new MutationObserver(() => {
-    if (timer) return;
-    timer = setTimeout(() => {
-      timer = null;
-      scanPosts();
-    }, 200);
+
+  // 以降は MutationObserver の addedNodes から増分処理
+  const observer = new MutationObserver(mutationsList => {
+    mutationsList.forEach(mutation => {
+      mutation.addedNodes.forEach(node => {
+        if (!(node instanceof HTMLElement)) return;
+
+        // 追加されたノード自体が投稿要素の場合
+        if (node.matches('[data-testid^="feedItem-"]')) {
+          addPlayButton(node);
+        }
+
+        // 追加されたノード配下に含まれる投稿要素を処理
+        if (node.querySelectorAll) {
+          node
+            .querySelectorAll('[data-testid^="feedItem-"]')
+            .forEach(postEl => addPlayButton(postEl));
+        }
+      });
+    });
   });
   observer.observe(document.body, { childList: true, subtree: true });
 }
