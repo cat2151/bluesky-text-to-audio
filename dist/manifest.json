@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Bluesky Text to Audio",
+  "version": "0.1.0",
+  "description": "Blueskyのタイムライン投稿にplayボタンを表示し、投稿内容をconsole.logに出力する",
+  "content_scripts": [
+    {
+      "js": [
+        "assets/content.ts-CjKtys5j.js"
+      ],
+      "matches": [
+        "https://bsky.app/*"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "matches": [
+        "https://bsky.app/*"
+      ],
+      "resources": [
+        "assets/content.ts-CjKtys5j.js"
+      ],
+      "use_dynamic_url": false
+    }
+  ]
+}
