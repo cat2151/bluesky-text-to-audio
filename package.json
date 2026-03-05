@@ -1,6 +1,6 @@
 {
   "name": "bluesky-text-to-audio",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Blueskyのタイムラインの投稿にplayボタンを表示するChrome拡張です。",
   "scripts": {
     "dev": "vite",
