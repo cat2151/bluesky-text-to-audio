@@ -13,10 +13,11 @@ Blueskyのタイムラインの投稿にplayボタンを表示するChrome拡張
    ```
    git clone https://github.com/cat2151/bluesky-text-to-audio.git
    ```
-2. ビルド成果物を生成する（後述の「開発者向け」参照）
-3. Chromeで `chrome://extensions/` を開く
-4. 「デベロッパーモード」を有効にする
-5. 「パッケージ化されていない拡張機能を読み込む」をクリックし、`dist` フォルダを選択する
+2. Chromeで `chrome://extensions/` を開く
+3. 「デベロッパーモード」を有効にする
+4. 「パッケージ化されていない拡張機能を読み込む」をクリックし、`dist` フォルダを選択する
+
+> **Note:** ビルド済みの `dist/` フォルダはリポジトリに含まれているため、Bunやビルドツールのインストールは不要です。
 
 ## 使い方
 
@@ -86,5 +87,5 @@ bluesky-text-to-audio/
 ├── vite.config.ts       # Vite設定
 ├── tsconfig.json        # TypeScript設定
 ├── package.json         # パッケージ設定・スクリプト
-└── dist/                # ビルド成果物（gitignore済み）
+└── dist/                # ビルド成果物（CIが自動コミット）
 ```
