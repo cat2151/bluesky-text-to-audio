@@ -1,0 +1,31 @@
+{
+  "name": "bluesky-text-to-audio",
+  "version": "1.0.0",
+  "description": "Blueskyのタイムラインの投稿にplayボタンを表示するChrome拡張です。",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "type-check": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cat2151/bluesky-text-to-audio.git"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cat2151/bluesky-text-to-audio/issues"
+  },
+  "homepage": "https://github.com/cat2151/bluesky-text-to-audio#readme",
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.3.0",
+    "@types/chrome": "^0.1.37",
+    "@types/node": "^25.3.3",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
+  },
+  "overrides": {
+    "@crxjs/vite-plugin": {
+      "rollup": "^2.80.0"
+    }
+  }
+}
