@@ -80,7 +80,7 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-dist
+# dist is intentionally tracked: CI auto-builds and commits it so users can load the extension without building locally
 
 # Gatsby files
 .cache/
@@ -137,3 +137,6 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# npm lockfile (this project uses bun)
+package-lock.json

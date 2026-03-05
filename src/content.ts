@@ -1,20 +1,20 @@
 const LOG_PREFIX = '[BTA:content]';
 
 // ---- 処理済み投稿を管理 ----
-const processedPosts = new WeakSet();
+const processedPosts = new WeakSet<HTMLElement>();
 
 // ---- 投稿テキストを取得 ----
-function getPostText(postEl) {
+function getPostText(postEl: HTMLElement): string {
   const textEl = postEl.querySelector('[data-testid="postText"]');
-  if (textEl) return textEl.innerText;
+  if (textEl instanceof HTMLElement) return textEl.innerText;
   // フォールバック: 注入したplayボタンを除外してテキストを取得
-  const clone = postEl.cloneNode(true);
+  const clone = postEl.cloneNode(true) as HTMLElement;
   clone.querySelectorAll('[data-bta-play]').forEach(el => el.remove());
   return clone.innerText || '';
 }
 
 // ---- playボタンを追加 ----
-function addPlayButton(postEl) {
+function addPlayButton(postEl: HTMLElement): void {
   if (processedPosts.has(postEl)) return;
   processedPosts.add(postEl);
 
@@ -45,17 +45,17 @@ function addPlayButton(postEl) {
 }
 
 // ---- 投稿要素を検出 ----
-function findPostElements() {
-  return document.querySelectorAll('[data-testid^="feedItem-"]');
+function findPostElements(): NodeListOf<HTMLElement> {
+  return document.querySelectorAll<HTMLElement>('[data-testid^="feedItem-"]');
 }
 
 // ---- 全投稿にplayボタンを追加 ----
-function scanPosts() {
+function scanPosts(): void {
   findPostElements().forEach(postEl => addPlayButton(postEl));
 }
 
 // ---- MutationObserverで新規投稿を監視 ----
-function init() {
+function init(): void {
   // 既存の投稿を一度だけ全走査
   scanPosts();
 
@@ -73,7 +73,7 @@ function init() {
         // 追加されたノード配下に含まれる投稿要素を処理
         if (node.querySelectorAll) {
           node
-            .querySelectorAll('[data-testid^="feedItem-"]')
+            .querySelectorAll<HTMLElement>('[data-testid^="feedItem-"]')
             .forEach(postEl => addPlayButton(postEl));
         }
       });
