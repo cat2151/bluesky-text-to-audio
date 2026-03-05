@@ -7,25 +7,21 @@ const processedPosts = new WeakSet<HTMLElement>();
 function getPostText(postEl: HTMLElement): string {
   const textEl = postEl.querySelector('[data-testid="postText"]');
   if (textEl instanceof HTMLElement) return textEl.innerText;
-  // フォールバック: 注入したplayボタンを除外してテキストを取得
+  // フォールバック: 注入したwrapper要素ごと除外してテキストを取得
   const clone = postEl.cloneNode(true) as HTMLElement;
-  clone.querySelectorAll('[data-bta-play]').forEach(el => el.remove());
+  clone.querySelectorAll('[data-bta-wrapper]').forEach(el => el.remove());
   return clone.innerText || '';
 }
 
-// ---- playボタンを追加 ----
+// ---- playボタン行とtextareaを追加 ----
 function addPlayButton(postEl: HTMLElement): void {
   if (processedPosts.has(postEl)) return;
   processedPosts.add(postEl);
 
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.setAttribute('data-bta-play', '');
-  btn.textContent = '▶ play';
-  btn.style.cssText = `
+  const btnStyle = `
     display: inline-flex;
     align-items: center;
-    margin: 4px 8px 4px 8px;
+    margin: 4px 4px 4px 4px;
     padding: 4px 10px;
     background: #0085ff;
     color: #fff;
@@ -35,13 +31,74 @@ function addPlayButton(postEl: HTMLElement): void {
     cursor: pointer;
     z-index: 1;
   `;
-  btn.addEventListener('click', e => {
+
+  // textareaを開く/閉じるボタン
+  const toggleBtn = document.createElement('button');
+  toggleBtn.type = 'button';
+  toggleBtn.setAttribute('data-bta-play', '');
+  toggleBtn.textContent = '▶ textareaを開く';
+  toggleBtn.style.cssText = btnStyle;
+
+  // console.log出力ボタン
+  const logBtn = document.createElement('button');
+  logBtn.type = 'button';
+  logBtn.setAttribute('data-bta-log', '');
+  logBtn.textContent = '📋 console.logに出力';
+  logBtn.style.cssText = btnStyle;
+
+  // ボタン行コンテナ
+  const row = document.createElement('div');
+  row.setAttribute('data-bta-row', '');
+  row.style.cssText = `
+    display: flex;
+    align-items: center;
+    margin: 4px 0;
+  `;
+  row.append(toggleBtn, logBtn);
+
+  // textarea
+  const textarea = document.createElement('textarea');
+  textarea.setAttribute('data-bta-textarea', '');
+  textarea.style.cssText = `
+    display: none;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 4px 0;
+    padding: 6px 8px;
+    font-size: 13px;
+    border: 1px solid #0085ff;
+    border-radius: 4px;
+    resize: vertical;
+    min-height: 80px;
+  `;
+
+  toggleBtn.addEventListener('click', e => {
     e.stopPropagation();
-    const text = getPostText(postEl);
-    console.log(LOG_PREFIX, text);
+    if (textarea.style.display === 'none') {
+      // 初回のみ投稿テキストをセット（ユーザー編集を保持）
+      if (!textarea.value) {
+        textarea.value = getPostText(postEl);
+      }
+      textarea.style.display = 'block';
+    } else {
+      textarea.style.display = 'none';
+    }
   });
 
-  postEl.prepend(btn);
+  logBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    // 未初期化の場合は投稿テキストをセット
+    if (!textarea.value) {
+      textarea.value = getPostText(postEl);
+    }
+    console.log(LOG_PREFIX, textarea.value);
+  });
+
+  const wrapper = document.createElement('div');
+  wrapper.setAttribute('data-bta-wrapper', '');
+  wrapper.append(row, textarea);
+
+  postEl.prepend(wrapper);
 }
 
 // ---- 投稿要素を検出 ----
