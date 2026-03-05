@@ -7,9 +7,9 @@ const processedPosts = new WeakSet<HTMLElement>();
 function getPostText(postEl: HTMLElement): string {
   const textEl = postEl.querySelector('[data-testid="postText"]');
   if (textEl instanceof HTMLElement) return textEl.innerText;
-  // フォールバック: 注入したplayボタンを除外してテキストを取得
+  // フォールバック: 注入したwrapper要素ごと除外してテキストを取得
   const clone = postEl.cloneNode(true) as HTMLElement;
-  clone.querySelectorAll('[data-bta-play]').forEach(el => el.remove());
+  clone.querySelectorAll('[data-bta-wrapper]').forEach(el => el.remove());
   return clone.innerText || '';
 }
 
@@ -75,7 +75,10 @@ function addPlayButton(postEl: HTMLElement): void {
   toggleBtn.addEventListener('click', e => {
     e.stopPropagation();
     if (textarea.style.display === 'none') {
-      textarea.value = getPostText(postEl);
+      // 初回のみ投稿テキストをセット（ユーザー編集を保持）
+      if (!textarea.value) {
+        textarea.value = getPostText(postEl);
+      }
       textarea.style.display = 'block';
     } else {
       textarea.style.display = 'none';
@@ -84,6 +87,10 @@ function addPlayButton(postEl: HTMLElement): void {
 
   logBtn.addEventListener('click', e => {
     e.stopPropagation();
+    // 未初期化の場合は投稿テキストをセット
+    if (!textarea.value) {
+      textarea.value = getPostText(postEl);
+    }
     console.log(LOG_PREFIX, textarea.value);
   });
 
