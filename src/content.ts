@@ -1,3 +1,5 @@
+import * as ABCJS from 'abcjs';
+
 const LOG_PREFIX = '[BTA:content]';
 
 // ---- 処理済み投稿を管理 ----
@@ -46,6 +48,13 @@ function addPlayButton(postEl: HTMLElement): void {
   logBtn.textContent = '📋 console.logに出力';
   logBtn.style.cssText = btnStyle;
 
+  // abcjs playボタン
+  const playBtn = document.createElement('button');
+  playBtn.type = 'button';
+  playBtn.setAttribute('data-bta-abcplay', '');
+  playBtn.textContent = '▶ Play';
+  playBtn.style.cssText = btnStyle;
+
   // ボタン行コンテナ
   const row = document.createElement('div');
   row.setAttribute('data-bta-row', '');
@@ -54,7 +63,7 @@ function addPlayButton(postEl: HTMLElement): void {
     align-items: center;
     margin: 4px 0;
   `;
-  row.append(toggleBtn, logBtn);
+  row.append(toggleBtn, logBtn, playBtn);
 
   // textarea
   const textarea = document.createElement('textarea');
@@ -70,6 +79,18 @@ function addPlayButton(postEl: HTMLElement): void {
     border-radius: 4px;
     resize: vertical;
     min-height: 80px;
+  `;
+
+  // abcjs SVG表示用div
+  const scoreDiv = document.createElement('div');
+  scoreDiv.setAttribute('data-bta-score', '');
+  scoreDiv.style.cssText = `
+    display: none;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 4px;
+    margin: 4px 0;
   `;
 
   toggleBtn.addEventListener('click', e => {
@@ -94,9 +115,47 @@ function addPlayButton(postEl: HTMLElement): void {
     console.log(LOG_PREFIX, textarea.value);
   });
 
+  // 投稿ごとのシンセインスタンス
+  let synthInstance: ABCJS.MidiBuffer | null = null;
+
+  playBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    // 未初期化の場合は投稿テキストをセット
+    if (!textarea.value) {
+      textarea.value = getPostText(postEl);
+    }
+    const abcText = textarea.value;
+
+    // console.logに出力（これまでの機能をそのまま維持）
+    console.log(LOG_PREFIX, abcText);
+
+    // SVG五線譜を表示
+    scoreDiv.style.display = 'block';
+    const tuneObjects = ABCJS.renderAbc(scoreDiv, abcText);
+    const visualObj = tuneObjects[0];
+
+    // abcjsで演奏
+    if (ABCJS.synth.supportsAudio()) {
+      if (!synthInstance) synthInstance = new ABCJS.synth.CreateSynth();
+      synthInstance
+        .init({ visualObj, options: {} })
+        .then(() => synthInstance!.prime())
+        .then(() => {
+          // 前回の演奏が残っている場合に停止してから再生
+          synthInstance!.stop();
+          synthInstance!.start();
+        })
+        .catch((error: unknown) => {
+          console.warn(LOG_PREFIX, 'Audio problem:', error);
+        });
+    } else {
+      console.error(LOG_PREFIX, 'Audio is not supported in this browser.');
+    }
+  });
+
   const wrapper = document.createElement('div');
   wrapper.setAttribute('data-bta-wrapper', '');
-  wrapper.append(row, textarea);
+  wrapper.append(row, textarea, scoreDiv);
 
   postEl.prepend(wrapper);
 }

@@ -27,5 +27,8 @@
     "@crxjs/vite-plugin": {
       "rollup": "^2.80.0"
     }
+  },
+  "dependencies": {
+    "abcjs": "^6.6.2"
   }
 }
