@@ -87,7 +87,7 @@ function addPlayButton(postEl: HTMLElement): void {
   scoreDiv.style.cssText = `
     display: none;
     background: white;
-    color-scheme: light;
+    color: black;
     border: 1px solid #ccc;
     border-radius: 4px;
     padding: 4px;
@@ -151,7 +151,8 @@ function addPlayButton(postEl: HTMLElement): void {
         .init({ visualObj, options: {} })
         .then(() => synthInstance!.prime())
         .then(() => {
-          // 再生開始
+          // 再生開始（easyabcjs6と同様に stop() してから start() する）
+          synthInstance!.stop();
           synthInstance!.start();
         })
         .catch((error: unknown) => {
