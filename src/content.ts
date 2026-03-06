@@ -87,6 +87,7 @@ function addPlayButton(postEl: HTMLElement): void {
   scoreDiv.style.cssText = `
     display: none;
     background: white;
+    color-scheme: light;
     border: 1px solid #ccc;
     border-radius: 4px;
     padding: 4px;
