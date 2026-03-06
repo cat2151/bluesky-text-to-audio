@@ -1,4 +1,5 @@
 import * as ABCJS from 'abcjs';
+import { parse as mml2abcParse } from './mml2abc.mjs';
 
 const LOG_PREFIX = '[BTA:content]';
 
@@ -41,12 +42,12 @@ function addPlayButton(postEl: HTMLElement): void {
   toggleBtn.textContent = '▶ textareaを開く';
   toggleBtn.style.cssText = btnStyle;
 
-  // console.log出力ボタン
-  const logBtn = document.createElement('button');
-  logBtn.type = 'button';
-  logBtn.setAttribute('data-bta-log', '');
-  logBtn.textContent = '📋 console.logに出力';
-  logBtn.style.cssText = btnStyle;
+  // mmlabcでplayボタン
+  const mmlabcBtn = document.createElement('button');
+  mmlabcBtn.type = 'button';
+  mmlabcBtn.setAttribute('data-bta-mmlabc', '');
+  mmlabcBtn.textContent = '🎵 mmlabcでplay';
+  mmlabcBtn.style.cssText = btnStyle;
 
   // abcjs playボタン
   const playBtn = document.createElement('button');
@@ -63,7 +64,7 @@ function addPlayButton(postEl: HTMLElement): void {
     align-items: center;
     margin: 4px 0;
   `;
-  row.append(toggleBtn, logBtn, playBtn);
+  row.append(toggleBtn, mmlabcBtn, playBtn);
 
   // textarea
   const textarea = document.createElement('textarea');
@@ -98,6 +99,9 @@ function addPlayButton(postEl: HTMLElement): void {
   textarea.addEventListener('click', e => { e.stopPropagation(); });
   textarea.addEventListener('mousedown', e => { e.stopPropagation(); });
 
+  // 投稿ごとのシンセインスタンス
+  let synthInstance: ABCJS.MidiBuffer | null = null;
+
   toggleBtn.addEventListener('click', e => {
     e.stopPropagation();
     if (textarea.style.display === 'none') {
@@ -111,17 +115,48 @@ function addPlayButton(postEl: HTMLElement): void {
     }
   });
 
-  logBtn.addEventListener('click', e => {
+  mmlabcBtn.addEventListener('click', e => {
     e.stopPropagation();
     // 未初期化の場合は投稿テキストをセット
     if (!textarea.value) {
       textarea.value = getPostText(postEl);
     }
-    console.log(LOG_PREFIX, textarea.value);
-  });
+    const mml = textarea.value;
+    let abcText = '';
+    try {
+      abcText = mml2abcParse(mml);
+    } catch (error) {
+      console.error(LOG_PREFIX, 'MML parse error:', error);
+      return;
+    }
 
-  // 投稿ごとのシンセインスタンス
-  let synthInstance: ABCJS.MidiBuffer | null = null;
+    // SVG五線譜を表示
+    scoreDiv.style.display = 'block';
+    const tuneObjects = ABCJS.renderAbc(scoreDiv, abcText);
+    const visualObj = tuneObjects[0];
+    if (!visualObj) return;
+
+    // abcjsで演奏
+    if (ABCJS.synth.supportsAudio()) {
+      if (!synthInstance) {
+        synthInstance = new ABCJS.synth.CreateSynth();
+      } else {
+        synthInstance.stop();
+      }
+      synthInstance
+        .init({ visualObj, options: {} })
+        .then(() => synthInstance!.prime())
+        .then(() => {
+          synthInstance!.stop();
+          synthInstance!.start();
+        })
+        .catch((error: unknown) => {
+          console.warn(LOG_PREFIX, 'Audio problem:', error);
+        });
+    } else {
+      console.error(LOG_PREFIX, 'Audio is not supported in this browser.');
+    }
+  });
 
   playBtn.addEventListener('click', e => {
     e.stopPropagation();
@@ -130,9 +165,6 @@ function addPlayButton(postEl: HTMLElement): void {
       textarea.value = getPostText(postEl);
     }
     const abcText = textarea.value;
-
-    // console.logに出力（これまでの機能をそのまま維持）
-    console.log(LOG_PREFIX, abcText);
 
     // SVG五線譜を表示
     scoreDiv.style.display = 'block';
