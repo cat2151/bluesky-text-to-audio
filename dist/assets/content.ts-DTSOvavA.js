@@ -161,6 +161,7 @@ X:`),o=s.length;return o===0&&(o=1),o};var r=c.TuneBook=function(i){var s=m(i);t
   `;const o=document.createElement("div");o.setAttribute("data-bta-score",""),o.style.cssText=`
     display: none;
     background: white;
+    color-scheme: light;
     border: 1px solid #ccc;
     border-radius: 4px;
     padding: 4px;
