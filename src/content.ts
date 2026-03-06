@@ -136,13 +136,17 @@ function addPlayButton(postEl: HTMLElement): void {
 
     // abcjsで演奏
     if (ABCJS.synth.supportsAudio()) {
-      if (!synthInstance) synthInstance = new ABCJS.synth.CreateSynth();
+      if (!synthInstance) {
+        synthInstance = new ABCJS.synth.CreateSynth();
+      } else {
+        // 既存のシンセが再生中の場合は、再初期化前に必ず停止する
+        synthInstance.stop();
+      }
       synthInstance
         .init({ visualObj, options: {} })
         .then(() => synthInstance!.prime())
         .then(() => {
-          // 前回の演奏が残っている場合に停止してから再生
-          synthInstance!.stop();
+          // 再生開始
           synthInstance!.start();
         })
         .catch((error: unknown) => {
