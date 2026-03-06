@@ -102,6 +102,36 @@ function addPlayButton(postEl: HTMLElement): void {
   // 投稿ごとのシンセインスタンス
   let synthInstance: ABCJS.MidiBuffer | null = null;
 
+  // ---- ABCテキストを五線譜表示し演奏する共通ヘルパー ----
+  function renderAndPlay(abcText: string): void {
+    scoreDiv.style.display = 'block';
+    const tuneObjects = ABCJS.renderAbc(scoreDiv, abcText);
+    const visualObj = tuneObjects[0];
+    if (!visualObj) return;
+
+    if (ABCJS.synth.supportsAudio()) {
+      if (!synthInstance) {
+        synthInstance = new ABCJS.synth.CreateSynth();
+      } else {
+        // 既存のシンセが再生中の場合は、再初期化前に必ず停止する
+        synthInstance.stop();
+      }
+      synthInstance
+        .init({ visualObj, options: {} })
+        .then(() => synthInstance!.prime())
+        .then(() => {
+          // 再生開始（easyabcjs6と同様に stop() してから start() する）
+          synthInstance!.stop();
+          synthInstance!.start();
+        })
+        .catch((error: unknown) => {
+          console.warn(LOG_PREFIX, 'Audio problem:', error);
+        });
+    } else {
+      console.error(LOG_PREFIX, 'Audio is not supported in this browser.');
+    }
+  }
+
   toggleBtn.addEventListener('click', e => {
     e.stopPropagation();
     if (textarea.style.display === 'none') {
@@ -129,33 +159,7 @@ function addPlayButton(postEl: HTMLElement): void {
       console.error(LOG_PREFIX, 'MML parse error:', error);
       return;
     }
-
-    // SVG五線譜を表示
-    scoreDiv.style.display = 'block';
-    const tuneObjects = ABCJS.renderAbc(scoreDiv, abcText);
-    const visualObj = tuneObjects[0];
-    if (!visualObj) return;
-
-    // abcjsで演奏
-    if (ABCJS.synth.supportsAudio()) {
-      if (!synthInstance) {
-        synthInstance = new ABCJS.synth.CreateSynth();
-      } else {
-        synthInstance.stop();
-      }
-      synthInstance
-        .init({ visualObj, options: {} })
-        .then(() => synthInstance!.prime())
-        .then(() => {
-          synthInstance!.stop();
-          synthInstance!.start();
-        })
-        .catch((error: unknown) => {
-          console.warn(LOG_PREFIX, 'Audio problem:', error);
-        });
-    } else {
-      console.error(LOG_PREFIX, 'Audio is not supported in this browser.');
-    }
+    renderAndPlay(abcText);
   });
 
   playBtn.addEventListener('click', e => {
@@ -164,35 +168,7 @@ function addPlayButton(postEl: HTMLElement): void {
     if (!textarea.value) {
       textarea.value = getPostText(postEl);
     }
-    const abcText = textarea.value;
-
-    // SVG五線譜を表示
-    scoreDiv.style.display = 'block';
-    const tuneObjects = ABCJS.renderAbc(scoreDiv, abcText);
-    const visualObj = tuneObjects[0];
-
-    // abcjsで演奏
-    if (ABCJS.synth.supportsAudio()) {
-      if (!synthInstance) {
-        synthInstance = new ABCJS.synth.CreateSynth();
-      } else {
-        // 既存のシンセが再生中の場合は、再初期化前に必ず停止する
-        synthInstance.stop();
-      }
-      synthInstance
-        .init({ visualObj, options: {} })
-        .then(() => synthInstance!.prime())
-        .then(() => {
-          // 再生開始（easyabcjs6と同様に stop() してから start() する）
-          synthInstance!.stop();
-          synthInstance!.start();
-        })
-        .catch((error: unknown) => {
-          console.warn(LOG_PREFIX, 'Audio problem:', error);
-        });
-    } else {
-      console.error(LOG_PREFIX, 'Audio is not supported in this browser.');
-    }
+    renderAndPlay(textarea.value);
   });
 
   const wrapper = document.createElement('div');

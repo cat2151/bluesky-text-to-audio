@@ -21,11 +21,15 @@
     }
   }
   function decimalToFraction(originalDecimal) {
-    let decimal = originalDecimal;
+    const MAX_DENOMINATOR = 128;
     let denominator = 1;
-    while (decimal % 1 !== 0) {
+    let decimal = originalDecimal * denominator;
+    while (!Number.isInteger(decimal) && denominator < MAX_DENOMINATOR) {
       denominator++;
       decimal = originalDecimal * denominator;
+    }
+    if (!Number.isInteger(decimal)) {
+      decimal = Math.round(decimal);
     }
     let numerator = decimal;
     if (numerator == 1) numerator = ""; // memo : for ABC music notation
