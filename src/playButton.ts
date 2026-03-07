@@ -10,6 +10,15 @@ import { getPostText } from './postText';
 
 const LOG_PREFIX = '[BTA:playButton]';
 
+// ---- モジュールレベルのAudioContext（再利用） ----
+let sharedAudioContext: AudioContext | null = null;
+function getAudioContext(): AudioContext {
+  if (!sharedAudioContext || sharedAudioContext.state === 'closed') {
+    sharedAudioContext = new AudioContext();
+  }
+  return sharedAudioContext;
+}
+
 // ---- 処理済み投稿を管理 ----
 const processedPosts = new WeakSet<HTMLElement>();
 
@@ -67,6 +76,13 @@ export function addPlayButton(postEl: HTMLElement): void {
   tonejsBtn.textContent = '🎹 Tone.jsでplay';
   tonejsBtn.style.cssText = btnStyle;
 
+  // 「投稿を読み上げる」ボタン（VOICEVOX）
+  const voicevoxBtn = document.createElement('button');
+  voicevoxBtn.type = 'button';
+  voicevoxBtn.setAttribute('data-bta-voicevox', '');
+  voicevoxBtn.textContent = '🔊 投稿を読み上げる';
+  voicevoxBtn.style.cssText = btnStyle;
+
   // ボタン行コンテナ
   const row = document.createElement('div');
   row.setAttribute('data-bta-row', '');
@@ -76,7 +92,7 @@ export function addPlayButton(postEl: HTMLElement): void {
     flex-wrap: wrap;
     margin: 4px 0;
   `;
-  row.append(toggleBtn, mmlabcBtn, playBtn, chord2mmlBtn, tonejsBtn);
+  row.append(toggleBtn, mmlabcBtn, playBtn, chord2mmlBtn, tonejsBtn, voicevoxBtn);
 
   // textarea
   const textarea = document.createElement('textarea');
@@ -247,6 +263,53 @@ export function addPlayButton(postEl: HTMLElement): void {
       Tone.Transport.start();
     } catch (e2: unknown) {
       console.error(LOG_PREFIX, 'Tone.js play error:', e2);
+    }
+  });
+
+  // ---- 「投稿を読み上げる」ボタン（VOICEVOX） ----
+  voicevoxBtn.addEventListener('click', async e => {
+    e.stopPropagation();
+    const text = getPostText(postEl);
+    if (!text) return;
+
+    voicevoxBtn.disabled = true;
+    voicevoxBtn.textContent = '🔊 読み上げ中...';
+    try {
+      const response = await new Promise<{ success: boolean; audio?: string; error?: string }>(
+        (resolve, reject) => {
+          chrome.runtime.sendMessage({ type: 'speak', text }, res => {
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message));
+            } else {
+              resolve(res as { success: boolean; audio?: string; error?: string });
+            }
+          });
+        },
+      );
+
+      if (!response.success || !response.audio) {
+        console.error(LOG_PREFIX, 'VOICEVOX error:', response.error);
+        return;
+      }
+
+      const binaryString = atob(response.audio);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      const audioContext = getAudioContext();
+      const decoded = await audioContext.decodeAudioData(bytes.buffer);
+      const source = audioContext.createBufferSource();
+      source.buffer = decoded;
+      source.connect(audioContext.destination);
+      source.onended = () => { source.disconnect(); };
+      source.start();
+    } catch (err: unknown) {
+      console.error(LOG_PREFIX, 'VOICEVOX error:', err);
+    } finally {
+      voicevoxBtn.disabled = false;
+      voicevoxBtn.textContent = '🔊 投稿を読み上げる';
     }
   });
 
