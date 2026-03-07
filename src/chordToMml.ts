@@ -39,6 +39,7 @@ export async function chordToMml(chord: string): Promise<string> {
 
   const transforms: Array<(s: string) => string> = [replaceHyphenToDot, replaceMinorRomanNumerals];
   const tried = new Set<string>();
+  let lastError: unknown;
   for (const seq of getAllCombinations(transforms)) {
     let candidate = chord;
     for (const fn of seq) candidate = fn(candidate);
@@ -46,7 +47,8 @@ export async function chordToMml(chord: string): Promise<string> {
     tried.add(candidate);
     try {
       return await parseChordViaLibrary(candidate);
-    } catch (_e) {}
+    } catch (e) { lastError = e; }
   }
-  return parseChordViaLibrary(chord);
+  // すべての候補が失敗した場合は最後のエラーを投げる
+  throw lastError;
 }

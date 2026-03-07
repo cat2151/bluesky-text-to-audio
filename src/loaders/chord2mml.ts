@@ -37,13 +37,14 @@ export function ensureChord2mmlLoader(): Promise<void> {
           document.head.appendChild(s);
         });
         if (!window.chord2mml) throw new Error('chord2mml not found on window after load');
+        const chord2mml = window.chord2mml;
         window.postMessage({ type: 'bta-chord2mml-ready' }, _origin);
         window.addEventListener('message', (e) => {
           if (e.origin !== _origin) return;
           if (e.data?.type !== 'bta-chord2mml-request') return;
           const { id, chord } = e.data;
           try {
-            const result = window.chord2mml.parse(chord);
+            const result = chord2mml.parse(chord);
             window.postMessage({ type: 'bta-chord2mml-response', id, result }, _origin);
           } catch (err) {
             window.postMessage({ type: 'bta-chord2mml-response', id, error: String(err) }, _origin);
@@ -54,6 +55,7 @@ export function ensureChord2mmlLoader(): Promise<void> {
       }
     `;
     script.onerror = () => {
+      window.removeEventListener('message', onMessage);
       chord2mmlReadyPromise = null;
       reject(new Error('chord2mml モジュールスクリプトの読み込みに失敗しました'));
     };

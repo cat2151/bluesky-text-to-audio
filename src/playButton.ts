@@ -210,7 +210,7 @@ export function addPlayButton(postEl: HTMLElement): void {
       const mml = await chordToMml(chord);
       abcText = mml2abcParse(mml);
     } catch (error) {
-      console.error(LOG_PREFIX, 'chord2mml parse error:', error);
+      console.error(LOG_PREFIX, 'chord2mml error (load or parse):', error);
       return;
     }
     renderAndPlay(abcText);
