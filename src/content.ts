@@ -1,4 +1,5 @@
 import * as ABCJS from 'abcjs';
+import { parse as mml2abcParse } from './mml2abc.mjs';
 
 const LOG_PREFIX = '[BTA:content]';
 
@@ -41,12 +42,12 @@ function addPlayButton(postEl: HTMLElement): void {
   toggleBtn.textContent = '▶ textareaを開く';
   toggleBtn.style.cssText = btnStyle;
 
-  // console.log出力ボタン
-  const logBtn = document.createElement('button');
-  logBtn.type = 'button';
-  logBtn.setAttribute('data-bta-log', '');
-  logBtn.textContent = '📋 console.logに出力';
-  logBtn.style.cssText = btnStyle;
+  // mmlabcでplayボタン
+  const mmlabcBtn = document.createElement('button');
+  mmlabcBtn.type = 'button';
+  mmlabcBtn.setAttribute('data-bta-mmlabc', '');
+  mmlabcBtn.textContent = '🎵 mmlabcでplay';
+  mmlabcBtn.style.cssText = btnStyle;
 
   // abcjs playボタン
   const playBtn = document.createElement('button');
@@ -63,7 +64,7 @@ function addPlayButton(postEl: HTMLElement): void {
     align-items: center;
     margin: 4px 0;
   `;
-  row.append(toggleBtn, logBtn, playBtn);
+  row.append(toggleBtn, mmlabcBtn, playBtn);
 
   // textarea
   const textarea = document.createElement('textarea');
@@ -98,48 +99,16 @@ function addPlayButton(postEl: HTMLElement): void {
   textarea.addEventListener('click', e => { e.stopPropagation(); });
   textarea.addEventListener('mousedown', e => { e.stopPropagation(); });
 
-  toggleBtn.addEventListener('click', e => {
-    e.stopPropagation();
-    if (textarea.style.display === 'none') {
-      // 初回のみ投稿テキストをセット（ユーザー編集を保持）
-      if (!textarea.value) {
-        textarea.value = getPostText(postEl);
-      }
-      textarea.style.display = 'block';
-    } else {
-      textarea.style.display = 'none';
-    }
-  });
-
-  logBtn.addEventListener('click', e => {
-    e.stopPropagation();
-    // 未初期化の場合は投稿テキストをセット
-    if (!textarea.value) {
-      textarea.value = getPostText(postEl);
-    }
-    console.log(LOG_PREFIX, textarea.value);
-  });
-
   // 投稿ごとのシンセインスタンス
   let synthInstance: ABCJS.MidiBuffer | null = null;
 
-  playBtn.addEventListener('click', e => {
-    e.stopPropagation();
-    // 未初期化の場合は投稿テキストをセット
-    if (!textarea.value) {
-      textarea.value = getPostText(postEl);
-    }
-    const abcText = textarea.value;
-
-    // console.logに出力（これまでの機能をそのまま維持）
-    console.log(LOG_PREFIX, abcText);
-
-    // SVG五線譜を表示
+  // ---- ABCテキストを五線譜表示し演奏する共通ヘルパー ----
+  function renderAndPlay(abcText: string): void {
     scoreDiv.style.display = 'block';
     const tuneObjects = ABCJS.renderAbc(scoreDiv, abcText);
     const visualObj = tuneObjects[0];
+    if (!visualObj) return;
 
-    // abcjsで演奏
     if (ABCJS.synth.supportsAudio()) {
       if (!synthInstance) {
         synthInstance = new ABCJS.synth.CreateSynth();
@@ -161,6 +130,45 @@ function addPlayButton(postEl: HTMLElement): void {
     } else {
       console.error(LOG_PREFIX, 'Audio is not supported in this browser.');
     }
+  }
+
+  toggleBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    if (textarea.style.display === 'none') {
+      // 初回のみ投稿テキストをセット（ユーザー編集を保持）
+      if (!textarea.value) {
+        textarea.value = getPostText(postEl);
+      }
+      textarea.style.display = 'block';
+    } else {
+      textarea.style.display = 'none';
+    }
+  });
+
+  mmlabcBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    // 未初期化の場合は投稿テキストをセット
+    if (!textarea.value) {
+      textarea.value = getPostText(postEl);
+    }
+    const mml = textarea.value;
+    let abcText = '';
+    try {
+      abcText = mml2abcParse(mml);
+    } catch (error) {
+      console.error(LOG_PREFIX, 'MML parse error:', error);
+      return;
+    }
+    renderAndPlay(abcText);
+  });
+
+  playBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    // 未初期化の場合は投稿テキストをセット
+    if (!textarea.value) {
+      textarea.value = getPostText(postEl);
+    }
+    renderAndPlay(textarea.value);
   });
 
   const wrapper = document.createElement('div');

@@ -5,7 +5,7 @@ Blueskyのタイムラインの投稿にplayボタンを表示するChrome拡張
 ## 機能
 
 - Bluesky（bsky.app）のタイムラインの各投稿にplayボタンを表示
-- playボタンを押すと、投稿内容を `console.log` に出力
+- playボタンを押すと、投稿内容をMMLとして解析し、mmlabcで演奏
 
 ## ユーザー向けインストール方法
 
@@ -22,8 +22,10 @@ Blueskyのタイムラインの投稿にplayボタンを表示するChrome拡張
 ## 使い方
 
 1. [Bluesky](https://bsky.app/) を開く
-2. タイムラインの各投稿に表示される「▶ play」ボタンをクリックする
-3. ブラウザのDevToolsのコンソールに投稿内容が出力される
+2. タイムラインの各投稿に表示される「▶ textareaを開く」ボタンをクリックしてtextareaを開く
+3. textareaにMML文字列を入力する
+4. 「🎵 mmlabcでplay」ボタンをクリックすると、MMLを解析して五線譜を表示し演奏する
+5. 「▶ Play」ボタンをクリックすると、textareaの内容をABC記譜法として直接演奏する
 
 ## 開発者向け
 
