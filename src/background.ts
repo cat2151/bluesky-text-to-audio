@@ -5,11 +5,19 @@ const LOG_PREFIX = '[BTA:background]';
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const uint8Array = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < uint8Array.length; i++) {
-    binary += String.fromCharCode(uint8Array[i]);
+  const chunkSize = 0x8000; // 32KB chunks to avoid large intermediate strings
+  const chunks: string[] = [];
+
+  for (let i = 0; i < uint8Array.length; i += chunkSize) {
+    const end = Math.min(i + chunkSize, uint8Array.length);
+    const charCodes: string[] = [];
+    for (let j = i; j < end; j++) {
+      charCodes.push(String.fromCharCode(uint8Array[j]));
+    }
+    chunks.push(charCodes.join(''));
   }
-  return btoa(binary);
+
+  return btoa(chunks.join(''));
 }
 
 async function speakText(text: string): Promise<string> {
@@ -40,7 +48,17 @@ async function speakText(text: string): Promise<string> {
 chrome.runtime.onMessage.addListener(
   (message: { type: string; text: string }, _sender, sendResponse) => {
     if (message.type === 'speak') {
-      speakText(message.text)
+      const text = message.text;
+      if (typeof text !== 'string' || text.trim().length === 0) {
+        console.error(LOG_PREFIX, 'Invalid text for speak request:', text);
+        sendResponse({
+          success: false,
+          error: 'Invalid text for speak request',
+        });
+        return false;
+      }
+
+      speakText(text)
         .then(base64Audio => sendResponse({ success: true, audio: base64Audio }))
         .catch((error: unknown) => {
           console.error(LOG_PREFIX, 'VOICEVOX error:', error);

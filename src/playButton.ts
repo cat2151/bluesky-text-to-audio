@@ -269,7 +269,12 @@ export function addPlayButton(postEl: HTMLElement): void {
   // ---- 「投稿を読み上げる」ボタン（VOICEVOX） ----
   voicevoxBtn.addEventListener('click', async e => {
     e.stopPropagation();
-    const text = getPostText(postEl);
+    // 未初期化の場合は投稿テキストをセット（textareaの編集内容を優先）
+    let text = textarea.value;
+    if (!text) {
+      text = getPostText(postEl);
+      textarea.value = text;
+    }
     if (!text) return;
 
     voicevoxBtn.disabled = true;
@@ -299,6 +304,9 @@ export function addPlayButton(postEl: HTMLElement): void {
       }
 
       const audioContext = getAudioContext();
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
       const decoded = await audioContext.decodeAudioData(bytes.buffer);
       const source = audioContext.createBufferSource();
       source.buffer = decoded;
