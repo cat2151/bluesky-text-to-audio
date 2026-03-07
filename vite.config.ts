@@ -4,4 +4,9 @@ import manifest from './manifest.json';
 
 export default defineConfig({
   plugins: [crx({ manifest })],
+  build: {
+    commonjsOptions: {
+      include: [/node_modules/, /src/],
+    },
+  },
 });

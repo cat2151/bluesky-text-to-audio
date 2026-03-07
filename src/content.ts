@@ -1,5 +1,6 @@
 import * as ABCJS from 'abcjs';
 import { parse as mml2abcParse } from './mml2abc.mjs';
+import { chord2mml } from './chord2mml.js';
 
 const LOG_PREFIX = '[BTA:content]';
 
@@ -14,6 +15,73 @@ function getPostText(postEl: HTMLElement): string {
   const clone = postEl.cloneNode(true) as HTMLElement;
   clone.querySelectorAll('[data-bta-wrapper]').forEach(el => el.remove());
   return clone.innerText || '';
+}
+
+// ---- コード進行テキストの方言を正規化 ----
+function preprocessChord(chord: string): string {
+  const transforms: Array<(s: string) => string> = [replaceHyphenToDot, replaceMinorRomanNumerals];
+  return findParsableChordVariant(chord);
+
+  function findParsableChordVariant(chord: string): string {
+    const tried = new Set<string>();
+    for (const seq of getAllCombinations(transforms)) {
+      let candidate = chord;
+      for (const fn of seq) {
+        candidate = fn(candidate);
+      }
+      if (tried.has(candidate)) continue;
+      tried.add(candidate);
+      try {
+        chord2mml.parse(candidate);
+        return candidate;
+      } catch (_e) {}
+    }
+    return chord;
+  }
+
+  function replaceHyphenToDot(s: string): string {
+    return s.replace(/-/g, '・');
+  }
+
+  function replaceMinorRomanNumerals(s: string): string {
+    return s
+      .replace(/\bvii(?![a-zA-Z])/g, 'VIIm')
+      .replace(/\biii(?![a-zA-Z])/g, 'IIIm')
+      .replace(/\bvi(?![a-zA-Z])/g, 'VIm')
+      .replace(/\biv(?![a-zA-Z])/g, 'IVm')
+      .replace(/\bii(?![a-zA-Z])/g, 'IIm')
+      .replace(/\bv(?![a-zA-Z])/g, 'Vm')
+      .replace(/\bi(?![a-zA-Z])/g, 'Im');
+  }
+
+  function getAllCombinations(funcs: Array<(s: string) => string>): Array<Array<(s: string) => string>> {
+    const results: Array<Array<(s: string) => string>> = [];
+    const n = funcs.length;
+    for (let i = 0; i < (1 << n); i++) {
+      const seq: Array<(s: string) => string> = [];
+      for (let j = 0; j < n; j++) {
+        if (i & (1 << j)) seq.push(funcs[j]);
+      }
+      if (seq.length === 0) {
+        results.push([(x: string) => x]);
+      } else {
+        results.push(...permute(seq));
+      }
+    }
+    return results;
+  }
+
+  function permute(arr: Array<(s: string) => string>): Array<Array<(s: string) => string>> {
+    if (arr.length <= 1) return [arr];
+    const result: Array<Array<(s: string) => string>> = [];
+    for (let i = 0; i < arr.length; i++) {
+      const rest = arr.slice(0, i).concat(arr.slice(i + 1));
+      for (const p of permute(rest)) {
+        result.push([arr[i], ...p]);
+      }
+    }
+    return result;
+  }
 }
 
 // ---- playボタン行とtextareaを追加 ----
@@ -53,8 +121,15 @@ function addPlayButton(postEl: HTMLElement): void {
   const playBtn = document.createElement('button');
   playBtn.type = 'button';
   playBtn.setAttribute('data-bta-abcplay', '');
-  playBtn.textContent = '▶ Play';
+  playBtn.textContent = '▶ abcjsでplay';
   playBtn.style.cssText = btnStyle;
+
+  // chord2mml playボタン
+  const chord2mmlBtn = document.createElement('button');
+  chord2mmlBtn.type = 'button';
+  chord2mmlBtn.setAttribute('data-bta-chord2mml', '');
+  chord2mmlBtn.textContent = '🎸 chord2mmlでplay';
+  chord2mmlBtn.style.cssText = btnStyle;
 
   // ボタン行コンテナ
   const row = document.createElement('div');
@@ -64,7 +139,7 @@ function addPlayButton(postEl: HTMLElement): void {
     align-items: center;
     margin: 4px 0;
   `;
-  row.append(toggleBtn, mmlabcBtn, playBtn);
+  row.append(toggleBtn, mmlabcBtn, playBtn, chord2mmlBtn);
 
   // textarea
   const textarea = document.createElement('textarea');
@@ -169,6 +244,25 @@ function addPlayButton(postEl: HTMLElement): void {
       textarea.value = getPostText(postEl);
     }
     renderAndPlay(textarea.value);
+  });
+
+  chord2mmlBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    // 未初期化の場合は投稿テキストをセット
+    if (!textarea.value) {
+      textarea.value = getPostText(postEl);
+    }
+    const chord = textarea.value;
+    let mml = '';
+    let abcText = '';
+    try {
+      mml = chord2mml.parse(preprocessChord(chord));
+      abcText = mml2abcParse(mml);
+    } catch (error) {
+      console.error(LOG_PREFIX, 'chord2mml parse error:', error);
+      return;
+    }
+    renderAndPlay(abcText);
   });
 
   const wrapper = document.createElement('div');
