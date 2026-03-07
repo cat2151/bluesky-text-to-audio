@@ -1,8 +1,23 @@
 import * as ABCJS from 'abcjs';
 import { parse as mml2abcParse } from './mml2abc.mjs';
-import { chord2mml } from './chord2mml.js';
 
 const LOG_PREFIX = '[BTA:content]';
+
+// ---- chord2mml を CDN から動的ロード（cat2151ライブラリは常に最新mainを使用、バージョン固定しない） ----
+const CHORD2MML_CDN_URL = 'https://cdn.jsdelivr.net/gh/cat2151/chord2mml/dist/chord2mml.js';
+type Chord2mmlLib = { parse(chord: string): string };
+
+const chord2mmlPromise: Promise<Chord2mmlLib> = fetch(CHORD2MML_CDN_URL)
+  .then(resp => resp.text())
+  .then(code => {
+    // UMD バンドルを Function スコープで実行し chord2mml オブジェクトを取得
+    const fn = new Function(`const self={};\n${code}\nreturn self.chord2mml;`);
+    return fn() as Chord2mmlLib;
+  })
+  .catch((e: unknown) => {
+    console.error(LOG_PREFIX, 'chord2mml の読み込みに失敗しました:', e);
+    return Promise.reject(e);
+  });
 
 // ---- 処理済み投稿を管理 ----
 const processedPosts = new WeakSet<HTMLElement>();
@@ -17,32 +32,11 @@ function getPostText(postEl: HTMLElement): string {
   return clone.innerText || '';
 }
 
-// ---- コード進行テキストの方言を正規化 ----
-function preprocessChord(chord: string): string {
-  const transforms: Array<(s: string) => string> = [replaceHyphenToDot, replaceMinorRomanNumerals];
-  return findParsableChordVariant(chord);
-
-  function findParsableChordVariant(chord: string): string {
-    const tried = new Set<string>();
-    for (const seq of getAllCombinations(transforms)) {
-      let candidate = chord;
-      for (const fn of seq) {
-        candidate = fn(candidate);
-      }
-      if (tried.has(candidate)) continue;
-      tried.add(candidate);
-      try {
-        chord2mml.parse(candidate);
-        return candidate;
-      } catch (_e) {}
-    }
-    return chord;
-  }
-
+// ---- コード進行テキストをMMLに変換（方言を正規化しつつパース、成功したMMLを直接返す） ----
+function chordToMml(chord: string, chord2mml: Chord2mmlLib): string {
   function replaceHyphenToDot(s: string): string {
     return s.replace(/-/g, '・');
   }
-
   function replaceMinorRomanNumerals(s: string): string {
     return s
       .replace(/\bvii(?![a-zA-Z])/g, 'VIIm')
@@ -53,7 +47,15 @@ function preprocessChord(chord: string): string {
       .replace(/\bv(?![a-zA-Z])/g, 'Vm')
       .replace(/\bi(?![a-zA-Z])/g, 'Im');
   }
-
+  function permute(arr: Array<(s: string) => string>): Array<Array<(s: string) => string>> {
+    if (arr.length <= 1) return [arr];
+    const result: Array<Array<(s: string) => string>> = [];
+    for (let i = 0; i < arr.length; i++) {
+      const rest = arr.slice(0, i).concat(arr.slice(i + 1));
+      for (const p of permute(rest)) result.push([arr[i], ...p]);
+    }
+    return result;
+  }
   function getAllCombinations(funcs: Array<(s: string) => string>): Array<Array<(s: string) => string>> {
     const results: Array<Array<(s: string) => string>> = [];
     const n = funcs.length;
@@ -62,26 +64,23 @@ function preprocessChord(chord: string): string {
       for (let j = 0; j < n; j++) {
         if (i & (1 << j)) seq.push(funcs[j]);
       }
-      if (seq.length === 0) {
-        results.push([(x: string) => x]);
-      } else {
-        results.push(...permute(seq));
-      }
+      results.push(...(seq.length === 0 ? [[(x: string) => x]] : permute(seq)));
     }
     return results;
   }
 
-  function permute(arr: Array<(s: string) => string>): Array<Array<(s: string) => string>> {
-    if (arr.length <= 1) return [arr];
-    const result: Array<Array<(s: string) => string>> = [];
-    for (let i = 0; i < arr.length; i++) {
-      const rest = arr.slice(0, i).concat(arr.slice(i + 1));
-      for (const p of permute(rest)) {
-        result.push([arr[i], ...p]);
-      }
-    }
-    return result;
+  const transforms: Array<(s: string) => string> = [replaceHyphenToDot, replaceMinorRomanNumerals];
+  const tried = new Set<string>();
+  for (const seq of getAllCombinations(transforms)) {
+    let candidate = chord;
+    for (const fn of seq) candidate = fn(candidate);
+    if (tried.has(candidate)) continue;
+    tried.add(candidate);
+    try {
+      return chord2mml.parse(candidate);
+    } catch (_e) {}
   }
+  return chord2mml.parse(chord);
 }
 
 // ---- playボタン行とtextareaを追加 ----
@@ -246,17 +245,23 @@ function addPlayButton(postEl: HTMLElement): void {
     renderAndPlay(textarea.value);
   });
 
-  chord2mmlBtn.addEventListener('click', e => {
+  chord2mmlBtn.addEventListener('click', async e => {
     e.stopPropagation();
     // 未初期化の場合は投稿テキストをセット
     if (!textarea.value) {
       textarea.value = getPostText(postEl);
     }
     const chord = textarea.value;
-    let mml = '';
+    let chord2mml: Chord2mmlLib;
+    try {
+      chord2mml = await chord2mmlPromise;
+    } catch {
+      console.error(LOG_PREFIX, 'chord2mml が利用できません');
+      return;
+    }
     let abcText = '';
     try {
-      mml = chord2mml.parse(preprocessChord(chord));
+      const mml = chordToMml(chord, chord2mml);
       abcText = mml2abcParse(mml);
     } catch (error) {
       console.error(LOG_PREFIX, 'chord2mml parse error:', error);
