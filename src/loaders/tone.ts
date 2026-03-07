@@ -2,7 +2,7 @@ import type { ToneLib } from '../types';
 
 const LOG_PREFIX = '[BTA:loaders/tone]';
 
-// Tone.js を CDN から動的ロード（cat2151ライブラリは常に最新mainを使用、バージョン固定しない）
+// Tone.js を CDN から動的ロード
 const TONE_CDN_URL = 'https://cdn.jsdelivr.net/npm/tone@15/build/Tone.js';
 
 let tonePromise: Promise<ToneLib> | null = null;
