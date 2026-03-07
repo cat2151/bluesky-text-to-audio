@@ -1,37 +1,39 @@
 # bluesky-text-to-audio
 
-A Chrome extension that displays a play button on posts in the Bluesky timeline.
+A Chrome extension that displays a play button on Bluesky timeline posts.
 
 ## Features
 
 - Displays a play button on each post in the Bluesky (bsky.app) timeline.
-- When the play button is pressed, the post content is output to `console.log`.
+- When the play button is pressed, the post content is parsed as MML and played using mmlabc.
 
-## Installation for Users
+## User Installation Guide
 
 1. Clone or download this repository
    ```
    git clone https://github.com/cat2151/bluesky-text-to-audio.git
    ```
 2. Open `chrome://extensions/` in Chrome
-3. Enable "Developer mode"
-4. Click "Load unpacked" and select the `dist` folder.
+3. Enable 'Developer mode'
+4. Click 'Load unpacked' and select the `dist` folder
 
-> **Note:** The pre-built `dist/` folder is included in the repository, so installing Bun or build tools is not necessary.
+> **Note:** The pre-built `dist/` folder is included in the repository, so installing Bun or build tools is not required.
 
 ## Usage
 
 1. Open [Bluesky](https://bsky.app/)
-2. Click the "▶ play" button displayed on each post in the timeline.
-3. The post content will be output to the browser's DevTools console.
+2. Click the '▶ Open textarea' button displayed on each timeline post to open the textarea.
+3. Enter an MML string into the textarea.
+4. Click the '🎵 Play with mmlabc' button to parse the MML, display the musical staff, and play the music.
+5. Click the '▶ Play' button to directly play the textarea content as ABC notation.
 
 ## For Developers
 
 ### Tech Stack
 
-- [Bun](https://bun.sh/) — Package Manager & Runtime
-- [Vite](https://vitejs.dev/) — Build Tool
-- [CRXJS Vite Plugin](https://crxjs.dev/) — Vite Plugin for Chrome Extensions
+- [Bun](https://bun.sh/) — Package manager and runtime
+- [Vite](https://vitejs.dev/) — Build tool
+- [CRXJS Vite Plugin](https://crxjs.dev/) — Vite plugin for Chrome extensions
 - [TypeScript](https://www.typescriptlang.org/) — Type-safe development
 
 ### Setup Steps
@@ -42,14 +44,14 @@ A Chrome extension that displays a play button on posts in the Bluesky timeline.
 curl -fsSL https://bun.sh/install | bash
 ```
 
-#### 2. Clone the repository
+#### 2. Clone the Repository
 
 ```bash
 git clone https://github.com/cat2151/bluesky-text-to-audio.git
 cd bluesky-text-to-audio
 ```
 
-#### 3. Install dependencies
+#### 3. Install Dependencies
 
 ```bash
 bun install
@@ -61,13 +63,13 @@ bun install
 bun run build
 ```
 
-The build artifacts will be output to the `dist/` directory.
+Build artifacts will be output to the `dist/` directory.
 
 #### 5. Load into Chrome
 
 1. Open `chrome://extensions/` in Chrome
-2. Enable "Developer mode"
-3. Click "Load unpacked" and select the `dist` folder.
+2. Enable 'Developer mode'
+3. Click 'Load unpacked' and select the `dist` folder
 
 ### Development Commands
 
@@ -86,5 +88,5 @@ bluesky-text-to-audio/
 ├── manifest.json        # Chrome Extension Manifest (Manifest V3)
 ├── vite.config.ts       # Vite configuration
 ├── tsconfig.json        # TypeScript configuration
-├── package.json         # Package configuration & scripts
-└── dist/                # Build artifacts (CI auto-commits)
+├── package.json         # Package configuration and scripts
+└── dist/                # Build artifacts (auto-committed by CI)
