@@ -108,127 +108,84 @@ function loadSequencer(): Promise<SequencerLib> {
   return sequencerPromise;
 }
 
-// ---- tonejs-mml-to-json を CDN から動的ロード ----
+// ---- tonejs-mml-to-json を CDN から動的ロード（script injection + postMessage パターン） ----
 // cat2151ライブラリは常に最新mainを使用、バージョン固定しない
-// このライブラリはESM+WASMのため、CDNからの直接ロードにはライブラリ側のUMD/IIFEビルドが必要。
-// 現在はフォールバックとして基本的なMMLパーサーを使用する。
-// ライブラリ側にUMD/IIFEビルドが追加されたら、このパーサーをライブラリに差し替える予定。
-// TODO: cat2151/tonejs-mml-to-json に UMD/IIFE ビルド追加を提案する
+// このライブラリはESM+WASMのため、コンテンツスクリプトの isolated world から直接 import() できない。
+// <script type="module"> を page DOM に注入して main world で動かし、postMessage で通信する。
+const MML_TO_JSON_CDN_URL = 'https://cdn.jsdelivr.net/gh/cat2151/tonejs-mml-to-json@main/dist/index.js';
 
-// ---- 基本MMLパーサー（tonejs-mml-to-json のCDNロードが可能になるまでの暫定実装） ----
-function parseMmlToSequence(mml: string): SequenceEvent[] {
-  const NOTE_MAP: Record<string, string> = {
-    c: 'C', d: 'D', e: 'E', f: 'F', g: 'G', a: 'A', b: 'B',
-  };
-  const SHARP_MAP: Record<string, string> = {
-    c: 'C#', d: 'D#', f: 'F#', g: 'G#', a: 'A#',
-  };
-  const FLAT_MAP: Record<string, string> = {
-    d: 'Db', e: 'Eb', g: 'Gb', a: 'Ab', b: 'Bb',
-  };
+let mmlToJsonReadyPromise: Promise<void> | null = null;
+let mmlToJsonRequestCounter = 0;
 
-  let octave = 4;
-  let length = 4; // デフォルト4分音符
-  let defaultDotted = false; // l4. のような付点デフォルト長フラグ
-  let pos = 0;
-  const input = mml.toLowerCase().replace(/\s+/g, '');
-  const events: SequenceEvent[] = [
-    { eventType: 'createNode', nodeId: 0, nodeType: 'Synth', args: {} },
-    { eventType: 'connect', nodeId: 0, connectTo: 'toDestination' },
-  ];
+function ensureMmlToJsonLoader(): Promise<void> {
+  if (mmlToJsonReadyPromise) return mmlToJsonReadyPromise;
+  mmlToJsonReadyPromise = new Promise<void>((resolve, reject) => {
+    const expectedOrigin = window.location.origin;
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== expectedOrigin) return;
+      if (e.data?.type === 'bta-mml2json-ready') {
+        window.removeEventListener('message', onMessage);
+        resolve();
+      } else if (e.data?.type === 'bta-mml2json-load-error') {
+        window.removeEventListener('message', onMessage);
+        mmlToJsonReadyPromise = null;
+        reject(new Error(String(e.data.error)));
+      }
+    };
+    window.addEventListener('message', onMessage);
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.textContent = `
+      import { initWasm, mml2json } from '${MML_TO_JSON_CDN_URL}';
+      const _origin = window.location.origin;
+      try {
+        await initWasm();
+        window.postMessage({ type: 'bta-mml2json-ready' }, _origin);
+        window.addEventListener('message', (e) => {
+          if (e.origin !== _origin) return;
+          if (e.data?.type !== 'bta-mml2json-request') return;
+          const { id, mml } = e.data;
+          try {
+            const result = mml2json(mml);
+            window.postMessage({ type: 'bta-mml2json-response', id, result }, _origin);
+          } catch (err) {
+            window.postMessage({ type: 'bta-mml2json-response', id, error: String(err) }, _origin);
+          }
+        });
+      } catch (err) {
+        window.postMessage({ type: 'bta-mml2json-load-error', error: String(err) }, _origin);
+      }
+    `;
+    script.onerror = () => {
+      mmlToJsonReadyPromise = null;
+      reject(new Error('tonejs-mml-to-json スクリプトの読み込みに失敗しました'));
+    };
+    document.head.appendChild(script);
+  }).catch((e: unknown) => {
+    console.error(LOG_PREFIX, 'tonejs-mml-to-json の読み込みに失敗しました:', e);
+    return Promise.reject(e);
+  });
+  return mmlToJsonReadyPromise;
+}
 
-  // 経過16分音符数で時刻管理
-  let sixteenths = 0;
-
-  function toToneTime(s: number): string {
-    const bars = Math.floor(s / 16);
-    const beats = Math.floor((s % 16) / 4);
-    const sixteenthsInBeat = s % 4;
-    return `${bars}:${beats}:${sixteenthsInBeat}`;
-  }
-
-  function parseLengthNum(defaultLen: number): number {
-    let len = 0;
-    while (pos < input.length && input[pos] >= '0' && input[pos] <= '9') {
-      len = len * 10 + parseInt(input[pos]);
-      pos++;
-    }
-    return len > 0 ? len : defaultLen;
-  }
-
-  while (pos < input.length) {
-    const ch = input[pos];
-
-    if (ch === 'o') {
-      pos++;
-      const oct = parseInt(input[pos] ?? '4');
-      if (!isNaN(oct)) { octave = oct; pos++; }
-    } else if (ch === 'l') {
-      pos++;
-      length = parseLengthNum(length);
-      if (pos < input.length && input[pos] === '.') {
-        defaultDotted = true; // 付点デフォルト長（分母は変えず、フラグで管理）
-        pos++;
+async function parseMmlViaLibrary(mml: string): Promise<SequenceEvent[]> {
+  await ensureMmlToJsonLoader();
+  const id = String(++mmlToJsonRequestCounter);
+  const expectedOrigin = window.location.origin;
+  return new Promise<SequenceEvent[]>((resolve, reject) => {
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== expectedOrigin) return;
+      if (e.data?.type !== 'bta-mml2json-response' || e.data.id !== id) return;
+      window.removeEventListener('message', onMessage);
+      if (e.data.error) {
+        reject(new Error(String(e.data.error)));
       } else {
-        defaultDotted = false;
+        resolve(e.data.result as SequenceEvent[]);
       }
-    } else if (ch === '>') {
-      octave = Math.min(octave + 1, 8); pos++;
-    } else if (ch === '<') {
-      octave = Math.max(octave - 1, 1); pos++;
-    } else if (ch === 'r') {
-      pos++;
-      const noteLen = parseLengthNum(length);
-      let restDotted = defaultDotted;
-      if (pos < input.length && input[pos] === '.') { restDotted = true; pos++; }
-      const stepSixteenths = restDotted
-        ? Math.round(16 / noteLen * 1.5)
-        : Math.round(16 / noteLen);
-      sixteenths += stepSixteenths;
-    } else if (NOTE_MAP[ch]) {
-      pos++;
-      let noteName = NOTE_MAP[ch];
-      // シャープ/フラット（'-'でフラット、'+'または'#'でシャープ。'b'はBノート名として扱う）
-      if (pos < input.length && (input[pos] === '+' || input[pos] === '#')) {
-        noteName = SHARP_MAP[ch] ?? noteName;
-        pos++;
-      } else if (pos < input.length && input[pos] === '-') {
-        noteName = FLAT_MAP[ch] ?? noteName;
-        pos++;
-      }
-      const noteLen = parseLengthNum(length);
-      let dotted = defaultDotted;
-      if (pos < input.length && input[pos] === '.') { dotted = true; pos++; }
-      const stepSixteenths = dotted
-        ? Math.round(16 / noteLen * 1.5)
-        : Math.round(16 / noteLen);
-      const durationStr = `${noteLen}n${dotted ? '.' : ''}`;
-      const toneNote = `${noteName}${octave}`;
-      const timeStr = toToneTime(sixteenths);
-      events.push({
-        eventType: 'triggerAttackRelease',
-        nodeId: 0,
-        args: [toneNote, durationStr, timeStr],
-      });
-      sixteenths += stepSixteenths;
-    } else if (ch === 't') {
-      // テンポ（無視）
-      pos++;
-      while (pos < input.length && input[pos] >= '0' && input[pos] <= '9') pos++;
-    } else if (ch === 'v') {
-      // ボリューム（無視）
-      pos++;
-      while (pos < input.length && input[pos] >= '0' && input[pos] <= '9') pos++;
-    } else {
-      pos++;
-    }
-  }
-
-  if (sixteenths > 0) {
-    events.push({ eventType: 'loopEnd', nodeId: 0, args: [toToneTime(sixteenths)] });
-  }
-
-  return events;
+    };
+    window.addEventListener('message', onMessage);
+    window.postMessage({ type: 'bta-mml2json-request', id, mml }, expectedOrigin);
+  });
 }
 
 type Chord2mmlLib = { parse(chord: string): string };
@@ -525,10 +482,10 @@ function addPlayButton(postEl: HTMLElement): void {
       return;
     }
 
-    // MML → tonejs-json-sequencer用JSONに変換（tonejs-mml-to-json のCDNロード可能なビルドが提供されたら差し替え予定）
+    // MML → tonejs-json-sequencer用JSONに変換（tonejs-mml-to-json ライブラリ使用）
     let sequence: SequenceEvent[];
     try {
-      sequence = parseMmlToSequence(mml);
+      sequence = await parseMmlViaLibrary(mml);
     } catch (e2: unknown) {
       console.error(LOG_PREFIX, 'MML parse error:', e2);
       return;
