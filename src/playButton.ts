@@ -4,7 +4,7 @@ import type { SequencerNodes } from './types';
 import { loadTone } from './loaders/tone';
 import { loadSequencer } from './loaders/sequencer';
 import { parseMmlViaLibrary } from './loaders/mmlToJson';
-import { chord2mmlPromise } from './loaders/chord2mml';
+import { loadChord2mml } from './loaders/chord2mml';
 import { chordToMml } from './chordToMml';
 import { getPostText } from './postText';
 
@@ -208,7 +208,7 @@ export function addPlayButton(postEl: HTMLElement): void {
     const chord = textarea.value;
     let chord2mml;
     try {
-      chord2mml = await chord2mmlPromise;
+      chord2mml = await loadChord2mml();
     } catch {
       console.error(LOG_PREFIX, 'chord2mml が利用できません');
       return;
