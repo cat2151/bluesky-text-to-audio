@@ -25,5 +25,3 @@ export type SequencerLib = {
   SequencerNodes: new () => SequencerNodes;
   playSequence(Tone: ToneLib, nodes: SequencerNodes, sequence: SequenceEvent[]): Promise<void>;
 };
-
-export type Chord2mmlLib = { parse(chord: string): string };
