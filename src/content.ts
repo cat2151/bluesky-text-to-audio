@@ -5,6 +5,189 @@ const LOG_PREFIX = '[BTA:content]';
 
 // ---- chord2mml を CDN から動的ロード（cat2151ライブラリは常に最新mainを使用、バージョン固定しない） ----
 const CHORD2MML_CDN_URL = 'https://cdn.jsdelivr.net/gh/cat2151/chord2mml/dist/chord2mml.js';
+
+// ---- Tone.js を CDN から動的ロード ----
+const TONE_CDN_URL = 'https://cdn.jsdelivr.net/npm/tone@15/build/Tone.js';
+
+type ToneLib = {
+  start(): Promise<void>;
+  Transport: {
+    start(): void;
+    stop(): void;
+    cancel(): void;
+  };
+};
+
+let tonePromise: Promise<ToneLib> | null = null;
+
+function loadTone(): Promise<ToneLib> {
+  if (!tonePromise) {
+    tonePromise = fetch(TONE_CDN_URL)
+      .then(resp => resp.text())
+      .then(code => {
+        // UMDビルドをFunction内で実行し、self.Tone（グローバル）にエクスポートされる
+        new Function(code)();
+        const Tone = (globalThis as Record<string, unknown>)['Tone'] as ToneLib | undefined;
+        if (!Tone) throw new Error('Tone.js の読み込みに失敗しました');
+        return Tone;
+      })
+      .catch((e: unknown) => {
+        console.error(LOG_PREFIX, 'Tone.js の読み込みに失敗しました:', e);
+        tonePromise = null;
+        return Promise.reject(e);
+      });
+  }
+  return tonePromise;
+}
+
+// ---- tonejs-json-sequencer を CDN から動的ロード（CJS mini-loader） ----
+// cat2151ライブラリは常に最新mainを使用、バージョン固定しない
+const SEQUENCER_CDN_BASE = 'https://cdn.jsdelivr.net/gh/cat2151/tonejs-json-sequencer@main/dist/cjs/';
+
+type SequencerNodes = {
+  get(id: number): unknown;
+  set(id: number, node: unknown): void;
+  disposeAll(): void;
+};
+
+type SequencerLib = {
+  SequencerNodes: new () => SequencerNodes;
+  playSequence(Tone: ToneLib, nodes: SequencerNodes, sequence: SequenceEvent[]): Promise<void>;
+};
+
+type SequenceEvent = {
+  eventType: string;
+  nodeId: number;
+  nodeType?: string;
+  args?: unknown[] | Record<string, unknown>;
+  connectTo?: number | 'toDestination';
+};
+
+let sequencerPromise: Promise<SequencerLib> | null = null;
+
+function loadSequencer(): Promise<SequencerLib> {
+  if (!sequencerPromise) {
+    sequencerPromise = (async () => {
+      // CJS ミニモジュールローダー
+      const registry: Record<string, Record<string, unknown>> = {};
+
+      async function loadCjsFile(registryKey: string, fetchPath: string): Promise<void> {
+        if (registry[registryKey]) return;
+        const code = await fetch(SEQUENCER_CDN_BASE + fetchPath).then(r => r.text());
+        const mod: { exports: Record<string, unknown> } = { exports: {} };
+        const requireFn = (dep: string): Record<string, unknown> => {
+          const loadedModule = registry[dep];
+          if (!loadedModule) {
+            throw new Error(
+              `tonejs-json-sequencer CJS loader: missing dependency "${dep}" (required by "${registryKey}")`
+            );
+          }
+          return loadedModule;
+        };
+        new Function('exports', 'require', 'module', code)(mod.exports, requireFn, mod);
+        registry[registryKey] = mod.exports;
+      }
+
+      // 依存順にロード
+      await loadCjsFile('./sequencer-nodes.js', 'sequencer-nodes.js');
+      await loadCjsFile('./factories/instrument-factory.js', 'factories/instrument-factory.js');
+      await loadCjsFile('./factories/effect-factory.js', 'factories/effect-factory.js');
+      await loadCjsFile('./node-factory.js', 'node-factory.js');
+      await loadCjsFile('./event-scheduler.js', 'event-scheduler.js');
+
+      const SeqNodes = registry['./sequencer-nodes.js']['SequencerNodes'] as new () => SequencerNodes;
+      const playSeq = registry['./event-scheduler.js']['playSequence'] as SequencerLib['playSequence'];
+
+      return { SequencerNodes: SeqNodes, playSequence: playSeq };
+    })().catch((e: unknown) => {
+      console.error(LOG_PREFIX, 'tonejs-json-sequencer の読み込みに失敗しました:', e);
+      sequencerPromise = null;
+      return Promise.reject(e);
+    });
+  }
+  return sequencerPromise;
+}
+
+// ---- tonejs-mml-to-json を CDN から動的ロード（script injection + postMessage パターン） ----
+// cat2151ライブラリは常に最新mainを使用、バージョン固定しない
+// このライブラリはESM+WASMのため、コンテンツスクリプトの isolated world から直接 import() できない。
+// <script type="module"> を page DOM に注入して main world で動かし、postMessage で通信する。
+const MML_TO_JSON_CDN_URL = 'https://cdn.jsdelivr.net/gh/cat2151/tonejs-mml-to-json@main/dist/index.js';
+
+let mmlToJsonReadyPromise: Promise<void> | null = null;
+let mmlToJsonRequestCounter = 0;
+
+function ensureMmlToJsonLoader(): Promise<void> {
+  if (mmlToJsonReadyPromise) return mmlToJsonReadyPromise;
+  mmlToJsonReadyPromise = new Promise<void>((resolve, reject) => {
+    const expectedOrigin = window.location.origin;
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== expectedOrigin) return;
+      if (e.data?.type === 'bta-mml2json-ready') {
+        window.removeEventListener('message', onMessage);
+        resolve();
+      } else if (e.data?.type === 'bta-mml2json-load-error') {
+        window.removeEventListener('message', onMessage);
+        mmlToJsonReadyPromise = null;
+        reject(new Error(String(e.data.error)));
+      }
+    };
+    window.addEventListener('message', onMessage);
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.textContent = `
+      import { initWasm, mml2json } from '${MML_TO_JSON_CDN_URL}';
+      const _origin = window.location.origin;
+      try {
+        await initWasm();
+        window.postMessage({ type: 'bta-mml2json-ready' }, _origin);
+        window.addEventListener('message', (e) => {
+          if (e.origin !== _origin) return;
+          if (e.data?.type !== 'bta-mml2json-request') return;
+          const { id, mml } = e.data;
+          try {
+            const result = mml2json(mml);
+            window.postMessage({ type: 'bta-mml2json-response', id, result }, _origin);
+          } catch (err) {
+            window.postMessage({ type: 'bta-mml2json-response', id, error: String(err) }, _origin);
+          }
+        });
+      } catch (err) {
+        window.postMessage({ type: 'bta-mml2json-load-error', error: String(err) }, _origin);
+      }
+    `;
+    script.onerror = () => {
+      mmlToJsonReadyPromise = null;
+      reject(new Error('tonejs-mml-to-json スクリプトの読み込みに失敗しました'));
+    };
+    document.head.appendChild(script);
+  }).catch((e: unknown) => {
+    console.error(LOG_PREFIX, 'tonejs-mml-to-json の読み込みに失敗しました:', e);
+    return Promise.reject(e);
+  });
+  return mmlToJsonReadyPromise;
+}
+
+async function parseMmlViaLibrary(mml: string): Promise<SequenceEvent[]> {
+  await ensureMmlToJsonLoader();
+  const id = String(++mmlToJsonRequestCounter);
+  const expectedOrigin = window.location.origin;
+  return new Promise<SequenceEvent[]>((resolve, reject) => {
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== expectedOrigin) return;
+      if (e.data?.type !== 'bta-mml2json-response' || e.data.id !== id) return;
+      window.removeEventListener('message', onMessage);
+      if (e.data.error) {
+        reject(new Error(String(e.data.error)));
+      } else {
+        resolve(e.data.result as SequenceEvent[]);
+      }
+    };
+    window.addEventListener('message', onMessage);
+    window.postMessage({ type: 'bta-mml2json-request', id, mml }, expectedOrigin);
+  });
+}
+
 type Chord2mmlLib = { parse(chord: string): string };
 
 const chord2mmlPromise: Promise<Chord2mmlLib> = fetch(CHORD2MML_CDN_URL)
@@ -130,15 +313,23 @@ function addPlayButton(postEl: HTMLElement): void {
   chord2mmlBtn.textContent = '🎸 chord2mmlでplay';
   chord2mmlBtn.style.cssText = btnStyle;
 
+  // Tone.js playボタン
+  const tonejsBtn = document.createElement('button');
+  tonejsBtn.type = 'button';
+  tonejsBtn.setAttribute('data-bta-tonejs', '');
+  tonejsBtn.textContent = '🎹 Tone.jsでplay';
+  tonejsBtn.style.cssText = btnStyle;
+
   // ボタン行コンテナ
   const row = document.createElement('div');
   row.setAttribute('data-bta-row', '');
   row.style.cssText = `
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     margin: 4px 0;
   `;
-  row.append(toggleBtn, mmlabcBtn, playBtn, chord2mmlBtn);
+  row.append(toggleBtn, mmlabcBtn, playBtn, chord2mmlBtn, tonejsBtn);
 
   // textarea
   const textarea = document.createElement('textarea');
@@ -268,6 +459,48 @@ function addPlayButton(postEl: HTMLElement): void {
       return;
     }
     renderAndPlay(abcText);
+  });
+
+  // ---- Tone.js playボタン ----
+  // 投稿ごとのSequencerNodesインスタンス（Tone.jsシーケンサー用）
+  let tonejsNodes: SequencerNodes | null = null;
+
+  tonejsBtn.addEventListener('click', async e => {
+    e.stopPropagation();
+    // 未初期化の場合は投稿テキストをセット
+    if (!textarea.value) {
+      textarea.value = getPostText(postEl);
+    }
+    const mml = textarea.value;
+
+    let Tone: ToneLib;
+    let sequencer: SequencerLib;
+    try {
+      [Tone, sequencer] = await Promise.all([loadTone(), loadSequencer()]);
+    } catch (e2: unknown) {
+      console.error(LOG_PREFIX, 'Tone.js または tonejs-json-sequencer の読み込みに失敗しました:', e2);
+      return;
+    }
+
+    // MML → tonejs-json-sequencer用JSONに変換（tonejs-mml-to-json ライブラリ使用）
+    let sequence: SequenceEvent[];
+    try {
+      sequence = await parseMmlViaLibrary(mml);
+    } catch (e2: unknown) {
+      console.error(LOG_PREFIX, 'MML parse error:', e2);
+      return;
+    }
+
+    try {
+      await Tone.start();
+      if (!tonejsNodes) {
+        tonejsNodes = new sequencer.SequencerNodes();
+      }
+      await sequencer.playSequence(Tone, tonejsNodes, sequence);
+      Tone.Transport.start();
+    } catch (e2: unknown) {
+      console.error(LOG_PREFIX, 'Tone.js play error:', e2);
+    }
   });
 
   const wrapper = document.createElement('div');
