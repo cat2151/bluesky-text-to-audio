@@ -6,7 +6,7 @@
   "content_scripts": [
     {
       "js": [
-        "assets/content.ts-Cy1F0Dr-.js"
+        "assets/content.ts-CBm4IEEN.js"
       ],
       "matches": [
         "https://bsky.app/*"
@@ -20,7 +20,7 @@
         "https://bsky.app/*"
       ],
       "resources": [
-        "assets/content.ts-Cy1F0Dr-.js"
+        "assets/content.ts-CBm4IEEN.js"
       ],
       "use_dynamic_url": false
     }

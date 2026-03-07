@@ -75,7 +75,15 @@ function loadSequencer(): Promise<SequencerLib> {
         if (registry[registryKey]) return;
         const code = await fetch(SEQUENCER_CDN_BASE + fetchPath).then(r => r.text());
         const mod: { exports: Record<string, unknown> } = { exports: {} };
-        const requireFn = (dep: string): Record<string, unknown> => registry[dep] ?? {};
+        const requireFn = (dep: string): Record<string, unknown> => {
+          const loadedModule = registry[dep];
+          if (!loadedModule) {
+            throw new Error(
+              `tonejs-json-sequencer CJS loader: missing dependency "${dep}" (required by "${registryKey}")`
+            );
+          }
+          return loadedModule;
+        };
         new Function('exports', 'require', 'module', code)(mod.exports, requireFn, mod);
         registry[registryKey] = mod.exports;
       }
@@ -121,6 +129,7 @@ function parseMmlToSequence(mml: string): SequenceEvent[] {
 
   let octave = 4;
   let length = 4; // デフォルト4分音符
+  let defaultDotted = false; // l4. のような付点デフォルト長フラグ
   let pos = 0;
   const input = mml.toLowerCase().replace(/\s+/g, '');
   const events: SequenceEvent[] = [
@@ -158,8 +167,10 @@ function parseMmlToSequence(mml: string): SequenceEvent[] {
       pos++;
       length = parseLengthNum(length);
       if (pos < input.length && input[pos] === '.') {
-        length = length * 2 / 3; // 付点
+        defaultDotted = true; // 付点デフォルト長（分母は変えず、フラグで管理）
         pos++;
+      } else {
+        defaultDotted = false;
       }
     } else if (ch === '>') {
       octave = Math.min(octave + 1, 8); pos++;
@@ -168,13 +179,12 @@ function parseMmlToSequence(mml: string): SequenceEvent[] {
     } else if (ch === 'r') {
       pos++;
       const noteLen = parseLengthNum(length);
-      if (pos < input.length && input[pos] === '.') {
-        const stepSixteenths = Math.round(16 / noteLen * 1.5);
-        sixteenths += stepSixteenths; pos++;
-      } else {
-        const stepSixteenths = Math.round(16 / noteLen);
-        sixteenths += stepSixteenths;
-      }
+      let restDotted = defaultDotted;
+      if (pos < input.length && input[pos] === '.') { restDotted = true; pos++; }
+      const stepSixteenths = restDotted
+        ? Math.round(16 / noteLen * 1.5)
+        : Math.round(16 / noteLen);
+      sixteenths += stepSixteenths;
     } else if (NOTE_MAP[ch]) {
       pos++;
       let noteName = NOTE_MAP[ch];
@@ -187,7 +197,7 @@ function parseMmlToSequence(mml: string): SequenceEvent[] {
         pos++;
       }
       const noteLen = parseLengthNum(length);
-      let dotted = false;
+      let dotted = defaultDotted;
       if (pos < input.length && input[pos] === '.') { dotted = true; pos++; }
       const stepSixteenths = dotted
         ? Math.round(16 / noteLen * 1.5)
