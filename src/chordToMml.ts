@@ -1,7 +1,7 @@
-import type { Chord2mmlLib } from './types';
+import { parseChordViaLibrary } from './loaders/chord2mml';
 
 // ---- コード進行テキストをMMLに変換（方言を正規化しつつパース、成功したMMLを直接返す） ----
-export function chordToMml(chord: string, chord2mml: Chord2mmlLib): string {
+export async function chordToMml(chord: string): Promise<string> {
   function replaceHyphenToDot(s: string): string {
     return s.replace(/-/g, '・');
   }
@@ -39,14 +39,16 @@ export function chordToMml(chord: string, chord2mml: Chord2mmlLib): string {
 
   const transforms: Array<(s: string) => string> = [replaceHyphenToDot, replaceMinorRomanNumerals];
   const tried = new Set<string>();
+  let lastError: unknown;
   for (const seq of getAllCombinations(transforms)) {
     let candidate = chord;
     for (const fn of seq) candidate = fn(candidate);
     if (tried.has(candidate)) continue;
     tried.add(candidate);
     try {
-      return chord2mml.parse(candidate);
-    } catch (_e) {}
+      return await parseChordViaLibrary(candidate);
+    } catch (e) { lastError = e; }
   }
-  return chord2mml.parse(chord);
+  // すべての候補が失敗した場合は最後のエラーを投げる
+  throw lastError;
 }
