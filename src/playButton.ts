@@ -348,6 +348,8 @@ export function addPlayButton(postEl: HTMLElement): void {
     if (playBtn.dataset.btaMode !== 'textarea') {
       playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
     }
+    // Reset to placeholder so selecting the same template again will fire a new change event
+    templateSelect.value = '';
   });
 
   row.append(playBtn, dropBtn, menu, templateSelect);

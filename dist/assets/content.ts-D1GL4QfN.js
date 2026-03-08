@@ -461,7 +461,7 @@ ${JSON.stringify(n,null,2)}`),new Error("Language.load failed: no language funct
     border-radius: 4px;
     cursor: pointer;
     max-width: 200px;
-  `;function _(){const E=n.dataset.btaMode||selectedMode,B=modeTemplates[E]??[];v.innerHTML="";const k=document.createElement("option");k.value="",k.textContent="テンプレート",k.disabled=!0,k.selected=!0,v.append(k);for(const I of B){const D=document.createElement("option");D.value=I.text,D.textContent=I.name,v.append(D)}}function d(){const E=n.dataset.btaMode||selectedMode;(modeTemplates[E]??[]).length>0?(_(),v.style.display="inline-block"):v.style.display="none"}v.addEventListener("change",()=>{const E=v.value;E&&(p.value=E,p.style.display="block",n.dataset.btaMode!=="textarea"&&n.dispatchEvent(new MouseEvent("click",{bubbles:!0,cancelable:!0})))}),m.append(n,c,l,v);const p=document.createElement("textarea");p.setAttribute("data-bta-textarea",""),p.style.cssText=`
+  `;function _(){const E=n.dataset.btaMode||selectedMode,B=modeTemplates[E]??[];v.innerHTML="";const k=document.createElement("option");k.value="",k.textContent="テンプレート",k.disabled=!0,k.selected=!0,v.append(k);for(const I of B){const D=document.createElement("option");D.value=I.text,D.textContent=I.name,v.append(D)}}function d(){const E=n.dataset.btaMode||selectedMode;(modeTemplates[E]??[]).length>0?(_(),v.style.display="inline-block"):v.style.display="none"}v.addEventListener("change",()=>{const E=v.value;E&&(p.value=E,p.style.display="block",n.dataset.btaMode!=="textarea"&&n.dispatchEvent(new MouseEvent("click",{bubbles:!0,cancelable:!0})),v.value="")}),m.append(n,c,l,v);const p=document.createElement("textarea");p.setAttribute("data-bta-textarea",""),p.style.cssText=`
     display: none;
     width: 100%;
     box-sizing: border-box;
