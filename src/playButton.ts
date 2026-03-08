@@ -214,6 +214,18 @@ export function addPlayButton(postEl: HTMLElement): void {
   textarea.addEventListener('click', e => { e.stopPropagation(); });
   textarea.addEventListener('mousedown', e => { e.stopPropagation(); });
 
+  // textarea編集1secデバウンスで自動play
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  textarea.addEventListener('input', () => {
+    if (debounceTimer !== null) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      debounceTimer = null;
+      if (selectedMode !== 'textarea') {
+        playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      }
+    }, 1000);
+  });
+
   // 投稿ごとのシンセインスタンス
   let synthInstance: ABCJS.MidiBuffer | null = null;
 
