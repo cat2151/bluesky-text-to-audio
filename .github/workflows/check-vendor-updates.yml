@@ -1,0 +1,62 @@
+name: Sync Vendored Libraries
+
+on:
+  schedule:
+    # 日本時間 09:00 (UTC 00:00)
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync-vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check and update chord2mml
+        id: chord2mml
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python .github/scripts/sync_vendor.py \
+            cat2151/chord2mml dist/chord2mml.mjs src/chord2mml.mjs 12
+
+      - name: Check and update mml2abc
+        id: mml2abc
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python .github/scripts/sync_vendor.py \
+            cat2151/obsidian-plugin-mmlabc mml/mml2abc.mjs src/mml2abc.mjs 9
+
+      - name: Setup Bun
+        if: steps.chord2mml.outputs.updated == 'true' || steps.mml2abc.outputs.updated == 'true'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.x
+
+      - name: Build and push
+        if: steps.chord2mml.outputs.updated == 'true' || steps.mml2abc.outputs.updated == 'true'
+        env:
+          CHORD2MML_UPDATED: ${{ steps.chord2mml.outputs.updated }}
+          CHORD2MML_OLD_SHA: ${{ steps.chord2mml.outputs.recorded_sha }}
+          CHORD2MML_NEW_SHA: ${{ steps.chord2mml.outputs.current_sha }}
+          MML2ABC_UPDATED: ${{ steps.mml2abc.outputs.updated }}
+          MML2ABC_OLD_SHA: ${{ steps.mml2abc.outputs.recorded_sha }}
+          MML2ABC_NEW_SHA: ${{ steps.mml2abc.outputs.current_sha }}
+        run: |
+          set -euo pipefail
+          bun install --frozen-lockfile
+          bun run build
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/ dist/
+
+          COMMIT_MSG="chore: update vendored libraries from upstream"
+          [ "$CHORD2MML_UPDATED" = "true" ] && COMMIT_MSG="$COMMIT_MSG
+- chord2mml: ${CHORD2MML_OLD_SHA} -> ${CHORD2MML_NEW_SHA}"
+          [ "$MML2ABC_UPDATED" = "true" ] && COMMIT_MSG="$COMMIT_MSG
+- mml2abc: ${MML2ABC_OLD_SHA} -> ${MML2ABC_NEW_SHA}"
+
+          git diff --cached --quiet || git commit -m "$COMMIT_MSG"
+          git push
