@@ -240,8 +240,11 @@ export function addPlayButton(postEl: HTMLElement): void {
   });
   resetBtn.addEventListener('click', e => {
     e.stopPropagation();
+    const wasVisible = textarea.style.display !== 'none';
     textarea.value = detectedCleanedText;
-    textarea.style.display = 'block';
+    if (wasVisible) {
+      textarea.style.display = 'block';
+    }
     menu.style.display = 'none';
     dropBtn.setAttribute('aria-expanded', 'false');
   });
