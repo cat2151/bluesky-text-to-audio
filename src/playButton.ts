@@ -157,6 +157,15 @@ export function addPlayButton(postEl: HTMLElement): void {
       });
       menu.style.display = 'none';
       dropBtn.setAttribute('aria-expanded', 'false');
+      // メニュー選択時に即座に実行する（disabled状態でもハンドラが動くようにdispatchEventを使う）
+      // textareaモードはメニューから選んだ場合は「必ず開く」（閉じない）
+      if (item.mode === 'textarea') {
+        if (textarea.style.display === 'none') {
+          playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        }
+      } else {
+        playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      }
     });
     menu.append(menuItem);
   }
