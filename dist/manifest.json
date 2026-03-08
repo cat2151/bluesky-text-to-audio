@@ -19,7 +19,7 @@
   "content_scripts": [
     {
       "js": [
-        "assets/content.ts-loader-DnOU4MGq.js"
+        "assets/content.ts-loader-ll3B1fEI.js"
       ],
       "matches": [
         "https://bsky.app/*"
@@ -41,7 +41,7 @@
         "assets/tree-sitter-mml-DQvQg2JC.wasm",
         "assets/ym2151-Ccu-8unz.wasm",
         "assets/__vite-browser-external-BIHI7g3E.js",
-        "assets/content.ts-B2RzXzZA.js"
+        "assets/content.ts-DxvttRvn.js"
       ],
       "use_dynamic_url": false
     }
