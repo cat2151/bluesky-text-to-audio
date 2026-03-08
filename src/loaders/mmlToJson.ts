@@ -27,9 +27,7 @@ export function ensureMmlToJsonLoader(): Promise<void> {
       }
     };
     window.addEventListener('message', onMessage);
-    const script = document.createElement('script');
-    script.type = 'module';
-    script.textContent = `
+    const scriptContent = `
       import { initWasm, mml2json } from '${MML_TO_JSON_CDN_URL}';
       const _origin = window.location.origin;
       try {
@@ -50,10 +48,17 @@ export function ensureMmlToJsonLoader(): Promise<void> {
         window.postMessage({ type: 'bta-mml2json-load-error', error: String(err) }, _origin);
       }
     `;
+    const blob = new Blob([scriptContent], { type: 'text/javascript' });
+    const blobUrl = URL.createObjectURL(blob);
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.src = blobUrl;
     script.onerror = () => {
+      URL.revokeObjectURL(blobUrl);
       mmlToJsonReadyPromise = null;
       reject(new Error('tonejs-mml-to-json スクリプトの読み込みに失敗しました'));
     };
+    script.onload = () => URL.revokeObjectURL(blobUrl);
     document.head.appendChild(script);
   }).catch((e: unknown) => {
     console.error(LOG_PREFIX, 'tonejs-mml-to-json の読み込みに失敗しました:', e);
