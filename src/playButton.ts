@@ -4,6 +4,7 @@ import type { SequencerNodes } from './types';
 import { loadTone } from './loaders/tone';
 import { loadSequencer } from './loaders/sequencer';
 import { parseMmlViaLibrary } from './loaders/mmlToJson';
+import { playWithYm2151 } from './loaders/ym2151';
 import { chordToMml } from './chordToMml';
 import { getPostText } from './postText';
 
@@ -22,7 +23,7 @@ function getAudioContext(): AudioContext {
 const processedPosts = new WeakSet<HTMLElement>();
 
 // ---- 選択中モード（投稿間で共有） ----
-type PlayMode = 'voicevox' | 'mmlabc' | 'abcjs' | 'chord2mml' | 'tonejs' | 'textarea';
+type PlayMode = 'voicevox' | 'mmlabc' | 'abcjs' | 'chord2mml' | 'tonejs' | 'ym2151' | 'textarea';
 let selectedMode: PlayMode = 'voicevox';
 
 const menuItems: { mode: PlayMode; label: string }[] = [
@@ -31,6 +32,7 @@ const menuItems: { mode: PlayMode; label: string }[] = [
   { mode: 'abcjs',    label: '▶ abcjsでplay' },
   { mode: 'chord2mml', label: '🎸 chord2mmlでplay' },
   { mode: 'tonejs',   label: '🎹 Tone.jsでplay' },
+  { mode: 'ym2151',   label: '🎶 YM2151でplay' },
   { mode: 'textarea', label: '📝 textareaを開く' },
 ];
 
@@ -328,6 +330,16 @@ export function addPlayButton(postEl: HTMLElement): void {
         Tone.Transport.start();
       } catch (e2: unknown) {
         console.error(LOG_PREFIX, 'Tone.js play error:', e2);
+      }
+      return;
+    }
+
+    if (mode === 'ym2151') {
+      const mml = textarea.value;
+      try {
+        await playWithYm2151(mml);
+      } catch (e2: unknown) {
+        console.error(LOG_PREFIX, 'YM2151 play error:', e2);
       }
       return;
     }
