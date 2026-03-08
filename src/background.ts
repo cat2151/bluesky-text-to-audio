@@ -3,6 +3,55 @@ const SPEAKER_ID = 3; // ずんだもん ノーマル
 
 const LOG_PREFIX = '[BTA:background]';
 
+// ---- ON/OFFトグル ----
+async function getEnabled(): Promise<boolean> {
+  const result = await chrome.storage.session.get({ enabled: true });
+  return result.enabled as boolean;
+}
+
+async function applyEnabled(enabled: boolean): Promise<void> {
+  await chrome.storage.session.set({ enabled });
+  chrome.action.setBadgeText({ text: enabled ? '' : 'OFF' });
+  chrome.action.setBadgeBackgroundColor({ color: '#cc0000' });
+}
+
+async function broadcastToggleEnabled(enabled: boolean): Promise<void> {
+  const tabs = await chrome.tabs.query({
+    url: ['*://bsky.app/*', '*://*.bsky.app/*'],
+  });
+
+  for (const t of tabs) {
+    if (t.id === undefined) {
+      continue;
+    }
+
+    chrome.tabs
+      .sendMessage(t.id, { type: 'toggleEnabled', enabled })
+      .catch((err: unknown) => {
+        console.debug(
+          LOG_PREFIX,
+          'toggleEnabled message failed (content script may not be loaded):',
+          err,
+        );
+      });
+  }
+}
+
+// 起動時にバッジ表示を同期
+getEnabled().then(enabled => applyEnabled(enabled));
+
+// 連続クリックの競合を避けるため、前回の処理を直列化する
+let toggleChain: Promise<void> = Promise.resolve();
+
+chrome.action.onClicked.addListener((_tab) => {
+  toggleChain = toggleChain.then(async () => {
+    const enabled = await getEnabled();
+    const newEnabled = !enabled;
+    await applyEnabled(newEnabled);
+    await broadcastToggleEnabled(newEnabled);
+  });
+});
+
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const uint8Array = new Uint8Array(buffer);
   const chunkSize = 0x8000; // 32KB chunks to avoid large intermediate strings

@@ -3,6 +3,10 @@
   "name": "Bluesky Text to Audio",
   "version": "0.1.0",
   "description": "Blueskyのタイムライン投稿にplayボタンを表示し、投稿内容をconsole.logに出力する",
+  "action": {
+    "default_title": "Bluesky Text to Audio（クリックでon/off）"
+  },
+  "permissions": ["storage"],
   "background": {
     "service_worker": "src/background.ts",
     "type": "module"

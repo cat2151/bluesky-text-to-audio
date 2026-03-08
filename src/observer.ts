@@ -3,14 +3,33 @@ import { addPlayButton } from './playButton';
 // ---- 投稿要素のセレクター（フィード・プロフィール・スレッド共通） ----
 const POST_SELECTOR = '[data-testid^="feedItem-"], [data-testid^="postThreadItem-"]';
 
+// ---- ON/OFF状態 ----
+let isEnabled = true;
+
+export function setEnabled(enabled: boolean): void {
+  isEnabled = enabled;
+  document.querySelectorAll<HTMLElement>('[data-bta-wrapper]').forEach(el => {
+    el.style.display = enabled ? '' : 'none';
+  });
+}
+
 // ---- 投稿要素を検出 ----
 function findPostElements(): NodeListOf<HTMLElement> {
   return document.querySelectorAll<HTMLElement>(POST_SELECTOR);
 }
 
+// ---- playボタンを追加し、無効時は非表示にする ----
+function addPlayButtonWithVisibility(postEl: HTMLElement): void {
+  addPlayButton(postEl);
+  if (!isEnabled) {
+    const wrapper = postEl.querySelector<HTMLElement>('[data-bta-wrapper]');
+    if (wrapper) wrapper.style.display = 'none';
+  }
+}
+
 // ---- 全投稿にplayボタンを追加 ----
 function scanPosts(): void {
-  findPostElements().forEach(postEl => addPlayButton(postEl));
+  findPostElements().forEach(postEl => addPlayButtonWithVisibility(postEl));
 }
 
 // ---- MutationObserverで新規投稿を監視 ----
@@ -26,14 +45,14 @@ export function init(): void {
 
         // 追加されたノード自体が投稿要素の場合
         if (node.matches(POST_SELECTOR)) {
-          addPlayButton(node);
+          addPlayButtonWithVisibility(node);
         }
 
         // 追加されたノード配下に含まれる投稿要素を処理
         if (node.querySelectorAll) {
           node
             .querySelectorAll<HTMLElement>(POST_SELECTOR)
-            .forEach(postEl => addPlayButton(postEl));
+            .forEach(postEl => addPlayButtonWithVisibility(postEl));
         }
       });
     });
