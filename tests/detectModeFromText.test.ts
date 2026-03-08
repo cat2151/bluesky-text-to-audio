@@ -49,7 +49,7 @@ describe('detectModeFromText', () => {
     expect(result.cleanedText).toBe('cde');
   });
 
-  it('先頭行がToneejsのときtonejs', () => {
+  it('先頭行がTonejsのときtonejs', () => {
     const result = detectModeFromText('Tonejs\nsome text');
     expect(result.mode).toBe('tonejs');
     expect(result.cleanedText).toBe('some text');

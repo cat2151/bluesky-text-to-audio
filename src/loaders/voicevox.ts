@@ -7,6 +7,8 @@ export async function playWithVoicevox(text: string): Promise<void> {
       chrome.runtime.sendMessage({ type: 'speak', text }, res => {
         if (chrome.runtime.lastError) {
           reject(new Error(chrome.runtime.lastError.message));
+        } else if (!res) {
+          reject(new Error('VOICEVOX: no response from background script'));
         } else {
           resolve(res as { success: boolean; audio?: string; error?: string });
         }
