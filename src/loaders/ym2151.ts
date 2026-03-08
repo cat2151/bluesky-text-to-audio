@@ -279,11 +279,20 @@ export function ensureYm2151Loader(): Promise<void> {
     script.type = 'module';
     script.src = blobUrl;
     script.onerror = () => {
+      window.removeEventListener('message', onMessage);
       URL.revokeObjectURL(blobUrl);
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
       ym2151LoaderPromise = null;
       reject(new Error('YM2151 ローダースクリプトの注入に失敗しました'));
     };
-    script.onload = () => URL.revokeObjectURL(blobUrl);
+    script.onload = () => {
+      URL.revokeObjectURL(blobUrl);
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    };
     document.head.appendChild(script);
   }).catch((e: unknown) => {
     console.error(LOG_PREFIX, 'YM2151 ローダーの初期化に失敗しました:', e);

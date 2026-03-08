@@ -19,7 +19,7 @@
   "content_scripts": [
     {
       "js": [
-        "assets/content.ts-Dfiepdo3.js"
+        "assets/content.ts-loader-CmpA7coP.js"
       ],
       "matches": [
         "https://bsky.app/*"
@@ -33,7 +33,11 @@
         "https://bsky.app/*"
       ],
       "resources": [
-        "assets/content.ts-Dfiepdo3.js"
+        "assets/tonejs_mml_to_json_bg-Z4r-jVMi.wasm",
+        "assets/web-tree-sitter-Bgri87aM.wasm",
+        "assets/tree-sitter-mml-5WI6aSUq.wasm",
+        "assets/__vite-browser-external-BIHI7g3E.js",
+        "assets/content.ts-B-L-xaW_.js"
       ],
       "use_dynamic_url": false
     }
