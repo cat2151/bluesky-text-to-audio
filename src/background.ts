@@ -5,12 +5,12 @@ const LOG_PREFIX = '[BTA:background]';
 
 // ---- ON/OFFトグル ----
 async function getEnabled(): Promise<boolean> {
-  const result = await chrome.storage.session.get({ enabled: true });
+  const result = await chrome.storage.local.get({ enabled: true });
   return result.enabled as boolean;
 }
 
 async function applyEnabled(enabled: boolean): Promise<void> {
-  await chrome.storage.session.set({ enabled });
+  await chrome.storage.local.set({ enabled });
   chrome.action.setBadgeText({ text: enabled ? '' : 'OFF' });
   chrome.action.setBadgeBackgroundColor({ color: '#cc0000' });
 }

@@ -11,18 +11,18 @@
     "src": "__vite-browser-external",
     "isDynamicEntry": true
   },
-  "_content.ts-loader-v9cRVQTb.js": {
-    "file": "assets/content.ts-loader-v9cRVQTb.js",
-    "src": "_content.ts-loader-v9cRVQTb.js"
+  "_content.ts-loader-BTep3g5H.js": {
+    "file": "assets/content.ts-loader-BTep3g5H.js",
+    "src": "_content.ts-loader-BTep3g5H.js"
   },
   "src/background.ts": {
-    "file": "assets/background.ts-B2NKiXC4.js",
+    "file": "assets/background.ts-C7uFUh6M.js",
     "name": "background.ts",
     "src": "src/background.ts",
     "isEntry": true
   },
   "src/content.ts": {
-    "file": "assets/content.ts-Dy9mYpit.js",
+    "file": "assets/content.ts-CPyUdWpu.js",
     "name": "content.ts",
     "src": "src/content.ts",
     "isEntry": true,

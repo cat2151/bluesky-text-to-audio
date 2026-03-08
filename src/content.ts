@@ -1,7 +1,7 @@
 import { init, setEnabled } from './observer';
 
 // 初期化時にON/OFF状態を確認してからinit
-chrome.storage.session.get({ enabled: true }, (result) => {
+chrome.storage.local.get({ enabled: true }, (result) => {
   const enabled = typeof result?.enabled === 'boolean' ? result.enabled : true;
   setEnabled(enabled);
   init();
