@@ -6,6 +6,9 @@
   "action": {
     "default_title": "Bluesky Text to Audio（クリックでon/off）"
   },
+  "permissions": [
+    "storage"
+  ],
   "background": {
     "service_worker": "service-worker-loader.js",
     "type": "module"

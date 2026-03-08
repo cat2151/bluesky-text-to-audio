@@ -15,19 +15,41 @@ async function applyEnabled(enabled: boolean): Promise<void> {
   chrome.action.setBadgeBackgroundColor({ color: '#cc0000' });
 }
 
+async function broadcastToggleEnabled(enabled: boolean): Promise<void> {
+  const tabs = await chrome.tabs.query({
+    url: ['*://bsky.app/*', '*://*.bsky.app/*'],
+  });
+
+  for (const t of tabs) {
+    if (t.id === undefined) {
+      continue;
+    }
+
+    chrome.tabs
+      .sendMessage(t.id, { type: 'toggleEnabled', enabled })
+      .catch((err: unknown) => {
+        console.debug(
+          LOG_PREFIX,
+          'toggleEnabled message failed (content script may not be loaded):',
+          err,
+        );
+      });
+  }
+}
+
 // 起動時にバッジ表示を同期
 getEnabled().then(enabled => applyEnabled(enabled));
 
-chrome.action.onClicked.addListener(async (tab) => {
-  const enabled = await getEnabled();
-  const newEnabled = !enabled;
-  await applyEnabled(newEnabled);
+// 連続クリックの競合を避けるため、前回の処理を直列化する
+let toggleChain: Promise<void> = Promise.resolve();
 
-  if (tab.id !== undefined) {
-    chrome.tabs.sendMessage(tab.id, { type: 'toggleEnabled', enabled: newEnabled }).catch((err: unknown) => {
-      console.debug(LOG_PREFIX, 'toggleEnabled message failed (content script may not be loaded):', err);
-    });
-  }
+chrome.action.onClicked.addListener((_tab) => {
+  toggleChain = toggleChain.then(async () => {
+    const enabled = await getEnabled();
+    const newEnabled = !enabled;
+    await applyEnabled(newEnabled);
+    await broadcastToggleEnabled(newEnabled);
+  });
 });
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
