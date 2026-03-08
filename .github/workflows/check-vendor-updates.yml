@@ -21,16 +21,25 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
           UPSTREAM_REPO="cat2151/chord2mml"
           UPSTREAM_FILE="dist/chord2mml.mjs"
           LOCAL_FILE="src/chord2mml.mjs"
 
           # ローカルファイルのヘッダーから記録済みSHAを取得
           RECORDED_SHA=$(grep '// Upstream-SHA:' "$LOCAL_FILE" | awk '{print $3}')
+          if ! [[ "$RECORDED_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "ERROR: RECORDED_SHA が不正です: '$RECORDED_SHA'" >&2
+            exit 1
+          fi
           echo "recorded_sha=$RECORDED_SHA" >> "$GITHUB_OUTPUT"
 
           # GitHubAPIで現在のアップストリームファイルのblobSHAを取得
           CURRENT_SHA=$(gh api "repos/$UPSTREAM_REPO/contents/$UPSTREAM_FILE" --jq '.sha')
+          if ! [[ "$CURRENT_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "ERROR: CURRENT_SHA が不正です (APIエラーの可能性): '$CURRENT_SHA'" >&2
+            exit 1
+          fi
           echo "current_sha=$CURRENT_SHA" >> "$GITHUB_OUTPUT"
 
           echo "chord2mml: recorded=$RECORDED_SHA current=$CURRENT_SHA"
@@ -45,14 +54,23 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
           UPSTREAM_REPO="cat2151/obsidian-plugin-mmlabc"
           UPSTREAM_FILE="mml/mml2abc.mjs"
           LOCAL_FILE="src/mml2abc.mjs"
 
           RECORDED_SHA=$(grep '// Upstream-SHA:' "$LOCAL_FILE" | awk '{print $3}')
+          if ! [[ "$RECORDED_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "ERROR: RECORDED_SHA が不正です: '$RECORDED_SHA'" >&2
+            exit 1
+          fi
           echo "recorded_sha=$RECORDED_SHA" >> "$GITHUB_OUTPUT"
 
           CURRENT_SHA=$(gh api "repos/$UPSTREAM_REPO/contents/$UPSTREAM_FILE" --jq '.sha')
+          if ! [[ "$CURRENT_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "ERROR: CURRENT_SHA が不正です (APIエラーの可能性): '$CURRENT_SHA'" >&2
+            exit 1
+          fi
           echo "current_sha=$CURRENT_SHA" >> "$GITHUB_OUTPUT"
 
           echo "mml2abc: recorded=$RECORDED_SHA current=$CURRENT_SHA"
