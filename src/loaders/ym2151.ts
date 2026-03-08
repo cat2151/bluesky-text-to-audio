@@ -56,6 +56,8 @@ const PIANO_PRESET_ATTACHMENT_OBJ = [
 
 let ym2151LoaderPromise: Promise<void> | null = null;
 let ym2151RequestCounter = 0;
+// 30 seconds covers the first-time WASM + tree-sitter library download/initialization
+const YM2151_RESPONSE_TIMEOUT_MS = 30000;
 
 export function ensureYm2151Loader(): Promise<void> {
   if (ym2151LoaderPromise) return ym2151LoaderPromise;
@@ -94,13 +96,16 @@ export function ensureYm2151Loader(): Promise<void> {
       const MML_LANGUAGE_URL = ${JSON.stringify(MML_LANGUAGE_URL)};
       const SMF_TO_YM2151_URL = ${JSON.stringify(SMF_TO_YM2151_URL)};
 
-      // Set up the Emscripten Module global BEFORE loading ym2151.js
-      // (Emscripten reads window.Module on startup and calls onRuntimeInitialized when ready)
+      // Set up the Emscripten Module global BEFORE loading ym2151.js.
+      // (Emscripten reads window.Module on startup and calls onRuntimeInitialized when ready.)
+      // We save and restore the previous handler so we don't permanently override it.
       let _resolveYm2151;
       const _ym2151ReadyPromise = new Promise(r => { _resolveYm2151 = r; });
       if (!window.Module) window.Module = {};
       const _prevOnRuntime = window.Module.onRuntimeInitialized;
       window.Module.onRuntimeInitialized = function() {
+        // Restore the previous handler so we don't hold this closure indefinitely
+        window.Module.onRuntimeInitialized = _prevOnRuntime;
         if (typeof _prevOnRuntime === 'function') _prevOnRuntime();
         _resolveYm2151();
       };
@@ -138,6 +143,15 @@ export function ensureYm2151Loader(): Promise<void> {
       }
 
       // Generate audio from YM2151 log JSON and play it via Web Audio API
+      // Reuse a single AudioContext across play calls (browsers limit the total count)
+      let sharedAudioContext = null;
+      function getAudioContext() {
+        if (!sharedAudioContext || sharedAudioContext.state === 'closed') {
+          sharedAudioContext = new AudioContext();
+        }
+        return sharedAudioContext;
+      }
+
       function generateAndPlay(ym2151LogJson) {
         const data = JSON.parse(ym2151LogJson);
         if (data.error) throw new Error(data.error);
@@ -146,7 +160,13 @@ export function ensureYm2151Loader(): Promise<void> {
           throw new Error('YM2151 log に events がありません');
         }
 
-        const maxTime = Math.max(...events.map(e => parseFloat(e.time)));
+        // Use a loop instead of Math.max(...spread) to avoid the argument-count limit
+        // for large event arrays.
+        let maxTime = -Infinity;
+        for (let i = 0; i < events.length; i++) {
+          const t = parseFloat(events[i].time);
+          if (t > maxTime) maxTime = t;
+        }
         const durationSec = maxTime + 0.5; // extra tail
         const numFrames = Math.floor(durationSec * OPM_SAMPLE_RATE);
 
@@ -166,6 +186,9 @@ export function ensureYm2151Loader(): Promise<void> {
         Module._free(dataPtr);
         if (actualFrames <= 0) throw new Error('YM2151 audio generation に失敗しました');
 
+        // web-ym2151 exposes audio via Module._get_sample() (the same API its own demo uses).
+        // A HEAPF32-based bulk copy is not available without modifying the upstream library,
+        // so we use per-sample reads matching web-ym2151's audioGenerator.ts reference impl.
         const left = new Float32Array(actualFrames);
         const right = new Float32Array(actualFrames);
         for (let i = 0; i < actualFrames; i++) {
@@ -174,7 +197,12 @@ export function ensureYm2151Loader(): Promise<void> {
         }
         Module._free_buffer();
 
-        const audioCtx = new AudioContext();
+        const audioCtx = getAudioContext();
+        if (audioCtx.state === 'suspended') {
+          // resume() can fail if the user hasn't interacted with the page yet;
+          // the AudioContext will auto-resume when start() is called after a user gesture.
+          audioCtx.resume().catch(() => {});
+        }
         const audioBuffer = audioCtx.createBuffer(2, actualFrames, OPM_SAMPLE_RATE);
         audioBuffer.getChannelData(0).set(left);
         audioBuffer.getChannelData(1).set(right);
@@ -259,16 +287,25 @@ export async function playWithYm2151(mml: string): Promise<void> {
   const id = String(++ym2151RequestCounter);
   const expectedOrigin = window.location.origin;
   return new Promise<void>((resolve, reject) => {
+    const timeoutMs = YM2151_RESPONSE_TIMEOUT_MS;
     const onMessage = (e: MessageEvent) => {
       if (e.origin !== expectedOrigin) return;
       if (e.data?.type !== 'bta-ym2151-response' || e.data.id !== id) return;
       window.removeEventListener('message', onMessage);
-      if (!e.data.success && e.data.error) {
-        reject(new Error(String(e.data.error)));
-      } else {
+      clearTimeout(timeoutId);
+      if (e.data?.success === true) {
         resolve();
+      } else {
+        const message = e.data?.error
+          ? String(e.data.error)
+          : 'YM2151 playback failed for an unknown reason';
+        reject(new Error(message));
       }
     };
+    const timeoutId = window.setTimeout(() => {
+      window.removeEventListener('message', onMessage);
+      reject(new Error('YM2151 response timed out'));
+    }, timeoutMs);
     window.addEventListener('message', onMessage);
     window.postMessage({ type: 'bta-ym2151-play', id, mml }, expectedOrigin);
   });
