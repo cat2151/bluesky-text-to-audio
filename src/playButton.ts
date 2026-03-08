@@ -1,100 +1,23 @@
-import * as ABCJS from 'abcjs';
 import { parse as mml2abcParse } from './mml2abc.mjs';
 import type { SequencerNodes } from './types';
 import { loadTone } from './loaders/tone';
 import { loadSequencer } from './loaders/sequencer';
 import { parseMmlViaLibrary } from './loaders/mmlToJson';
 import { playWithYm2151 } from './loaders/ym2151';
+import { playWithVoicevox } from './loaders/voicevox';
+import { AbcjsPlayer } from './loaders/abcjsPlayer';
 import { chordToMml } from './chordToMml';
 import { getPostText } from './postText';
-import { mmlTemplates } from './mmlTemplates';
-import { chordTemplates } from './chordTemplates';
-import { tonejsTemplates } from './tonejsTemplates';
+import { detectModeFromText } from './detectModeFromText';
+import { type PlayMode, menuItems, modeTemplates } from './playModes';
 
 const LOG_PREFIX = '[BTA:playButton]';
-
-// ---- 投稿テキストからモードを自動検出 ----
-function detectModeFromText(text: string): { mode: PlayMode; cleanedText: string } {
-  const lines = text.split('\n');
-  if (!text.trim()) return { mode: 'voicevox', cleanedText: text };
-
-  const firstLine = lines[0];
-  const lastLine = lines[lines.length - 1];
-
-  const checks: [RegExp, PlayMode][] = [
-    [/Chord|コード/, 'chord2mml'],
-    [/YM2151|OPM/, 'ym2151'],
-    [/Tonejs|Tone\.js/, 'tonejs'],
-    [/MML/, 'mmlabc'],
-  ];
-
-  for (const [re, mode] of checks) {
-    if (re.test(firstLine)) {
-      return { mode, cleanedText: lines.slice(1).join('\n') };
-    }
-  }
-
-  if (lines.length > 1) {
-    for (const [re, mode] of checks) {
-      if (re.test(lastLine)) {
-        return { mode, cleanedText: lines.slice(0, -1).join('\n') };
-      }
-    }
-  }
-
-  return { mode: 'voicevox', cleanedText: text };
-}
-
-// ---- モジュールレベルのAudioContext（再利用） ----
-let sharedAudioContext: AudioContext | null = null;
-function getAudioContext(): AudioContext {
-  if (!sharedAudioContext || sharedAudioContext.state === 'closed') {
-    sharedAudioContext = new AudioContext();
-  }
-  return sharedAudioContext;
-}
 
 // ---- 処理済み投稿を管理 ----
 const processedPosts = new WeakSet<HTMLElement>();
 
 // ---- 選択中モード（投稿間で共有） ----
-type PlayMode = 'voicevox' | 'mmlabc' | 'chord2mml' | 'tonejs' | 'ym2151' | 'textarea';
 let selectedMode: PlayMode = 'voicevox';
-
-const menuItems: { mode: PlayMode; label: string }[] = [
-  { mode: 'voicevox',  label: '🔊 投稿を読み上げる' },
-  { mode: 'mmlabc',   label: '🎵 mmlabcでplay' },
-  { mode: 'chord2mml', label: '🎸 chord2mmlでplay' },
-  { mode: 'tonejs',   label: '🎹 Tone.jsでplay' },
-  { mode: 'ym2151',   label: '🎶 YM2151でplay' },
-  { mode: 'textarea', label: '📝 textareaを開く' },
-];
-
-type TemplateItem = { name: string; text: string };
-
-// 各ライブラリのdemoで使われていたテンプレート（mmlabc/chord2mmlはvendoredファイルからインポート）
-const modeTemplates: Partial<Record<PlayMode, TemplateItem[]>> = {
-  voicevox: [
-    { name: 'サンプルテキスト', text: 'こんにちは、ずんだもんです。今日も元気に音声合成するのだ！' },
-  ],
-  mmlabc: mmlTemplates
-    .filter(([, text]) => text !== '')
-    .map(([name, text]) => ({ name, text })),
-  chord2mml: chordTemplates
-    .filter(([, text]) => text !== '')
-    .map(([name, text]) => ({
-      name,
-      // easychord2mml.js の removeIndent と同じ処理（テンプレートリテラルのインデントを除去）
-      text: text.split('\n').map(line => line.trim()).join('\n'),
-    })),
-  tonejs: tonejsTemplates.map(([name, text]) => ({ name, text })),
-  ym2151: [
-    // mmlabc互換MML
-    { name: 'ドレミ', text: 'cde' },
-    { name: 'ドミソシの和音', text: "v11 'c1egb'" },
-    { name: 'メロディー', text: 'o4 l16 e f g+ a b a g+ f e8. <e8. >e8' },
-  ],
-};
 
 // ---- ドキュメントクリックでメニューを閉じる（一度だけ登録） ----
 // キャプチャフェーズで登録するが、ドロップダウンボタンやメニュー自身のクリックは無視する
@@ -436,37 +359,7 @@ export function addPlayButton(postEl: HTMLElement): void {
   });
 
   // 投稿ごとのシンセインスタンス
-  let synthInstance: ABCJS.MidiBuffer | null = null;
-
-  // ---- ABCテキストを五線譜表示し演奏する共通ヘルパー ----
-  function renderAndPlay(abcText: string): void {
-    scoreDiv.style.display = 'block';
-    const tuneObjects = ABCJS.renderAbc(scoreDiv, abcText);
-    const visualObj = tuneObjects[0];
-    if (!visualObj) return;
-
-    if (ABCJS.synth.supportsAudio()) {
-      if (!synthInstance) {
-        synthInstance = new ABCJS.synth.CreateSynth();
-      } else {
-        // 既存のシンセが再生中の場合は、再初期化前に必ず停止する
-        synthInstance.stop();
-      }
-      synthInstance
-        .init({ visualObj, options: {} })
-        .then(() => synthInstance!.prime())
-        .then(() => {
-          // 再生開始（easyabcjs6と同様に stop() してから start() する）
-          synthInstance!.stop();
-          synthInstance!.start();
-        })
-        .catch((error: unknown) => {
-          console.warn(LOG_PREFIX, 'Audio problem:', error);
-        });
-    } else {
-      console.error(LOG_PREFIX, 'Audio is not supported in this browser.');
-    }
-  }
+  const abcjsPlayer = new AbcjsPlayer();
 
   // ---- ドロップダウン開閉 ----
   dropBtn.addEventListener('click', e => {
@@ -513,7 +406,7 @@ export function addPlayButton(postEl: HTMLElement): void {
         handleError('MML parse error:', 'MML parse error', error);
         return;
       }
-      renderAndPlay(abcText);
+      abcjsPlayer.renderAndPlay(scoreDiv, abcText);
       return;
     }
 
@@ -527,7 +420,7 @@ export function addPlayButton(postEl: HTMLElement): void {
         handleError('chord2mml error (load or parse):', 'chord2mml error', error);
         return;
       }
-      renderAndPlay(abcText);
+      abcjsPlayer.renderAndPlay(scoreDiv, abcText);
       return;
     }
 
@@ -581,39 +474,7 @@ export function addPlayButton(postEl: HTMLElement): void {
 
       playBtn.disabled = true;
       try {
-        const response = await new Promise<{ success: boolean; audio?: string; error?: string }>(
-          (resolve, reject) => {
-            chrome.runtime.sendMessage({ type: 'speak', text }, res => {
-              if (chrome.runtime.lastError) {
-                reject(new Error(chrome.runtime.lastError.message));
-              } else {
-                resolve(res as { success: boolean; audio?: string; error?: string });
-              }
-            });
-          },
-        );
-
-        if (!response.success || !response.audio) {
-          handleError('VOICEVOX error:', response.error ?? 'VOICEVOX error', response);
-          return;
-        }
-
-        const binaryString = atob(response.audio);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-
-        const audioContext = getAudioContext();
-        if (audioContext.state === 'suspended') {
-          await audioContext.resume();
-        }
-        const decoded = await audioContext.decodeAudioData(bytes.buffer);
-        const source = audioContext.createBufferSource();
-        source.buffer = decoded;
-        source.connect(audioContext.destination);
-        source.onended = () => { source.disconnect(); };
-        source.start();
+        await playWithVoicevox(text);
       } catch (err: unknown) {
         handleError('VOICEVOX error:', 'VOICEVOX error', err);
       } finally {
