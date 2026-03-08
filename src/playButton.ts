@@ -23,7 +23,6 @@ function detectModeFromText(text: string): { mode: PlayMode; cleanedText: string
     [/YM2151|OPM/, 'ym2151'],
     [/Tonejs|Tone\.js/, 'tonejs'],
     [/MML/, 'mmlabc'],
-    [/abc/, 'abcjs'],
   ];
 
   for (const [re, mode] of checks) {
@@ -56,13 +55,12 @@ function getAudioContext(): AudioContext {
 const processedPosts = new WeakSet<HTMLElement>();
 
 // ---- 選択中モード（投稿間で共有） ----
-type PlayMode = 'voicevox' | 'mmlabc' | 'abcjs' | 'chord2mml' | 'tonejs' | 'ym2151' | 'textarea';
+type PlayMode = 'voicevox' | 'mmlabc' | 'chord2mml' | 'tonejs' | 'ym2151' | 'textarea';
 let selectedMode: PlayMode = 'voicevox';
 
 const menuItems: { mode: PlayMode; label: string }[] = [
   { mode: 'voicevox',  label: '🔊 投稿を読み上げる' },
   { mode: 'mmlabc',   label: '🎵 mmlabcでplay' },
-  { mode: 'abcjs',    label: '▶ abcjsでplay' },
   { mode: 'chord2mml', label: '🎸 chord2mmlでplay' },
   { mode: 'tonejs',   label: '🎹 Tone.jsでplay' },
   { mode: 'ym2151',   label: '🎶 YM2151でplay' },
@@ -342,11 +340,6 @@ export function addPlayButton(postEl: HTMLElement): void {
         return;
       }
       renderAndPlay(abcText);
-      return;
-    }
-
-    if (mode === 'abcjs') {
-      renderAndPlay(textarea.value);
       return;
     }
 
