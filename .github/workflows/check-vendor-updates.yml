@@ -36,14 +36,21 @@ jobs:
           python .github/scripts/sync_vendor_sequencer.py \
             src/tonejs-json-sequencer.mjs
 
+      - name: Check and update ym2151 libraries
+        id: ym2151
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python .github/scripts/sync_vendor_ym2151.py
+
       - name: Setup Bun
-        if: steps.chord2mml.outputs.updated == 'true' || steps.mml2abc.outputs.updated == 'true' || steps.sequencer.outputs.updated == 'true'
+        if: steps.chord2mml.outputs.updated == 'true' || steps.mml2abc.outputs.updated == 'true' || steps.sequencer.outputs.updated == 'true' || steps.ym2151.outputs.updated == 'true'
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.x
 
       - name: Build and push
-        if: steps.chord2mml.outputs.updated == 'true' || steps.mml2abc.outputs.updated == 'true' || steps.sequencer.outputs.updated == 'true'
+        if: steps.chord2mml.outputs.updated == 'true' || steps.mml2abc.outputs.updated == 'true' || steps.sequencer.outputs.updated == 'true' || steps.ym2151.outputs.updated == 'true'
         env:
           CHORD2MML_UPDATED: ${{ steps.chord2mml.outputs.updated }}
           CHORD2MML_OLD_SHA: ${{ steps.chord2mml.outputs.recorded_sha }}
@@ -54,6 +61,7 @@ jobs:
           SEQUENCER_UPDATED: ${{ steps.sequencer.outputs.updated }}
           SEQUENCER_OLD_SHA: ${{ steps.sequencer.outputs.recorded_sha }}
           SEQUENCER_NEW_SHA: ${{ steps.sequencer.outputs.current_sha }}
+          YM2151_UPDATED: ${{ steps.ym2151.outputs.updated }}
         run: |
           set -euo pipefail
           bun install --frozen-lockfile
@@ -70,6 +78,8 @@ jobs:
 - mml2abc: ${MML2ABC_OLD_SHA} -> ${MML2ABC_NEW_SHA}"
           [ "$SEQUENCER_UPDATED" = "true" ] && COMMIT_MSG="$COMMIT_MSG
 - tonejs-json-sequencer: ${SEQUENCER_OLD_SHA} -> ${SEQUENCER_NEW_SHA}"
+          [ "$YM2151_UPDATED" = "true" ] && COMMIT_MSG="$COMMIT_MSG
+- ym2151 libraries: updated from upstream"
 
           git diff --cached --quiet || git commit -m "$COMMIT_MSG"
           git push
