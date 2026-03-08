@@ -21,66 +21,126 @@ function getAudioContext(): AudioContext {
 // ---- 処理済み投稿を管理 ----
 const processedPosts = new WeakSet<HTMLElement>();
 
+// ---- 選択中モード（投稿間で共有） ----
+type PlayMode = 'voicevox' | 'mmlabc' | 'abcjs' | 'chord2mml' | 'tonejs' | 'textarea';
+let selectedMode: PlayMode = 'voicevox';
+
+const menuItems: { mode: PlayMode; label: string }[] = [
+  { mode: 'voicevox',  label: '🔊 投稿を読み上げる' },
+  { mode: 'mmlabc',   label: '🎵 mmlabcでplay' },
+  { mode: 'abcjs',    label: '▶ abcjsでplay' },
+  { mode: 'chord2mml', label: '🎸 chord2mmlでplay' },
+  { mode: 'tonejs',   label: '🎹 Tone.jsでplay' },
+  { mode: 'textarea', label: '📝 textareaを開く' },
+];
+
+// ---- 全playボタンのtitleを同期するためのSet ----
+const allPlayButtons = new Set<HTMLButtonElement>();
+
+// ---- ドキュメントクリックでメニューを閉じる（一度だけ登録） ----
+document.addEventListener('click', () => {
+  document.querySelectorAll<HTMLElement>('[data-bta-menu]').forEach(m => {
+    m.style.display = 'none';
+  });
+}, true);
+
 // ---- playボタン行とtextareaを追加 ----
 export function addPlayButton(postEl: HTMLElement): void {
   if (processedPosts.has(postEl)) return;
   processedPosts.add(postEl);
 
-  const btnStyle = `
+  // ---- playボタン（SVG三角） ----
+  const playBtn = document.createElement('button');
+  playBtn.type = 'button';
+  playBtn.setAttribute('data-bta-play', '');
+  playBtn.style.cssText = `
     display: inline-flex;
     align-items: center;
-    margin: 4px 4px 4px 4px;
-    padding: 4px 10px;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
     background: #0085ff;
     color: #fff;
     border: none;
-    border-radius: 4px;
-    font-size: 13px;
+    border-radius: 4px 0 0 4px;
     cursor: pointer;
     z-index: 1;
+    flex-shrink: 0;
+  `;
+  playBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="white" xmlns="http://www.w3.org/2000/svg"><polygon points="4,2 14,8 4,14"/></svg>`;
+  playBtn.title = menuItems.find(m => m.mode === selectedMode)?.label ?? '';
+  allPlayButtons.add(playBtn);
+
+  // ---- ドロップダウン矢印ボタン ----
+  const dropBtn = document.createElement('button');
+  dropBtn.type = 'button';
+  dropBtn.setAttribute('data-bta-drop', '');
+  dropBtn.style.cssText = `
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 32px;
+    padding: 0;
+    background: #0085ff;
+    color: #fff;
+    border: none;
+    border-left: 1px solid rgba(255,255,255,0.3);
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+    z-index: 1;
+    flex-shrink: 0;
+  `;
+  dropBtn.innerHTML = `<svg width="10" height="10" viewBox="0 0 10 10" fill="white" xmlns="http://www.w3.org/2000/svg"><polygon points="1,3 9,3 5,8"/></svg>`;
+  dropBtn.title = 'メニューを開く';
+
+  // ---- ポップアップメニュー ----
+  const menu = document.createElement('div');
+  menu.setAttribute('data-bta-menu', '');
+  menu.style.cssText = `
+    display: none;
+    position: absolute;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 9999;
+    min-width: 180px;
+    padding: 4px 0;
   `;
 
-  // textareaを開く/閉じるボタン
-  const toggleBtn = document.createElement('button');
-  toggleBtn.type = 'button';
-  toggleBtn.setAttribute('data-bta-play', '');
-  toggleBtn.textContent = '▶ textareaを開く';
-  toggleBtn.style.cssText = btnStyle;
-
-  // mmlabcでplayボタン
-  const mmlabcBtn = document.createElement('button');
-  mmlabcBtn.type = 'button';
-  mmlabcBtn.setAttribute('data-bta-mmlabc', '');
-  mmlabcBtn.textContent = '🎵 mmlabcでplay';
-  mmlabcBtn.style.cssText = btnStyle;
-
-  // abcjs playボタン
-  const playBtn = document.createElement('button');
-  playBtn.type = 'button';
-  playBtn.setAttribute('data-bta-abcplay', '');
-  playBtn.textContent = '▶ abcjsでplay';
-  playBtn.style.cssText = btnStyle;
-
-  // chord2mml playボタン
-  const chord2mmlBtn = document.createElement('button');
-  chord2mmlBtn.type = 'button';
-  chord2mmlBtn.setAttribute('data-bta-chord2mml', '');
-  chord2mmlBtn.textContent = '🎸 chord2mmlでplay';
-  chord2mmlBtn.style.cssText = btnStyle;
-
-  // Tone.js playボタン
-  const tonejsBtn = document.createElement('button');
-  tonejsBtn.type = 'button';
-  tonejsBtn.setAttribute('data-bta-tonejs', '');
-  tonejsBtn.textContent = '🎹 Tone.jsでplay';
-  tonejsBtn.style.cssText = btnStyle;
-
-  // 「投稿を読み上げる」ボタン（VOICEVOX）
-  const voicevoxBtn = document.createElement('button');
-  voicevoxBtn.type = 'button';
-  voicevoxBtn.setAttribute('data-bta-voicevox', '');
-  voicevoxBtn.textContent = '🔊 投稿を読み上げる';
-  voicevoxBtn.style.cssText = btnStyle;
+  for (const item of menuItems) {
+    const menuItem = document.createElement('button');
+    menuItem.type = 'button';
+    menuItem.setAttribute('data-bta-menu-item', item.mode);
+    menuItem.textContent = item.label;
+    menuItem.style.cssText = `
+      display: block;
+      width: 100%;
+      padding: 8px 14px;
+      background: none;
+      border: none;
+      text-align: left;
+      font-size: 13px;
+      cursor: pointer;
+      color: #000;
+      white-space: nowrap;
+    `;
+    menuItem.addEventListener('mouseenter', () => {
+      menuItem.style.background = '#e8f0fe';
+    });
+    menuItem.addEventListener('mouseleave', () => {
+      menuItem.style.background = 'none';
+    });
+    menuItem.addEventListener('click', e => {
+      e.stopPropagation();
+      selectedMode = item.mode;
+      allPlayButtons.forEach(btn => { btn.title = item.label; });
+      menu.style.display = 'none';
+    });
+    menu.append(menuItem);
+  }
 
   // ボタン行コンテナ
   const row = document.createElement('div');
@@ -88,10 +148,10 @@ export function addPlayButton(postEl: HTMLElement): void {
   row.style.cssText = `
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
     margin: 4px 0;
+    position: relative;
   `;
-  row.append(toggleBtn, mmlabcBtn, playBtn, chord2mmlBtn, tonejsBtn, voicevoxBtn);
+  row.append(playBtn, dropBtn, menu);
 
   // textarea
   const textarea = document.createElement('textarea');
@@ -159,157 +219,149 @@ export function addPlayButton(postEl: HTMLElement): void {
     }
   }
 
-  toggleBtn.addEventListener('click', e => {
+  // ---- ドロップダウン開閉 ----
+  dropBtn.addEventListener('click', e => {
     e.stopPropagation();
-    if (textarea.style.display === 'none') {
-      // 初回のみ投稿テキストをセット（ユーザー編集を保持）
-      if (!textarea.value) {
-        textarea.value = getPostText(postEl);
-      }
-      textarea.style.display = 'block';
-    } else {
-      textarea.style.display = 'none';
-    }
+    const isOpen = menu.style.display !== 'none';
+    menu.style.display = isOpen ? 'none' : 'block';
   });
 
-  mmlabcBtn.addEventListener('click', e => {
-    e.stopPropagation();
-    // 未初期化の場合は投稿テキストをセット
-    if (!textarea.value) {
-      textarea.value = getPostText(postEl);
-    }
-    const mml = textarea.value;
-    let abcText = '';
-    try {
-      abcText = mml2abcParse(mml);
-    } catch (error) {
-      console.error(LOG_PREFIX, 'MML parse error:', error);
-      return;
-    }
-    renderAndPlay(abcText);
-  });
-
-  playBtn.addEventListener('click', e => {
-    e.stopPropagation();
-    // 未初期化の場合は投稿テキストをセット
-    if (!textarea.value) {
-      textarea.value = getPostText(postEl);
-    }
-    renderAndPlay(textarea.value);
-  });
-
-  chord2mmlBtn.addEventListener('click', async e => {
-    e.stopPropagation();
-    // 未初期化の場合は投稿テキストをセット
-    if (!textarea.value) {
-      textarea.value = getPostText(postEl);
-    }
-    const chord = textarea.value;
-    let abcText = '';
-    try {
-      const mml = await chordToMml(chord);
-      abcText = mml2abcParse(mml);
-    } catch (error) {
-      console.error(LOG_PREFIX, 'chord2mml error (load or parse):', error);
-      return;
-    }
-    renderAndPlay(abcText);
-  });
-
-  // ---- Tone.js playボタン ----
+  // ---- playボタン：選択中モードを実行 ----
   // 投稿ごとのSequencerNodesインスタンス（Tone.jsシーケンサー用）
   let tonejsNodes: SequencerNodes | null = null;
 
-  tonejsBtn.addEventListener('click', async e => {
+  playBtn.addEventListener('click', async e => {
     e.stopPropagation();
+    const mode = selectedMode;
+
+    if (mode === 'textarea') {
+      if (textarea.style.display === 'none') {
+        // 初回のみ投稿テキストをセット（ユーザー編集を保持）
+        if (!textarea.value) {
+          textarea.value = getPostText(postEl);
+        }
+        textarea.style.display = 'block';
+      } else {
+        textarea.style.display = 'none';
+      }
+      return;
+    }
+
     // 未初期化の場合は投稿テキストをセット
     if (!textarea.value) {
       textarea.value = getPostText(postEl);
     }
-    const mml = textarea.value;
 
-    let Tone;
-    let sequencer;
-    try {
-      [Tone, sequencer] = await Promise.all([loadTone(), loadSequencer()]);
-    } catch (e2: unknown) {
-      console.error(LOG_PREFIX, 'Tone.js または tonejs-json-sequencer の読み込みに失敗しました:', e2);
-      return;
-    }
-
-    // MML → tonejs-json-sequencer用JSONに変換（tonejs-mml-to-json ライブラリ使用）
-    let sequence;
-    try {
-      sequence = await parseMmlViaLibrary(mml);
-    } catch (e2: unknown) {
-      console.error(LOG_PREFIX, 'MML parse error:', e2);
-      return;
-    }
-
-    try {
-      await Tone.start();
-      if (!tonejsNodes) {
-        tonejsNodes = new sequencer.SequencerNodes();
-      }
-      await sequencer.playSequence(Tone, tonejsNodes, sequence);
-      Tone.Transport.start();
-    } catch (e2: unknown) {
-      console.error(LOG_PREFIX, 'Tone.js play error:', e2);
-    }
-  });
-
-  // ---- 「投稿を読み上げる」ボタン（VOICEVOX） ----
-  voicevoxBtn.addEventListener('click', async e => {
-    e.stopPropagation();
-    // 未初期化の場合は投稿テキストをセット（textareaの編集内容を優先）
-    let text = textarea.value;
-    if (!text) {
-      text = getPostText(postEl);
-      textarea.value = text;
-    }
-    if (!text) return;
-
-    voicevoxBtn.disabled = true;
-    voicevoxBtn.textContent = '🔊 読み上げ中...';
-    try {
-      const response = await new Promise<{ success: boolean; audio?: string; error?: string }>(
-        (resolve, reject) => {
-          chrome.runtime.sendMessage({ type: 'speak', text }, res => {
-            if (chrome.runtime.lastError) {
-              reject(new Error(chrome.runtime.lastError.message));
-            } else {
-              resolve(res as { success: boolean; audio?: string; error?: string });
-            }
-          });
-        },
-      );
-
-      if (!response.success || !response.audio) {
-        console.error(LOG_PREFIX, 'VOICEVOX error:', response.error);
+    if (mode === 'mmlabc') {
+      const mml = textarea.value;
+      let abcText = '';
+      try {
+        abcText = mml2abcParse(mml);
+      } catch (error) {
+        console.error(LOG_PREFIX, 'MML parse error:', error);
         return;
       }
+      renderAndPlay(abcText);
+      return;
+    }
 
-      const binaryString = atob(response.audio);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
+    if (mode === 'abcjs') {
+      renderAndPlay(textarea.value);
+      return;
+    }
 
-      const audioContext = getAudioContext();
-      if (audioContext.state === 'suspended') {
-        await audioContext.resume();
+    if (mode === 'chord2mml') {
+      const chord = textarea.value;
+      let abcText = '';
+      try {
+        const mml = await chordToMml(chord);
+        abcText = mml2abcParse(mml);
+      } catch (error) {
+        console.error(LOG_PREFIX, 'chord2mml error (load or parse):', error);
+        return;
       }
-      const decoded = await audioContext.decodeAudioData(bytes.buffer);
-      const source = audioContext.createBufferSource();
-      source.buffer = decoded;
-      source.connect(audioContext.destination);
-      source.onended = () => { source.disconnect(); };
-      source.start();
-    } catch (err: unknown) {
-      console.error(LOG_PREFIX, 'VOICEVOX error:', err);
-    } finally {
-      voicevoxBtn.disabled = false;
-      voicevoxBtn.textContent = '🔊 投稿を読み上げる';
+      renderAndPlay(abcText);
+      return;
+    }
+
+    if (mode === 'tonejs') {
+      const mml = textarea.value;
+      let Tone;
+      let sequencer;
+      try {
+        [Tone, sequencer] = await Promise.all([loadTone(), loadSequencer()]);
+      } catch (e2: unknown) {
+        console.error(LOG_PREFIX, 'Tone.js または tonejs-json-sequencer の読み込みに失敗しました:', e2);
+        return;
+      }
+      let sequence;
+      try {
+        sequence = await parseMmlViaLibrary(mml);
+      } catch (e2: unknown) {
+        console.error(LOG_PREFIX, 'MML parse error:', e2);
+        return;
+      }
+      try {
+        await Tone.start();
+        if (!tonejsNodes) {
+          tonejsNodes = new sequencer.SequencerNodes();
+        }
+        await sequencer.playSequence(Tone, tonejsNodes, sequence);
+        Tone.Transport.start();
+      } catch (e2: unknown) {
+        console.error(LOG_PREFIX, 'Tone.js play error:', e2);
+      }
+      return;
+    }
+
+    if (mode === 'voicevox') {
+      let text = textarea.value;
+      if (!text) {
+        text = getPostText(postEl);
+        textarea.value = text;
+      }
+      if (!text) return;
+
+      playBtn.disabled = true;
+      try {
+        const response = await new Promise<{ success: boolean; audio?: string; error?: string }>(
+          (resolve, reject) => {
+            chrome.runtime.sendMessage({ type: 'speak', text }, res => {
+              if (chrome.runtime.lastError) {
+                reject(new Error(chrome.runtime.lastError.message));
+              } else {
+                resolve(res as { success: boolean; audio?: string; error?: string });
+              }
+            });
+          },
+        );
+
+        if (!response.success || !response.audio) {
+          console.error(LOG_PREFIX, 'VOICEVOX error:', response.error);
+          return;
+        }
+
+        const binaryString = atob(response.audio);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+
+        const audioContext = getAudioContext();
+        if (audioContext.state === 'suspended') {
+          await audioContext.resume();
+        }
+        const decoded = await audioContext.decodeAudioData(bytes.buffer);
+        const source = audioContext.createBufferSource();
+        source.buffer = decoded;
+        source.connect(audioContext.destination);
+        source.onended = () => { source.disconnect(); };
+        source.start();
+      } catch (err: unknown) {
+        console.error(LOG_PREFIX, 'VOICEVOX error:', err);
+      } finally {
+        playBtn.disabled = false;
+      }
     }
   });
 
