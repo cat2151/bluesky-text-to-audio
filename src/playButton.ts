@@ -261,6 +261,7 @@ export function addPlayButton(postEl: HTMLElement): void {
     }
     const toast = document.createElement('div');
     toast.setAttribute('data-bta-toast', '');
+    toast.setAttribute('role', 'alert');
     toast.textContent = message;
     toast.style.cssText = `
       margin-left: 8px;
@@ -269,7 +270,9 @@ export function addPlayButton(postEl: HTMLElement): void {
       color: #fff;
       border-radius: 4px;
       font-size: 12px;
-      white-space: nowrap;
+      max-width: 260px;
+      white-space: normal;
+      word-break: break-word;
       pointer-events: none;
     `;
     row.append(toast);
@@ -455,7 +458,7 @@ export function addPlayButton(postEl: HTMLElement): void {
         );
 
         if (!response.success || !response.audio) {
-          handleError('VOICEVOX error:', response.error ?? 'VOICEVOX error', response.error ?? 'unknown');
+          handleError('VOICEVOX error:', response.error ?? 'VOICEVOX error', response);
           return;
         }
 
