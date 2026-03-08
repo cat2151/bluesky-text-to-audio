@@ -140,3 +140,7 @@ vite.config.ts.timestamp-*
 
 # npm lockfile (this project uses bun)
 package-lock.json
+
+# Python cache
+__pycache__/
+*.pyc
