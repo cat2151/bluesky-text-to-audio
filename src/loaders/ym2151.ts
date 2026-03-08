@@ -186,14 +186,17 @@ export function ensureYm2151Loader(): Promise<void> {
         Module._free(dataPtr);
         if (actualFrames <= 0) throw new Error('YM2151 audio generation に失敗しました');
 
-        // web-ym2151 exposes audio via Module._get_sample() (the same API its own demo uses).
-        // A HEAPF32-based bulk copy is not available without modifying the upstream library,
-        // so we use per-sample reads matching web-ym2151's audioGenerator.ts reference impl.
+        // web-ym2151 exposes the audio buffer via Module._get_buffer_ptr() (added in upstream).
+        // We copy the interleaved stereo float32 data from WASM memory in one subarray call,
+        // avoiding the per-sample JS↔WASM boundary crossings that would freeze the UI.
+        const bufPtr = Module._get_buffer_ptr();
+        // bufPtr is a byte address; >>2 converts to Float32Array index.
+        const interleaved = Module.HEAPF32.subarray(bufPtr >> 2, (bufPtr >> 2) + actualFrames * 2);
         const left = new Float32Array(actualFrames);
         const right = new Float32Array(actualFrames);
         for (let i = 0; i < actualFrames; i++) {
-          left[i] = Module._get_sample(i * 2);
-          right[i] = Module._get_sample(i * 2 + 1);
+          left[i] = interleaved[i * 2];
+          right[i] = interleaved[i * 2 + 1];
         }
         Module._free_buffer();
 
