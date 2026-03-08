@@ -373,7 +373,7 @@ ${JSON.stringify(n,null,2)}`),new Error("Language.load failed: no language funct
     background: #0085ff;
     color: #fff;
     border: none;
-    border-radius: 4px 0 0 4px;
+    border-radius: 4px 0 0 0;
     cursor: pointer;
     z-index: 1;
     flex-shrink: 0;
@@ -388,7 +388,7 @@ ${JSON.stringify(n,null,2)}`),new Error("Language.load failed: no language funct
     color: #fff;
     border: none;
     border-left: 1px solid rgba(255,255,255,0.3);
-    border-radius: 0 4px 4px 0;
+    border-radius: 0 4px 0 0;
     cursor: pointer;
     z-index: 1;
     flex-shrink: 0;
@@ -418,7 +418,7 @@ ${JSON.stringify(n,null,2)}`),new Error("Language.load failed: no language funct
     `,E.addEventListener("mouseenter",()=>{E.style.background="#e8f0fe"}),E.addEventListener("mouseleave",()=>{E.style.background="none"}),E.addEventListener("click",S=>{S.stopPropagation(),selectedMode=T.mode,document.querySelectorAll("[data-bta-play]").forEach($=>{$.title=T.label,$.setAttribute("aria-label",T.label),$.dataset.btaMode=T.mode}),l.style.display="none",c.setAttribute("aria-expanded","false"),T.mode==="textarea"?p.style.display==="none"&&n.dispatchEvent(new MouseEvent("click",{bubbles:!0,cancelable:!0})):n.dispatchEvent(new MouseEvent("click",{bubbles:!0,cancelable:!0}))}),l.append(E)}const f=document.createElement("div");f.setAttribute("data-bta-row",""),f.style.cssText=`
     display: flex;
     align-items: center;
-    margin: 4px 0;
+    margin: 4px 0 0 0;
     position: relative;
   `,f.append(n,c,l);const p=document.createElement("textarea");p.setAttribute("data-bta-textarea",""),p.style.cssText=`
     display: none;

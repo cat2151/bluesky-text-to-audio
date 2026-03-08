@@ -106,7 +106,7 @@ export function addPlayButton(postEl: HTMLElement): void {
     background: #0085ff;
     color: #fff;
     border: none;
-    border-radius: 4px 0 0 4px;
+    border-radius: 4px 0 0 0;
     cursor: pointer;
     z-index: 1;
     flex-shrink: 0;
@@ -132,7 +132,7 @@ export function addPlayButton(postEl: HTMLElement): void {
     color: #fff;
     border: none;
     border-left: 1px solid rgba(255,255,255,0.3);
-    border-radius: 0 4px 4px 0;
+    border-radius: 0 4px 0 0;
     cursor: pointer;
     z-index: 1;
     flex-shrink: 0;
@@ -213,7 +213,7 @@ export function addPlayButton(postEl: HTMLElement): void {
   row.style.cssText = `
     display: flex;
     align-items: center;
-    margin: 4px 0;
+    margin: 4px 0 0 0;
     position: relative;
   `;
   row.append(playBtn, dropBtn, menu);
