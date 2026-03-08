@@ -14,13 +14,12 @@ export interface Tree {
   rootNode: SyntaxNode;
 }
 
-export interface Language {}
+export declare class Language {
+  static load(url: string | URL): Promise<Language>;
+}
 
 export declare class Parser {
   static init(options?: { locateFile?: (name: string, prefix: string) => string }): Promise<void>;
-  static Language: {
-    load(url: string | URL): Promise<Language>;
-  };
   parse(text: string): Tree;
   setLanguage(language: Language): void;
 }

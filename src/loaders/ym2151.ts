@@ -11,7 +11,7 @@
 // cat2151ライブラリは常に最新mainを使用、バージョン固定しない。
 // 最新版への追従: 各 src/ サブディレクトリのファイルをアップストリームから再ダウンロードする。
 
-import { Parser, type SyntaxNode, type Language } from '../tonejs-mml-to-json/dist/web-tree-sitter.js';
+import { Parser, Language, type SyntaxNode } from '../tonejs-mml-to-json/dist/web-tree-sitter.js';
 import mmlabcInit, { parse_tree_json_to_smf } from '../mmlabc-to-smf-wasm/pkg/mmlabc_to_smf_wasm.js';
 import smfYm2151Init, { smf_to_ym2151_json_with_attachment } from '../smf-to-ym2151log-rust/pkg/smf_to_ym2151log.js';
 import treeSitterMmlUrl from '../mmlabc-tree-sitter-mml/tree-sitter-mml.wasm?url';
@@ -96,10 +96,10 @@ async function ensureLibs(): Promise<Libs> {
 
     // Create a separate parser instance for the mmlabc MML grammar.
     // Resolve the ?url import against import.meta.url (extension origin) so that
-    // Parser.Language.load() fetches from chrome-extension://... rather than
+    // Language.load() fetches from chrome-extension://... rather than
     // the page origin (bsky.app), which would 404.
     const parser = new Parser();
-    const lang: Language = await Parser.Language.load(
+    const lang: Language = await Language.load(
       new URL(treeSitterMmlUrl, import.meta.url).href,
     );
     parser.setLanguage(lang);
