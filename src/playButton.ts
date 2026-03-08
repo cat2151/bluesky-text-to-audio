@@ -157,6 +157,8 @@ export function addPlayButton(postEl: HTMLElement): void {
       });
       menu.style.display = 'none';
       dropBtn.setAttribute('aria-expanded', 'false');
+      // メニュー選択時に即座に実行する
+      playBtn.click();
     });
     menu.append(menuItem);
   }
