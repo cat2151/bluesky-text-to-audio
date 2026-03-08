@@ -76,11 +76,11 @@ export function ensureYm2151Loader(): Promise<void> {
     };
     window.addEventListener('message', onMessage);
 
-    const script = document.createElement('script');
-    script.type = 'module';
     // Embed constants into the injected script via template literals.
     // This script runs in the page's main world (bypasses extension CSP).
-    script.textContent = `
+    // Use a Blob URL instead of script.textContent to avoid bsky.app's CSP
+    // blocking inline scripts (script-src does not allow 'unsafe-inline').
+    const scriptContent = `
       const _origin = window.location.origin;
       // YM2151 emulator constants (must match WASM side)
       const OPM_CLOCK = 3579545;
@@ -273,9 +273,25 @@ export function ensureYm2151Loader(): Promise<void> {
         window.postMessage({ type: 'bta-ym2151-load-error', error: String(err) }, _origin);
       }
     `;
+    const blob = new Blob([scriptContent], { type: 'text/javascript' });
+    const blobUrl = URL.createObjectURL(blob);
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.src = blobUrl;
     script.onerror = () => {
+      window.removeEventListener('message', onMessage);
+      URL.revokeObjectURL(blobUrl);
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
       ym2151LoaderPromise = null;
       reject(new Error('YM2151 ローダースクリプトの注入に失敗しました'));
+    };
+    script.onload = () => {
+      URL.revokeObjectURL(blobUrl);
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
     };
     document.head.appendChild(script);
   }).catch((e: unknown) => {

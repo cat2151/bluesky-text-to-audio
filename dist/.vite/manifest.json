@@ -5,6 +5,16 @@
     "src": "../../../../../@crx/manifest",
     "isEntry": true
   },
+  "__vite-browser-external": {
+    "file": "assets/__vite-browser-external-BIHI7g3E.js",
+    "name": "__vite-browser-external",
+    "src": "__vite-browser-external",
+    "isDynamicEntry": true
+  },
+  "_content.ts-loader-CmpA7coP.js": {
+    "file": "assets/content.ts-loader-CmpA7coP.js",
+    "src": "_content.ts-loader-CmpA7coP.js"
+  },
   "src/background.ts": {
     "file": "assets/background.ts-B2NKiXC4.js",
     "name": "background.ts",
@@ -12,9 +22,30 @@
     "isEntry": true
   },
   "src/content.ts": {
-    "file": "assets/content.ts-bKK1f9FW.js",
+    "file": "assets/content.ts-B-L-xaW_.js",
     "name": "content.ts",
     "src": "src/content.ts",
-    "isEntry": true
+    "isEntry": true,
+    "dynamicImports": [
+      "__vite-browser-external",
+      "__vite-browser-external"
+    ],
+    "assets": [
+      "assets/tonejs_mml_to_json_bg-Z4r-jVMi.wasm",
+      "assets/web-tree-sitter-Bgri87aM.wasm",
+      "assets/tree-sitter-mml-5WI6aSUq.wasm"
+    ]
+  },
+  "src/tonejs-mml-to-json/dist/tree-sitter-mml/tree-sitter-mml.wasm": {
+    "file": "assets/tree-sitter-mml-5WI6aSUq.wasm",
+    "src": "src/tonejs-mml-to-json/dist/tree-sitter-mml/tree-sitter-mml.wasm"
+  },
+  "src/tonejs-mml-to-json/dist/web-tree-sitter.wasm": {
+    "file": "assets/web-tree-sitter-Bgri87aM.wasm",
+    "src": "src/tonejs-mml-to-json/dist/web-tree-sitter.wasm"
+  },
+  "src/tonejs-mml-to-json/pkg/tonejs_mml_to_json_bg.wasm": {
+    "file": "assets/tonejs_mml_to_json_bg-Z4r-jVMi.wasm",
+    "src": "src/tonejs-mml-to-json/pkg/tonejs_mml_to_json_bg.wasm"
   }
 }
