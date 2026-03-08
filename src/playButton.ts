@@ -207,6 +207,49 @@ export function addPlayButton(postEl: HTMLElement): void {
     menu.append(menuItem);
   }
 
+  // ---- リセットボタン（投稿テキストでtextareaをリセット） ----
+  const separator = document.createElement('hr');
+  separator.style.cssText = `
+    margin: 4px 0;
+    border: none;
+    border-top: 1px solid #e0e0e0;
+  `;
+  menu.append(separator);
+
+  const resetBtn = document.createElement('button');
+  resetBtn.type = 'button';
+  resetBtn.setAttribute('data-bta-menu-item', 'reset');
+  resetBtn.textContent = '🔄 リセット';
+  resetBtn.style.cssText = `
+    display: block;
+    width: 100%;
+    padding: 8px 14px;
+    background: none;
+    border: none;
+    text-align: left;
+    font-size: 13px;
+    cursor: pointer;
+    color: #000;
+    white-space: nowrap;
+  `;
+  resetBtn.addEventListener('mouseenter', () => {
+    resetBtn.style.background = '#e8f0fe';
+  });
+  resetBtn.addEventListener('mouseleave', () => {
+    resetBtn.style.background = 'none';
+  });
+  resetBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const wasVisible = textarea.style.display !== 'none';
+    textarea.value = detectedCleanedText;
+    if (wasVisible) {
+      textarea.style.display = 'block';
+    }
+    menu.style.display = 'none';
+    dropBtn.setAttribute('aria-expanded', 'false');
+  });
+  menu.append(resetBtn);
+
   // ボタン行コンテナ
   const row = document.createElement('div');
   row.setAttribute('data-bta-row', '');
