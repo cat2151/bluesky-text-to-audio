@@ -10,6 +10,39 @@ import { getPostText } from './postText';
 
 const LOG_PREFIX = '[BTA:playButton]';
 
+// ---- 投稿テキストからモードを自動検出 ----
+function detectModeFromText(text: string): { mode: PlayMode; cleanedText: string } {
+  const lines = text.split('\n');
+  if (!text.trim()) return { mode: 'voicevox', cleanedText: text };
+
+  const firstLine = lines[0];
+  const lastLine = lines[lines.length - 1];
+
+  const checks: [RegExp, PlayMode][] = [
+    [/Chord|コード/, 'chord2mml'],
+    [/YM2151|OPM/, 'ym2151'],
+    [/Tonejs|Tone\.js/, 'tonejs'],
+    [/MML/, 'mmlabc'],
+    [/abc/, 'abcjs'],
+  ];
+
+  for (const [re, mode] of checks) {
+    if (re.test(firstLine)) {
+      return { mode, cleanedText: lines.slice(1).join('\n') };
+    }
+  }
+
+  if (lines.length > 1) {
+    for (const [re, mode] of checks) {
+      if (re.test(lastLine)) {
+        return { mode, cleanedText: lines.slice(0, -1).join('\n') };
+      }
+    }
+  }
+
+  return { mode: 'voicevox', cleanedText: text };
+}
+
 // ---- モジュールレベルのAudioContext（再利用） ----
 let sharedAudioContext: AudioContext | null = null;
 function getAudioContext(): AudioContext {
@@ -57,6 +90,10 @@ export function addPlayButton(postEl: HTMLElement): void {
   if (processedPosts.has(postEl)) return;
   processedPosts.add(postEl);
 
+  // ---- 投稿テキストからモードを自動検出（初期値） ----
+  const rawPostText = getPostText(postEl);
+  const { mode: detectedMode, cleanedText: detectedCleanedText } = detectModeFromText(rawPostText);
+
   // ---- playボタン（SVG三角） ----
   const playBtn = document.createElement('button');
   playBtn.type = 'button';
@@ -77,9 +114,10 @@ export function addPlayButton(postEl: HTMLElement): void {
     flex-shrink: 0;
   `;
   playBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="white" xmlns="http://www.w3.org/2000/svg"><polygon points="4,2 14,8 4,14"/></svg>`;
-  const initialPlayLabel = menuItems.find(m => m.mode === selectedMode)?.label ?? '再生';
+  const initialPlayLabel = menuItems.find(m => m.mode === detectedMode)?.label ?? '再生';
   playBtn.title = initialPlayLabel;
   playBtn.setAttribute('aria-label', initialPlayLabel);
+  playBtn.dataset.btaMode = detectedMode;
 
   // ---- ドロップダウン矢印ボタン ----
   const dropBtn = document.createElement('button');
@@ -150,10 +188,11 @@ export function addPlayButton(postEl: HTMLElement): void {
     menuItem.addEventListener('click', e => {
       e.stopPropagation();
       selectedMode = item.mode;
-      // DOMに存在する全playボタンのtitle/aria-labelを同期（Setを使わずliveクエリでメモリリーク防止）
+      // DOMに存在する全playボタンのtitle/aria-label/data-bta-modeを同期（Setを使わずliveクエリでメモリリーク防止）
       document.querySelectorAll<HTMLButtonElement>('[data-bta-play]').forEach(btn => {
         btn.title = item.label;
         btn.setAttribute('aria-label', item.label);
+        btn.dataset.btaMode = item.mode;
       });
       menu.style.display = 'none';
       dropBtn.setAttribute('aria-expanded', 'false');
@@ -273,13 +312,13 @@ export function addPlayButton(postEl: HTMLElement): void {
 
   playBtn.addEventListener('click', async e => {
     e.stopPropagation();
-    const mode = selectedMode;
+    const mode = (playBtn.dataset.btaMode as PlayMode) || selectedMode;
 
     if (mode === 'textarea') {
       if (textarea.style.display === 'none') {
         // 初回のみ投稿テキストをセット（ユーザー編集を保持）
         if (!textarea.value) {
-          textarea.value = getPostText(postEl);
+          textarea.value = detectedCleanedText;
         }
         textarea.style.display = 'block';
       } else {
@@ -288,9 +327,9 @@ export function addPlayButton(postEl: HTMLElement): void {
       return;
     }
 
-    // 未初期化の場合は投稿テキストをセット
+    // 未初期化の場合は投稿テキスト（検出行削除済み）をセット
     if (!textarea.value) {
-      textarea.value = getPostText(postEl);
+      textarea.value = detectedCleanedText;
     }
 
     if (mode === 'mmlabc') {
@@ -368,7 +407,7 @@ export function addPlayButton(postEl: HTMLElement): void {
     if (mode === 'voicevox') {
       let text = textarea.value;
       if (!text) {
-        text = getPostText(postEl);
+        text = detectedCleanedText;
         textarea.value = text;
       }
       if (!text) return;
