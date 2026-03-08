@@ -251,6 +251,41 @@ export function addPlayButton(postEl: HTMLElement): void {
   textarea.addEventListener('click', e => { e.stopPropagation(); });
   textarea.addEventListener('mousedown', e => { e.stopPropagation(); });
 
+  // ---- エラートーストを表示する ----
+  let errorToastTimer: ReturnType<typeof setTimeout> | null = null;
+  function showErrorToast(message: string): void {
+    row.querySelector('[data-bta-toast]')?.remove();
+    if (errorToastTimer !== null) {
+      clearTimeout(errorToastTimer);
+      errorToastTimer = null;
+    }
+    const toast = document.createElement('div');
+    toast.setAttribute('data-bta-toast', '');
+    toast.textContent = message;
+    toast.style.cssText = `
+      margin-left: 8px;
+      padding: 4px 10px;
+      background: #d32f2f;
+      color: #fff;
+      border-radius: 4px;
+      font-size: 12px;
+      white-space: nowrap;
+      pointer-events: none;
+    `;
+    row.append(toast);
+    errorToastTimer = setTimeout(() => {
+      toast.remove();
+      errorToastTimer = null;
+    }, 5000);
+  }
+
+  // ---- エラー時にtextareaを表示してトーストを出す ----
+  function handleError(logLabel: string, message: string, error: unknown): void {
+    console.error(LOG_PREFIX, logLabel, error);
+    textarea.style.display = 'block';
+    showErrorToast(message);
+  }
+
   // textarea編集1secデバウンスで自動play
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   textarea.addEventListener('input', () => {
@@ -336,7 +371,7 @@ export function addPlayButton(postEl: HTMLElement): void {
       try {
         abcText = mml2abcParse(mml);
       } catch (error) {
-        console.error(LOG_PREFIX, 'MML parse error:', error);
+        handleError('MML parse error:', 'MML parse error', error);
         return;
       }
       renderAndPlay(abcText);
@@ -350,7 +385,7 @@ export function addPlayButton(postEl: HTMLElement): void {
         const mml = await chordToMml(chord);
         abcText = mml2abcParse(mml);
       } catch (error) {
-        console.error(LOG_PREFIX, 'chord2mml error (load or parse):', error);
+        handleError('chord2mml error (load or parse):', 'chord2mml error', error);
         return;
       }
       renderAndPlay(abcText);
@@ -364,14 +399,14 @@ export function addPlayButton(postEl: HTMLElement): void {
       try {
         [Tone, sequencer] = await Promise.all([loadTone(), loadSequencer()]);
       } catch (e2: unknown) {
-        console.error(LOG_PREFIX, 'Tone.js または tonejs-json-sequencer の読み込みに失敗しました:', e2);
+        handleError('Tone.js または tonejs-json-sequencer の読み込みに失敗しました:', 'ライブラリ読み込みエラー', e2);
         return;
       }
       let sequence;
       try {
         sequence = await parseMmlViaLibrary(mml);
       } catch (e2: unknown) {
-        console.error(LOG_PREFIX, 'MML parse error:', e2);
+        handleError('MML parse error:', 'MML parse error', e2);
         return;
       }
       try {
@@ -382,7 +417,7 @@ export function addPlayButton(postEl: HTMLElement): void {
         await sequencer.playSequence(Tone, tonejsNodes, sequence);
         Tone.Transport.start();
       } catch (e2: unknown) {
-        console.error(LOG_PREFIX, 'Tone.js play error:', e2);
+        handleError('Tone.js play error:', 'Tone.js play error', e2);
       }
       return;
     }
@@ -392,7 +427,7 @@ export function addPlayButton(postEl: HTMLElement): void {
       try {
         await playWithYm2151(mml);
       } catch (e2: unknown) {
-        console.error(LOG_PREFIX, 'YM2151 play error:', e2);
+        handleError('YM2151 play error:', 'YM2151 play error', e2);
       }
       return;
     }
@@ -420,7 +455,7 @@ export function addPlayButton(postEl: HTMLElement): void {
         );
 
         if (!response.success || !response.audio) {
-          console.error(LOG_PREFIX, 'VOICEVOX error:', response.error);
+          handleError('VOICEVOX error:', response.error ?? 'VOICEVOX error', response.error ?? 'unknown');
           return;
         }
 
@@ -441,7 +476,7 @@ export function addPlayButton(postEl: HTMLElement): void {
         source.onended = () => { source.disconnect(); };
         source.start();
       } catch (err: unknown) {
-        console.error(LOG_PREFIX, 'VOICEVOX error:', err);
+        handleError('VOICEVOX error:', 'VOICEVOX error', err);
       } finally {
         playBtn.disabled = false;
       }
