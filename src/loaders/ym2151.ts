@@ -95,8 +95,13 @@ async function ensureLibs(): Promise<Libs> {
     await Parser.init();
 
     // Create a separate parser instance for the mmlabc MML grammar.
+    // Resolve the ?url import against import.meta.url (extension origin) so that
+    // Parser.Language.load() fetches from chrome-extension://... rather than
+    // the page origin (bsky.app), which would 404.
     const parser = new Parser();
-    const lang: Language = await Parser.Language.load(treeSitterMmlUrl);
+    const lang: Language = await Parser.Language.load(
+      new URL(treeSitterMmlUrl, import.meta.url).href,
+    );
     parser.setLanguage(lang);
 
     // Initialize wasm-pack modules (idempotent after first call).
@@ -109,7 +114,22 @@ async function ensureLibs(): Promise<Libs> {
     // because the WASM is built with a fixed heap. If hit, it signals that the input
     // MML is unusually large or complex, and a meaningful error is preferable to a
     // silent crash. The OPM sample rate cap (numFrames limit) further bounds usage.
-    const response = await fetch(ym2151WasmUrl);
+    //
+    // Resolve the ?url import to an extension-origin URL. In a content script the
+    // raw Vite ?url value is an absolute path (/assets/...) which would resolve
+    // against the page origin (bsky.app) and fail. Use chrome.runtime.getURL when
+    // available, falling back to new URL(path, import.meta.url) as a safe default.
+    const ym2151WasmRequestUrl =
+      typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.getURL === 'function'
+        ? chrome.runtime.getURL(ym2151WasmUrl)
+        : new URL(ym2151WasmUrl, import.meta.url).toString();
+    const response = await fetch(ym2151WasmRequestUrl);
+    if (!response.ok) {
+      throw new Error(
+        `${LOG_PREFIX} Failed to load YM2151 WASM from "${ym2151WasmRequestUrl}": ` +
+          `HTTP ${response.status} ${response.statusText}`,
+      );
+    }
     const buffer = await response.arrayBuffer();
     const imports = {
       a: {

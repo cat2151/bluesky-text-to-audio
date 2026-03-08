@@ -32,7 +32,7 @@ LIBRARIES = [
         "name": "web-ym2151",
         "upstream_repo": "cat2151/web-ym2151",
         "js_file": "src/web-ym2151/ym2151.js",
-        "header_lines": 10,
+        "header_lines": 11,
         "downloads": [
             {
                 "url": "https://cat2151.github.io/web-ym2151/ym2151.js",
