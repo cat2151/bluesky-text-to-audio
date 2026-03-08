@@ -259,7 +259,7 @@ export function addPlayButton(postEl: HTMLElement): void {
     if (debounceTimer !== null) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
       debounceTimer = null;
-      if (selectedMode !== 'textarea') {
+      if (playBtn.dataset.btaMode !== 'textarea') {
         playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
       }
     }, 1000);
