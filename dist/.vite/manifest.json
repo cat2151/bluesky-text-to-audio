@@ -11,9 +11,9 @@
     "src": "__vite-browser-external",
     "isDynamicEntry": true
   },
-  "_content.ts-loader-CmpA7coP.js": {
-    "file": "assets/content.ts-loader-CmpA7coP.js",
-    "src": "_content.ts-loader-CmpA7coP.js"
+  "_content.ts-loader-Cm4zqXWg.js": {
+    "file": "assets/content.ts-loader-Cm4zqXWg.js",
+    "src": "_content.ts-loader-Cm4zqXWg.js"
   },
   "src/background.ts": {
     "file": "assets/background.ts-B2NKiXC4.js",
@@ -22,7 +22,7 @@
     "isEntry": true
   },
   "src/content.ts": {
-    "file": "assets/content.ts-B-L-xaW_.js",
+    "file": "assets/content.ts-TiOoiE92.js",
     "name": "content.ts",
     "src": "src/content.ts",
     "isEntry": true,
@@ -33,8 +33,24 @@
     "assets": [
       "assets/tonejs_mml_to_json_bg-Z4r-jVMi.wasm",
       "assets/web-tree-sitter-Bgri87aM.wasm",
-      "assets/tree-sitter-mml-5WI6aSUq.wasm"
+      "assets/tree-sitter-mml-5WI6aSUq.wasm",
+      "assets/mmlabc_to_smf_wasm_bg-BB-KmDE0.wasm",
+      "assets/smf_to_ym2151log_bg-BE_GsBy_.wasm",
+      "assets/tree-sitter-mml-DQvQg2JC.wasm",
+      "assets/ym2151-Ccu-8unz.wasm"
     ]
+  },
+  "src/mmlabc-to-smf-wasm/pkg/mmlabc_to_smf_wasm_bg.wasm": {
+    "file": "assets/mmlabc_to_smf_wasm_bg-BB-KmDE0.wasm",
+    "src": "src/mmlabc-to-smf-wasm/pkg/mmlabc_to_smf_wasm_bg.wasm"
+  },
+  "src/mmlabc-tree-sitter-mml/tree-sitter-mml.wasm": {
+    "file": "assets/tree-sitter-mml-DQvQg2JC.wasm",
+    "src": "src/mmlabc-tree-sitter-mml/tree-sitter-mml.wasm"
+  },
+  "src/smf-to-ym2151log-rust/pkg/smf_to_ym2151log_bg.wasm": {
+    "file": "assets/smf_to_ym2151log_bg-BE_GsBy_.wasm",
+    "src": "src/smf-to-ym2151log-rust/pkg/smf_to_ym2151log_bg.wasm"
   },
   "src/tonejs-mml-to-json/dist/tree-sitter-mml/tree-sitter-mml.wasm": {
     "file": "assets/tree-sitter-mml-5WI6aSUq.wasm",
@@ -47,5 +63,9 @@
   "src/tonejs-mml-to-json/pkg/tonejs_mml_to_json_bg.wasm": {
     "file": "assets/tonejs_mml_to_json_bg-Z4r-jVMi.wasm",
     "src": "src/tonejs-mml-to-json/pkg/tonejs_mml_to_json_bg.wasm"
+  },
+  "src/web-ym2151/ym2151.wasm": {
+    "file": "assets/ym2151-Ccu-8unz.wasm",
+    "src": "src/web-ym2151/ym2151.wasm"
   }
 }
