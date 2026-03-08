@@ -412,7 +412,7 @@ ${ie}`+X;return ue=n0(ue),ue}function n0(X){return tr&&(X=X.replace(/\[Q:\d+\]/g
       cursor: pointer;
       color: #000;
       white-space: nowrap;
-    `,o.addEventListener("mouseenter",()=>{o.style.background="#e8f0fe"}),o.addEventListener("mouseleave",()=>{o.style.background="none"}),o.addEventListener("click",c=>{c.stopPropagation(),mi=u.mode,document.querySelectorAll("[data-bta-play]").forEach(s=>{s.title=u.label,s.setAttribute("aria-label",u.label)}),n.style.display="none",f.setAttribute("aria-expanded","false")}),n.append(o)}const l=document.createElement("div");l.setAttribute("data-bta-row",""),l.style.cssText=`
+    `,o.addEventListener("mouseenter",()=>{o.style.background="#e8f0fe"}),o.addEventListener("mouseleave",()=>{o.style.background="none"}),o.addEventListener("click",c=>{c.stopPropagation(),mi=u.mode,document.querySelectorAll("[data-bta-play]").forEach(s=>{s.title=u.label,s.setAttribute("aria-label",u.label)}),n.style.display="none",f.setAttribute("aria-expanded","false"),u.mode==="textarea"?d.style.display==="none"&&y.dispatchEvent(new MouseEvent("click",{bubbles:!0,cancelable:!0})):y.dispatchEvent(new MouseEvent("click",{bubbles:!0,cancelable:!0}))}),n.append(o)}const l=document.createElement("div");l.setAttribute("data-bta-row",""),l.style.cssText=`
     display: flex;
     align-items: center;
     margin: 4px 0;
