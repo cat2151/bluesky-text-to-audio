@@ -126,9 +126,9 @@ def build_bundle(token: str, current_sha: str, local_file: Path) -> str:
         print(f"  Downloading {file_path}...")
         content = fetch_file_content(file_path, token)
         content = remove_import_lines(content)
-        sections.append(f"\n// === {section_label} ===\n{content}")
+        sections.append(f"// === {section_label} ===\n{content}")
 
-    return header + "".join(sections)
+    return header + "\n".join(sections)
 
 
 def sync_vendor_sequencer(local_file: Path) -> None:
