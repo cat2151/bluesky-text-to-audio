@@ -7,6 +7,8 @@ import { parseMmlViaLibrary } from './loaders/mmlToJson';
 import { playWithYm2151 } from './loaders/ym2151';
 import { chordToMml } from './chordToMml';
 import { getPostText } from './postText';
+import { mmlTemplates } from './mmlTemplates';
+import { chordTemplates } from './chordTemplates';
 
 const LOG_PREFIX = '[BTA:playButton]';
 
@@ -66,6 +68,36 @@ const menuItems: { mode: PlayMode; label: string }[] = [
   { mode: 'ym2151',   label: '🎶 YM2151でplay' },
   { mode: 'textarea', label: '📝 textareaを開く' },
 ];
+
+type TemplateItem = { name: string; text: string };
+
+// 各ライブラリのdemoで使われていたテンプレート（mmlabc/chord2mmlはvendoredファイルからインポート）
+const modeTemplates: Partial<Record<PlayMode, TemplateItem[]>> = {
+  voicevox: [
+    { name: 'サンプルテキスト', text: 'こんにちは、ずんだもんです。今日も元気に音声合成するのだ！' },
+  ],
+  mmlabc: mmlTemplates
+    .filter(([, text]) => text !== '')
+    .map(([name, text]) => ({ name, text })),
+  chord2mml: chordTemplates
+    .filter(([, text]) => text !== '')
+    .map(([name, text]) => ({
+      name,
+      // easychord2mml.js の removeIndent と同じ処理（テンプレートリテラルのインデントを除去）
+      text: text.split('\n').map(line => line.trim()).join('\n'),
+    })),
+  tonejs: [
+    // tonejs-mml-to-json demo-library より
+    { name: 'メロディー', text: 'o4 l16 e f g+ a b a g+ f e8. <e8. >e8' },
+    { name: 'ドレミ', text: 'o4 l16 c d e f g' },
+  ],
+  ym2151: [
+    // mmlabc互換MML
+    { name: 'ドレミ', text: 'cde' },
+    { name: 'ドミソシの和音', text: "v11 'c1egb'" },
+    { name: 'メロディー', text: 'o4 l16 e f g+ a b a g+ f e8. <e8. >e8' },
+  ],
+};
 
 // ---- ドキュメントクリックでメニューを閉じる（一度だけ登録） ----
 // キャプチャフェーズで登録するが、ドロップダウンボタンやメニュー自身のクリックは無視する
@@ -250,6 +282,19 @@ export function addPlayButton(postEl: HTMLElement): void {
   });
   menu.append(resetBtn);
 
+  // ---- テンプレートセクション（モードに応じて動的に構築） ----
+  const templateSeparator = document.createElement('hr');
+  templateSeparator.style.cssText = `
+    margin: 4px 0;
+    border: none;
+    border-top: 1px solid #e0e0e0;
+  `;
+  menu.append(templateSeparator);
+
+  const templateSection = document.createElement('div');
+  templateSection.setAttribute('data-bta-template-section', '');
+  menu.append(templateSection);
+
   // ボタン行コンテナ
   const row = document.createElement('div');
   row.setAttribute('data-bta-row', '');
@@ -378,9 +423,69 @@ export function addPlayButton(postEl: HTMLElement): void {
   }
 
   // ---- ドロップダウン開閉 ----
+  // テンプレートセクションをモードに応じて動的に更新する
+  function updateTemplateSection(): void {
+    const mode = (playBtn.dataset.btaMode as PlayMode) || selectedMode;
+    const templates = modeTemplates[mode] ?? [];
+    templateSection.innerHTML = '';
+    if (templates.length === 0) {
+      templateSeparator.style.display = 'none';
+      return;
+    }
+    templateSeparator.style.display = '';
+
+    const header = document.createElement('div');
+    header.textContent = '📋 テンプレート';
+    header.style.cssText = `
+      padding: 4px 14px 2px;
+      font-size: 11px;
+      color: #666;
+      font-weight: bold;
+    `;
+    templateSection.append(header);
+
+    const list = document.createElement('div');
+    list.style.cssText = `
+      max-height: 200px;
+      overflow-y: auto;
+    `;
+    templateSection.append(list);
+
+    for (const tmpl of templates) {
+      const tmplBtn = document.createElement('button');
+      tmplBtn.type = 'button';
+      tmplBtn.textContent = tmpl.name;
+      tmplBtn.style.cssText = `
+        display: block;
+        width: 100%;
+        padding: 6px 14px 6px 24px;
+        background: none;
+        border: none;
+        text-align: left;
+        font-size: 13px;
+        cursor: pointer;
+        color: #000;
+        white-space: nowrap;
+      `;
+      tmplBtn.addEventListener('mouseenter', () => { tmplBtn.style.background = '#e8f0fe'; });
+      tmplBtn.addEventListener('mouseleave', () => { tmplBtn.style.background = 'none'; });
+      tmplBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        textarea.value = tmpl.text;
+        textarea.style.display = 'block';
+        menu.style.display = 'none';
+        dropBtn.setAttribute('aria-expanded', 'false');
+      });
+      list.append(tmplBtn);
+    }
+  }
+
   dropBtn.addEventListener('click', e => {
     e.stopPropagation();
     const isOpen = menu.style.display !== 'none';
+    if (!isOpen) {
+      updateTemplateSection();
+    }
     menu.style.display = isOpen ? 'none' : 'block';
     dropBtn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
   });
