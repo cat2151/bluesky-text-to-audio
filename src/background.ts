@@ -5,14 +5,18 @@ const LOG_PREFIX = '[BTA:background]';
 
 // ---- ON/OFFトグル ----
 async function getEnabled(): Promise<boolean> {
-  const result = await chrome.storage.session.get({ enabled: true });
+  const result = await chrome.storage.local.get({ enabled: true });
   return result.enabled as boolean;
 }
 
-async function applyEnabled(enabled: boolean): Promise<void> {
-  await chrome.storage.session.set({ enabled });
+function syncBadge(enabled: boolean): void {
   chrome.action.setBadgeText({ text: enabled ? '' : 'OFF' });
   chrome.action.setBadgeBackgroundColor({ color: '#cc0000' });
+}
+
+async function applyEnabled(enabled: boolean): Promise<void> {
+  await chrome.storage.local.set({ enabled });
+  syncBadge(enabled);
 }
 
 async function broadcastToggleEnabled(enabled: boolean): Promise<void> {
@@ -37,8 +41,8 @@ async function broadcastToggleEnabled(enabled: boolean): Promise<void> {
   }
 }
 
-// 起動時にバッジ表示を同期
-getEnabled().then(enabled => applyEnabled(enabled));
+// 起動時にバッジ表示を同期（storage書き込みは行わない）
+getEnabled().then(enabled => syncBadge(enabled));
 
 // 連続クリックの競合を避けるため、前回の処理を直列化する
 let toggleChain: Promise<void> = Promise.resolve();
