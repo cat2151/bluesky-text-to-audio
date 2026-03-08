@@ -1,8 +1,11 @@
 import { addPlayButton } from './playButton';
 
+// ---- 投稿要素のセレクター（フィード・プロフィール・スレッド共通） ----
+const POST_SELECTOR = '[data-testid^="feedItem-"], [data-testid^="postThreadItem-"]';
+
 // ---- 投稿要素を検出 ----
 function findPostElements(): NodeListOf<HTMLElement> {
-  return document.querySelectorAll<HTMLElement>('[data-testid^="feedItem-"]');
+  return document.querySelectorAll<HTMLElement>(POST_SELECTOR);
 }
 
 // ---- 全投稿にplayボタンを追加 ----
@@ -22,14 +25,14 @@ export function init(): void {
         if (!(node instanceof HTMLElement)) return;
 
         // 追加されたノード自体が投稿要素の場合
-        if (node.matches('[data-testid^="feedItem-"]')) {
+        if (node.matches(POST_SELECTOR)) {
           addPlayButton(node);
         }
 
         // 追加されたノード配下に含まれる投稿要素を処理
         if (node.querySelectorAll) {
           node
-            .querySelectorAll<HTMLElement>('[data-testid^="feedItem-"]')
+            .querySelectorAll<HTMLElement>(POST_SELECTOR)
             .forEach(postEl => addPlayButton(postEl));
         }
       });
