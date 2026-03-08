@@ -226,6 +226,10 @@ export function addPlayButton(postEl: HTMLElement): void {
       });
       menu.style.display = 'none';
       dropBtn.setAttribute('aria-expanded', 'false');
+      // モード変更時にtextareaが開いていればテンプレートプルダウンを更新
+      if (textarea.style.display !== 'none') {
+        showTemplateSelectIfNeeded();
+      }
       // メニュー選択時に即座に実行する（disabled状態でもハンドラが動くようにdispatchEventを使う）
       // textareaモードはメニューから選んだ場合は「必ず開く」（閉じない）
       if (item.mode === 'textarea') {
@@ -276,24 +280,12 @@ export function addPlayButton(postEl: HTMLElement): void {
     textarea.value = detectedCleanedText;
     if (wasVisible) {
       textarea.style.display = 'block';
+      showTemplateSelectIfNeeded();
     }
     menu.style.display = 'none';
     dropBtn.setAttribute('aria-expanded', 'false');
   });
   menu.append(resetBtn);
-
-  // ---- テンプレートセクション（モードに応じて動的に構築） ----
-  const templateSeparator = document.createElement('hr');
-  templateSeparator.style.cssText = `
-    margin: 4px 0;
-    border: none;
-    border-top: 1px solid #e0e0e0;
-  `;
-  menu.append(templateSeparator);
-
-  const templateSection = document.createElement('div');
-  templateSection.setAttribute('data-bta-template-section', '');
-  menu.append(templateSection);
 
   // ボタン行コンテナ
   const row = document.createElement('div');
@@ -304,7 +296,61 @@ export function addPlayButton(postEl: HTMLElement): void {
     margin: 4px 0 0 0;
     position: relative;
   `;
-  row.append(playBtn, dropBtn, menu);
+
+  // ---- テンプレートプルダウン（textareaが開いている時のみ表示） ----
+  const templateSelect = document.createElement('select');
+  templateSelect.setAttribute('data-bta-template-select', '');
+  templateSelect.style.cssText = `
+    display: none;
+    margin-left: 8px;
+    padding: 4px 6px;
+    font-size: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    max-width: 200px;
+  `;
+
+  function updateTemplateSelect(): void {
+    const mode = (playBtn.dataset.btaMode as PlayMode) || selectedMode;
+    const templates = modeTemplates[mode] ?? [];
+    templateSelect.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'テンプレート';
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    templateSelect.append(placeholder);
+    for (const tmpl of templates) {
+      const option = document.createElement('option');
+      option.value = tmpl.text;
+      option.textContent = tmpl.name;
+      templateSelect.append(option);
+    }
+  }
+
+  function showTemplateSelectIfNeeded(): void {
+    const mode = (playBtn.dataset.btaMode as PlayMode) || selectedMode;
+    const templates = modeTemplates[mode] ?? [];
+    if (templates.length > 0) {
+      updateTemplateSelect();
+      templateSelect.style.display = 'inline-block';
+    } else {
+      templateSelect.style.display = 'none';
+    }
+  }
+
+  templateSelect.addEventListener('change', () => {
+    const selected = templateSelect.value;
+    if (!selected) return;
+    textarea.value = selected;
+    textarea.style.display = 'block';
+    if (playBtn.dataset.btaMode !== 'textarea') {
+      playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    }
+  });
+
+  row.append(playBtn, dropBtn, menu, templateSelect);
 
   // textarea
   const textarea = document.createElement('textarea');
@@ -374,6 +420,7 @@ export function addPlayButton(postEl: HTMLElement): void {
   function handleError(logLabel: string, message: string, error: unknown): void {
     console.error(LOG_PREFIX, logLabel, error);
     textarea.style.display = 'block';
+    showTemplateSelectIfNeeded();
     showErrorToast(message);
   }
 
@@ -423,69 +470,9 @@ export function addPlayButton(postEl: HTMLElement): void {
   }
 
   // ---- ドロップダウン開閉 ----
-  // テンプレートセクションをモードに応じて動的に更新する
-  function updateTemplateSection(): void {
-    const mode = (playBtn.dataset.btaMode as PlayMode) || selectedMode;
-    const templates = modeTemplates[mode] ?? [];
-    templateSection.innerHTML = '';
-    if (templates.length === 0) {
-      templateSeparator.style.display = 'none';
-      return;
-    }
-    templateSeparator.style.display = '';
-
-    const header = document.createElement('div');
-    header.textContent = '📋 テンプレート';
-    header.style.cssText = `
-      padding: 4px 14px 2px;
-      font-size: 11px;
-      color: #666;
-      font-weight: bold;
-    `;
-    templateSection.append(header);
-
-    const list = document.createElement('div');
-    list.style.cssText = `
-      max-height: 200px;
-      overflow-y: auto;
-    `;
-    templateSection.append(list);
-
-    for (const tmpl of templates) {
-      const tmplBtn = document.createElement('button');
-      tmplBtn.type = 'button';
-      tmplBtn.textContent = tmpl.name;
-      tmplBtn.style.cssText = `
-        display: block;
-        width: 100%;
-        padding: 6px 14px 6px 24px;
-        background: none;
-        border: none;
-        text-align: left;
-        font-size: 13px;
-        cursor: pointer;
-        color: #000;
-        white-space: nowrap;
-      `;
-      tmplBtn.addEventListener('mouseenter', () => { tmplBtn.style.background = '#e8f0fe'; });
-      tmplBtn.addEventListener('mouseleave', () => { tmplBtn.style.background = 'none'; });
-      tmplBtn.addEventListener('click', e => {
-        e.stopPropagation();
-        textarea.value = tmpl.text;
-        textarea.style.display = 'block';
-        menu.style.display = 'none';
-        dropBtn.setAttribute('aria-expanded', 'false');
-      });
-      list.append(tmplBtn);
-    }
-  }
-
   dropBtn.addEventListener('click', e => {
     e.stopPropagation();
     const isOpen = menu.style.display !== 'none';
-    if (!isOpen) {
-      updateTemplateSection();
-    }
     menu.style.display = isOpen ? 'none' : 'block';
     dropBtn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
   });
@@ -505,8 +492,10 @@ export function addPlayButton(postEl: HTMLElement): void {
           textarea.value = detectedCleanedText;
         }
         textarea.style.display = 'block';
+        showTemplateSelectIfNeeded();
       } else {
         textarea.style.display = 'none';
+        templateSelect.style.display = 'none';
       }
       return;
     }
