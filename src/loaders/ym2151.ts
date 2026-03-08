@@ -96,7 +96,7 @@ async function ensureLibs(): Promise<Libs> {
 
     // Create a separate parser instance for the mmlabc MML grammar.
     // Resolve the ?url import against import.meta.url (extension origin) so that
-    // Parser.Language.load() fetches from chrome-extension://... rather than
+    // Language.load() fetches from chrome-extension://... rather than
     // the page origin (bsky.app), which would 404.
     const parser = new Parser();
     const lang: Language = await Language.load(
