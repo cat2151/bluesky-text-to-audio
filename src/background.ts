@@ -3,6 +3,33 @@ const SPEAKER_ID = 3; // ずんだもん ノーマル
 
 const LOG_PREFIX = '[BTA:background]';
 
+// ---- ON/OFFトグル ----
+async function getEnabled(): Promise<boolean> {
+  const result = await chrome.storage.session.get({ enabled: true });
+  return result.enabled as boolean;
+}
+
+async function applyEnabled(enabled: boolean): Promise<void> {
+  await chrome.storage.session.set({ enabled });
+  chrome.action.setBadgeText({ text: enabled ? '' : 'OFF' });
+  chrome.action.setBadgeBackgroundColor({ color: '#cc0000' });
+}
+
+// 起動時にバッジ表示を同期
+getEnabled().then(enabled => applyEnabled(enabled));
+
+chrome.action.onClicked.addListener(async (tab) => {
+  const enabled = await getEnabled();
+  const newEnabled = !enabled;
+  await applyEnabled(newEnabled);
+
+  if (tab.id !== undefined) {
+    chrome.tabs.sendMessage(tab.id, { type: 'toggleEnabled', enabled: newEnabled }).catch((err: unknown) => {
+      console.debug(LOG_PREFIX, 'toggleEnabled message failed (content script may not be loaded):', err);
+    });
+  }
+});
+
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const uint8Array = new Uint8Array(buffer);
   const chunkSize = 0x8000; // 32KB chunks to avoid large intermediate strings

@@ -1,3 +1,13 @@
-import { init } from './observer';
+import { init, setEnabled } from './observer';
 
-init();
+// 初期化時にON/OFF状態を確認してからinit
+chrome.storage.session.get({ enabled: true }, ({ enabled }) => {
+  setEnabled(enabled as boolean);
+  init();
+});
+
+chrome.runtime.onMessage.addListener((message: { type: string; enabled?: boolean }) => {
+  if (message.type === 'toggleEnabled' && typeof message.enabled === 'boolean') {
+    setEnabled(message.enabled);
+  }
+});
