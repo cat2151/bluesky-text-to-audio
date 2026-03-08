@@ -1,5 +1,7 @@
 // @generated ESM bundle of cat2151/chord2mml (main branch)
 // Upstream: https://github.com/cat2151/chord2mml
+// Upstream-File: dist/chord2mml.mjs
+// Upstream-SHA: 9b7a4e55917f0e4d3c1042fce4e17dd084174d3b
 // License: MIT (https://github.com/cat2151/chord2mml/blob/main/LICENSE)
 //
 // Build steps (run inside the cat2151/chord2mml repository):

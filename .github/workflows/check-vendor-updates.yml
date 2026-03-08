@@ -1,0 +1,132 @@
+name: Check Vendored Library Updates
+
+on:
+  schedule:
+    # 日本時間 09:00 (UTC 00:00)
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check-vendor-updates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check chord2mml upstream
+        id: chord2mml
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          UPSTREAM_REPO="cat2151/chord2mml"
+          UPSTREAM_FILE="dist/chord2mml.mjs"
+          LOCAL_FILE="src/chord2mml.mjs"
+
+          # ローカルファイルのヘッダーから記録済みSHAを取得
+          RECORDED_SHA=$(grep '// Upstream-SHA:' "$LOCAL_FILE" | awk '{print $3}')
+          echo "recorded_sha=$RECORDED_SHA" >> "$GITHUB_OUTPUT"
+
+          # GitHubAPIで現在のアップストリームファイルのblobSHAを取得
+          CURRENT_SHA=$(gh api "repos/$UPSTREAM_REPO/contents/$UPSTREAM_FILE" --jq '.sha')
+          echo "current_sha=$CURRENT_SHA" >> "$GITHUB_OUTPUT"
+
+          echo "chord2mml: recorded=$RECORDED_SHA current=$CURRENT_SHA"
+          if [ "$RECORDED_SHA" != "$CURRENT_SHA" ]; then
+            echo "outdated=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "outdated=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check mml2abc upstream
+        id: mml2abc
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          UPSTREAM_REPO="cat2151/obsidian-plugin-mmlabc"
+          UPSTREAM_FILE="mml/mml2abc.mjs"
+          LOCAL_FILE="src/mml2abc.mjs"
+
+          RECORDED_SHA=$(grep '// Upstream-SHA:' "$LOCAL_FILE" | awk '{print $3}')
+          echo "recorded_sha=$RECORDED_SHA" >> "$GITHUB_OUTPUT"
+
+          CURRENT_SHA=$(gh api "repos/$UPSTREAM_REPO/contents/$UPSTREAM_FILE" --jq '.sha')
+          echo "current_sha=$CURRENT_SHA" >> "$GITHUB_OUTPUT"
+
+          echo "mml2abc: recorded=$RECORDED_SHA current=$CURRENT_SHA"
+          if [ "$RECORDED_SHA" != "$CURRENT_SHA" ]; then
+            echo "outdated=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "outdated=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open issue for chord2mml if outdated
+        if: steps.chord2mml.outputs.outdated == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RECORDED_SHA: ${{ steps.chord2mml.outputs.recorded_sha }}
+          CURRENT_SHA: ${{ steps.chord2mml.outputs.current_sha }}
+        run: |
+          TITLE="vendor update: chord2mml のアップストリームが更新されました"
+
+          # 既存の未クローズissueがあればスキップ
+          EXISTING=$(gh issue list --state open --search "chord2mml のアップストリームが更新されました in:title" --json number --jq '.[0].number')
+          if [ -n "$EXISTING" ]; then
+            echo "既存のissue #$EXISTING が存在するためスキップします"
+            exit 0
+          fi
+
+          cat > /tmp/issue-body.md << EOF
+          ## ベンダリング済みライブラリの更新検知
+
+          \`src/chord2mml.mjs\` のアップストリーム \`cat2151/chord2mml\` の \`dist/chord2mml.mjs\` が更新されています。
+
+          - **記録済み SHA**: \`${RECORDED_SHA}\`
+          - **現在の SHA**: \`${CURRENT_SHA}\`
+          - **アップストリーム**: https://github.com/cat2151/chord2mml/blob/main/dist/chord2mml.mjs
+
+          ### 更新手順
+          1. \`cat2151/chord2mml\` リポジトリをクローンして ESM ビルドを実行:
+             \`\`\`
+             npm run build:esm
+             \`\`\`
+          2. 生成された \`dist/chord2mml.mjs\` を \`src/chord2mml.mjs\` としてコピー（ヘッダーを保持）
+          3. ヘッダーの \`Upstream-SHA\` を \`${CURRENT_SHA}\` に更新してコミット
+          EOF
+
+          gh issue create --title "$TITLE" --body-file /tmp/issue-body.md --label "vendor-update" || \
+          gh issue create --title "$TITLE" --body-file /tmp/issue-body.md
+
+      - name: Open issue for mml2abc if outdated
+        if: steps.mml2abc.outputs.outdated == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RECORDED_SHA: ${{ steps.mml2abc.outputs.recorded_sha }}
+          CURRENT_SHA: ${{ steps.mml2abc.outputs.current_sha }}
+        run: |
+          TITLE="vendor update: mml2abc のアップストリームが更新されました"
+
+          EXISTING=$(gh issue list --state open --search "mml2abc のアップストリームが更新されました in:title" --json number --jq '.[0].number')
+          if [ -n "$EXISTING" ]; then
+            echo "既存のissue #$EXISTING が存在するためスキップします"
+            exit 0
+          fi
+
+          cat > /tmp/issue-body.md << EOF
+          ## ベンダリング済みライブラリの更新検知
+
+          \`src/mml2abc.mjs\` のアップストリーム \`cat2151/obsidian-plugin-mmlabc\` の \`mml/mml2abc.mjs\` が更新されています。
+
+          - **記録済み SHA**: \`${RECORDED_SHA}\`
+          - **現在の SHA**: \`${CURRENT_SHA}\`
+          - **アップストリーム**: https://github.com/cat2151/obsidian-plugin-mmlabc/blob/main/mml/mml2abc.mjs
+
+          ### 更新手順
+          1. アップストリームの \`mml/mml2abc.mjs\` を \`src/mml2abc.mjs\` としてコピー（ヘッダーを保持）
+          2. ヘッダーの \`Upstream-SHA\` を \`${CURRENT_SHA}\` に更新してコミット
+          EOF
+
+          gh issue create --title "$TITLE" --body-file /tmp/issue-body.md --label "vendor-update" || \
+          gh issue create --title "$TITLE" --body-file /tmp/issue-body.md
