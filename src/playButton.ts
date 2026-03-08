@@ -67,6 +67,51 @@ const menuItems: { mode: PlayMode; label: string }[] = [
   { mode: 'textarea', label: '📝 textareaを開く' },
 ];
 
+type TemplateItem = { name: string; text: string };
+
+// 各ライブラリのdemoで使われていたテンプレート
+const modeTemplates: Partial<Record<PlayMode, TemplateItem[]>> = {
+  voicevox: [
+    { name: 'サンプルテキスト', text: 'こんにちは、ずんだもんです。今日も元気に音声合成するのだ！' },
+  ],
+  mmlabc: [
+    // easymmlabc mmlTemplates.js より
+    { name: 'ドミソシの和音', text: "@49 v11 'c1egb'" },
+    { name: 'ドレミ', text: 'cde' },
+    { name: '音量(velocity)', text: 'v16e v10e v5e v0e v5e v10e v16e' },
+    { name: '音長(note length)', text: 'l4f l8f l16f l32f l32f l16f l8f l4f l2f l1f l8cdef l16 cdef' },
+    { name: '音色(MIDI Program Change)', text: "t150 v11 @0'>d1gb<f+' @2'>d1gb<f+' @4'>d1gb<f+' @5'>d1gb<f+'\n@18'>d1gb<f+' @52'>d1gb<f+'" },
+    { name: 'synth bass and synth strings', text: "t150 @51 v11 o 'c1egb' 'd1f+a<c+';\n@38 v12 l8 >>[c<c>cc<c>c<c>c]2" },
+    { name: 'drum 8beat', text: "@128 t100 l8 >> ['cf+' f+ 'df+' f+]" },
+  ],
+  chord2mml: [
+    // easychord2mml chordTemplates.js より
+    { name: 'ドミソシの和音', text: 'CM7' },
+    { name: 'IIの和音', text: 'IIm' },
+    { name: '転回形', text: 'IV IV^1 IV^2' },
+    { name: '臨時オクターブ', text: 'Key=D I IV^2, V^1, I' },
+    { name: 'bass is root', text: 'Key=E, bass is root.\nI IV V' },
+    { name: 'drop2 / drop4 / drop2and4', text: 'Key=Ab, Octave down, BPM100. |\nE.Piano2 drop2 IM7 IVM7 V6 |\nStr.2 drop4 IM7 IVM7 V6 |\nChoir drop2and4 IM7 IVM7 V6' },
+    { name: 'chord on bass note', text: 'Key=F,\nI^1\'/I IIIm\'/I\nVIm^1/I IIm\'/I\nV7^2/I' },
+    { name: 'Upper Structure', text: 'US bIII/I7(o1)(o5) bVm^2/I7(o1)(o5)' },
+    { name: '四度堆積', text: 'Key=D bass is root. Strings1 | I4.2 I4.3 | I4.4 I4.5 I4.6 |' },
+    { name: 'Octave down', text: 'Octave down bVI bVII' },
+    { name: 'BPM', text: 'BPM180 Im bVI, bVII, I' },
+    { name: '小節線', text: 'Bass is root. Str.1 BPM130\nI | bIII | IV | bVI bVII' },
+  ],
+  tonejs: [
+    // tonejs-mml-to-json demo-library より
+    { name: 'メロディー', text: 'o4 l16 e f g+ a b a g+ f e8. <e8. >e8' },
+    { name: 'ドレミ', text: 'o4 l16 c d e f g' },
+  ],
+  ym2151: [
+    // mmlabc互換MML
+    { name: 'ドレミ', text: 'cde' },
+    { name: 'ドミソシの和音', text: "v11 'c1egb'" },
+    { name: 'メロディー', text: 'o4 l16 e f g+ a b a g+ f e8. <e8. >e8' },
+  ],
+};
+
 // ---- ドキュメントクリックでメニューを閉じる（一度だけ登録） ----
 // キャプチャフェーズで登録するが、ドロップダウンボタンやメニュー自身のクリックは無視する
 document.addEventListener('click', (e: MouseEvent) => {
@@ -250,6 +295,19 @@ export function addPlayButton(postEl: HTMLElement): void {
   });
   menu.append(resetBtn);
 
+  // ---- テンプレートセクション（モードに応じて動的に構築） ----
+  const templateSeparator = document.createElement('hr');
+  templateSeparator.style.cssText = `
+    margin: 4px 0;
+    border: none;
+    border-top: 1px solid #e0e0e0;
+  `;
+  menu.append(templateSeparator);
+
+  const templateSection = document.createElement('div');
+  templateSection.setAttribute('data-bta-template-section', '');
+  menu.append(templateSection);
+
   // ボタン行コンテナ
   const row = document.createElement('div');
   row.setAttribute('data-bta-row', '');
@@ -378,9 +436,62 @@ export function addPlayButton(postEl: HTMLElement): void {
   }
 
   // ---- ドロップダウン開閉 ----
+  // テンプレートセクションをモードに応じて動的に更新する
+  function updateTemplateSection(): void {
+    const mode = (playBtn.dataset.btaMode as PlayMode) || selectedMode;
+    const templates = modeTemplates[mode] ?? [];
+    templateSection.innerHTML = '';
+    if (templates.length === 0) {
+      templateSeparator.style.display = 'none';
+      return;
+    }
+    templateSeparator.style.display = '';
+
+    const header = document.createElement('div');
+    header.textContent = '📋 テンプレート';
+    header.style.cssText = `
+      padding: 4px 14px 2px;
+      font-size: 11px;
+      color: #666;
+      font-weight: bold;
+    `;
+    templateSection.append(header);
+
+    for (const tmpl of templates) {
+      const tmplBtn = document.createElement('button');
+      tmplBtn.type = 'button';
+      tmplBtn.textContent = tmpl.name;
+      tmplBtn.style.cssText = `
+        display: block;
+        width: 100%;
+        padding: 6px 14px 6px 24px;
+        background: none;
+        border: none;
+        text-align: left;
+        font-size: 13px;
+        cursor: pointer;
+        color: #000;
+        white-space: nowrap;
+      `;
+      tmplBtn.addEventListener('mouseenter', () => { tmplBtn.style.background = '#e8f0fe'; });
+      tmplBtn.addEventListener('mouseleave', () => { tmplBtn.style.background = 'none'; });
+      tmplBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        textarea.value = tmpl.text;
+        textarea.style.display = 'block';
+        menu.style.display = 'none';
+        dropBtn.setAttribute('aria-expanded', 'false');
+      });
+      templateSection.append(tmplBtn);
+    }
+  }
+
   dropBtn.addEventListener('click', e => {
     e.stopPropagation();
     const isOpen = menu.style.display !== 'none';
+    if (!isOpen) {
+      updateTemplateSection();
+    }
     menu.style.display = isOpen ? 'none' : 'block';
     dropBtn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
   });
