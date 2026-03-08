@@ -34,15 +34,21 @@ const menuItems: { mode: PlayMode; label: string }[] = [
   { mode: 'textarea', label: '📝 textareaを開く' },
 ];
 
-// ---- 全playボタンのtitleを同期するためのSet ----
-const allPlayButtons = new Set<HTMLButtonElement>();
-
 // ---- ドキュメントクリックでメニューを閉じる（一度だけ登録） ----
-document.addEventListener('click', () => {
+// キャプチャフェーズで登録するが、ドロップダウンボタンやメニュー自身のクリックは無視する
+document.addEventListener('click', (e: MouseEvent) => {
+  const target = e.target as Element | null;
+  if (target?.closest('[data-bta-drop]') || target?.closest('[data-bta-menu]')) return;
   document.querySelectorAll<HTMLElement>('[data-bta-menu]').forEach(m => {
     m.style.display = 'none';
+    const row = m.closest('[data-bta-row]');
+    row?.querySelector<HTMLButtonElement>('[data-bta-drop]')?.setAttribute('aria-expanded', 'false');
   });
 }, true);
+
+// ---- DOM から削除されたplayボタンのaria-labelを同期するためのMutationObserver ----
+// 削除されたpost内のplayボタンはDOMから消えるので、querySelectorAllで常にliveに参照する
+// （メモリリーク対策：Setは使わずDOMから都度クエリする）
 
 // ---- playボタン行とtextareaを追加 ----
 export function addPlayButton(postEl: HTMLElement): void {
@@ -69,8 +75,9 @@ export function addPlayButton(postEl: HTMLElement): void {
     flex-shrink: 0;
   `;
   playBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="white" xmlns="http://www.w3.org/2000/svg"><polygon points="4,2 14,8 4,14"/></svg>`;
-  playBtn.title = menuItems.find(m => m.mode === selectedMode)?.label ?? '';
-  allPlayButtons.add(playBtn);
+  const initialPlayLabel = menuItems.find(m => m.mode === selectedMode)?.label ?? '再生';
+  playBtn.title = initialPlayLabel;
+  playBtn.setAttribute('aria-label', initialPlayLabel);
 
   // ---- ドロップダウン矢印ボタン ----
   const dropBtn = document.createElement('button');
@@ -94,6 +101,9 @@ export function addPlayButton(postEl: HTMLElement): void {
   `;
   dropBtn.innerHTML = `<svg width="10" height="10" viewBox="0 0 10 10" fill="white" xmlns="http://www.w3.org/2000/svg"><polygon points="1,3 9,3 5,8"/></svg>`;
   dropBtn.title = 'メニューを開く';
+  dropBtn.setAttribute('aria-label', 'メニューを開く');
+  dropBtn.setAttribute('aria-haspopup', 'menu');
+  dropBtn.setAttribute('aria-expanded', 'false');
 
   // ---- ポップアップメニュー ----
   const menu = document.createElement('div');
@@ -101,6 +111,8 @@ export function addPlayButton(postEl: HTMLElement): void {
   menu.style.cssText = `
     display: none;
     position: absolute;
+    top: 100%;
+    left: 0;
     background: #fff;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -136,8 +148,13 @@ export function addPlayButton(postEl: HTMLElement): void {
     menuItem.addEventListener('click', e => {
       e.stopPropagation();
       selectedMode = item.mode;
-      allPlayButtons.forEach(btn => { btn.title = item.label; });
+      // DOMに存在する全playボタンのtitle/aria-labelを同期（Setを使わずliveクエリでメモリリーク防止）
+      document.querySelectorAll<HTMLButtonElement>('[data-bta-play]').forEach(btn => {
+        btn.title = item.label;
+        btn.setAttribute('aria-label', item.label);
+      });
       menu.style.display = 'none';
+      dropBtn.setAttribute('aria-expanded', 'false');
     });
     menu.append(menuItem);
   }
@@ -224,6 +241,7 @@ export function addPlayButton(postEl: HTMLElement): void {
     e.stopPropagation();
     const isOpen = menu.style.display !== 'none';
     menu.style.display = isOpen ? 'none' : 'block';
+    dropBtn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
   });
 
   // ---- playボタン：選択中モードを実行 ----
