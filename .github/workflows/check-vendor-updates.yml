@@ -36,6 +36,14 @@ jobs:
           python .github/scripts/sync_vendor_sequencer.py \
             src/tonejs-json-sequencer.mjs
 
+      - name: Check and update tonejs-mml-to-json templates
+        id: tonejs_templates
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python .github/scripts/sync_vendor_tonejs_templates.py \
+            src/tonejsTemplates.ts
+
       - name: Check and update ym2151 libraries
         id: ym2151
         env:
@@ -44,13 +52,13 @@ jobs:
           python .github/scripts/sync_vendor_ym2151.py
 
       - name: Setup Bun
-        if: steps.chord2mml.outputs.updated == 'true' || steps.mml2abc.outputs.updated == 'true' || steps.sequencer.outputs.updated == 'true' || steps.ym2151.outputs.updated == 'true'
+        if: steps.chord2mml.outputs.updated == 'true' || steps.mml2abc.outputs.updated == 'true' || steps.sequencer.outputs.updated == 'true' || steps.ym2151.outputs.updated == 'true' || steps.tonejs_templates.outputs.updated == 'true'
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.x
 
       - name: Build and push
-        if: steps.chord2mml.outputs.updated == 'true' || steps.mml2abc.outputs.updated == 'true' || steps.sequencer.outputs.updated == 'true' || steps.ym2151.outputs.updated == 'true'
+        if: steps.chord2mml.outputs.updated == 'true' || steps.mml2abc.outputs.updated == 'true' || steps.sequencer.outputs.updated == 'true' || steps.ym2151.outputs.updated == 'true' || steps.tonejs_templates.outputs.updated == 'true'
         env:
           CHORD2MML_UPDATED: ${{ steps.chord2mml.outputs.updated }}
           CHORD2MML_OLD_SHA: ${{ steps.chord2mml.outputs.recorded_sha }}
@@ -62,6 +70,9 @@ jobs:
           SEQUENCER_OLD_SHA: ${{ steps.sequencer.outputs.recorded_sha }}
           SEQUENCER_NEW_SHA: ${{ steps.sequencer.outputs.current_sha }}
           YM2151_UPDATED: ${{ steps.ym2151.outputs.updated }}
+          TONEJS_TEMPLATES_UPDATED: ${{ steps.tonejs_templates.outputs.updated }}
+          TONEJS_TEMPLATES_OLD_SHA: ${{ steps.tonejs_templates.outputs.recorded_sha }}
+          TONEJS_TEMPLATES_NEW_SHA: ${{ steps.tonejs_templates.outputs.current_sha }}
         run: |
           set -euo pipefail
           bun install --frozen-lockfile
@@ -80,6 +91,8 @@ jobs:
 - tonejs-json-sequencer: ${SEQUENCER_OLD_SHA} -> ${SEQUENCER_NEW_SHA}"
           [ "$YM2151_UPDATED" = "true" ] && COMMIT_MSG="$COMMIT_MSG
 - ym2151 libraries: updated from upstream"
+          [ "$TONEJS_TEMPLATES_UPDATED" = "true" ] && COMMIT_MSG="$COMMIT_MSG
+- tonejs-mml-to-json templates: ${TONEJS_TEMPLATES_OLD_SHA} -> ${TONEJS_TEMPLATES_NEW_SHA}"
 
           git diff --cached --quiet || git commit -m "$COMMIT_MSG"
           git push

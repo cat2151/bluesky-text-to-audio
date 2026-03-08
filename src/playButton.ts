@@ -9,6 +9,7 @@ import { chordToMml } from './chordToMml';
 import { getPostText } from './postText';
 import { mmlTemplates } from './mmlTemplates';
 import { chordTemplates } from './chordTemplates';
+import { tonejsTemplates } from './tonejsTemplates';
 
 const LOG_PREFIX = '[BTA:playButton]';
 
@@ -86,11 +87,7 @@ const modeTemplates: Partial<Record<PlayMode, TemplateItem[]>> = {
       // easychord2mml.js の removeIndent と同じ処理（テンプレートリテラルのインデントを除去）
       text: text.split('\n').map(line => line.trim()).join('\n'),
     })),
-  tonejs: [
-    // tonejs-mml-to-json demo-library より
-    { name: 'メロディー', text: 'o4 l16 e f g+ a b a g+ f e8. <e8. >e8' },
-    { name: 'ドレミ', text: 'o4 l16 c d e f g' },
-  ],
+  tonejs: tonejsTemplates.map(([name, text]) => ({ name, text })),
   ym2151: [
     // mmlabc互換MML
     { name: 'ドレミ', text: 'cde' },
