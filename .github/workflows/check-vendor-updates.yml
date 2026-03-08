@@ -17,96 +17,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -euo pipefail
-          UPSTREAM_REPO="cat2151/chord2mml"
-          UPSTREAM_FILE="dist/chord2mml.mjs"
-          LOCAL_FILE="src/chord2mml.mjs"
-          HEADER_LINES=12  # 11コメント行 + 1空行（セパレータ）= アップストリームコンテンツ開始前まで
-
-          # ローカルファイルのヘッダーから記録済みSHAを取得
-          RECORDED_SHA=$(grep '// Upstream-SHA:' "$LOCAL_FILE" | awk '{print $3}')
-          if ! [[ "$RECORDED_SHA" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "ERROR: RECORDED_SHA が不正です: '$RECORDED_SHA'" >&2
-            exit 1
-          fi
-
-          # GitHubAPIで現在のアップストリームファイルのblobSHAを取得
-          CURRENT_SHA=$(gh api "repos/$UPSTREAM_REPO/contents/$UPSTREAM_FILE" --jq '.sha')
-          if ! [[ "$CURRENT_SHA" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "ERROR: CURRENT_SHA が不正です (APIエラーの可能性): '$CURRENT_SHA'" >&2
-            exit 1
-          fi
-
-          echo "chord2mml: recorded=$RECORDED_SHA current=$CURRENT_SHA"
-          if [ "$RECORDED_SHA" = "$CURRENT_SHA" ]; then
-            echo "updated=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          # アップストリームのファイル内容をダウンロード
-          gh api "repos/$UPSTREAM_REPO/contents/$UPSTREAM_FILE" --jq '.content' \
-            | tr -d '\n' | base64 -d > /tmp/upstream_content.mjs
-
-          # ヘッダー（SHA更新済み）+ アップストリームコンテンツでファイルを再構築
-          {
-            head -n $HEADER_LINES "$LOCAL_FILE" \
-              | sed "s|^// Upstream-SHA:.*|// Upstream-SHA: $CURRENT_SHA|"
-            cat /tmp/upstream_content.mjs
-          } > /tmp/new_file.mjs
-          mv /tmp/new_file.mjs "$LOCAL_FILE"
-
-          echo "updated=true" >> "$GITHUB_OUTPUT"
-          echo "recorded_sha=$RECORDED_SHA" >> "$GITHUB_OUTPUT"
-          echo "current_sha=$CURRENT_SHA" >> "$GITHUB_OUTPUT"
-          echo "chord2mml を $RECORDED_SHA -> $CURRENT_SHA に更新しました"
+          python .github/scripts/sync_vendor.py \
+            cat2151/chord2mml dist/chord2mml.mjs src/chord2mml.mjs 12
 
       - name: Check and update mml2abc
         id: mml2abc
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -euo pipefail
-          UPSTREAM_REPO="cat2151/obsidian-plugin-mmlabc"
-          UPSTREAM_FILE="mml/mml2abc.mjs"
-          LOCAL_FILE="src/mml2abc.mjs"
-          HEADER_LINES=9  # 9コメント行（ライセンス・出典・SHA等） = アップストリームコンテンツ開始前まで
-
-          # ローカルファイルのヘッダーから記録済みSHAを取得
-          RECORDED_SHA=$(grep '// Upstream-SHA:' "$LOCAL_FILE" | awk '{print $3}')
-          if ! [[ "$RECORDED_SHA" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "ERROR: RECORDED_SHA が不正です: '$RECORDED_SHA'" >&2
-            exit 1
-          fi
-
-          # GitHubAPIで現在のアップストリームファイルのblobSHAを取得
-          CURRENT_SHA=$(gh api "repos/$UPSTREAM_REPO/contents/$UPSTREAM_FILE" --jq '.sha')
-          if ! [[ "$CURRENT_SHA" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "ERROR: CURRENT_SHA が不正です (APIエラーの可能性): '$CURRENT_SHA'" >&2
-            exit 1
-          fi
-
-          echo "mml2abc: recorded=$RECORDED_SHA current=$CURRENT_SHA"
-          if [ "$RECORDED_SHA" = "$CURRENT_SHA" ]; then
-            echo "updated=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          # アップストリームのファイル内容をダウンロード
-          gh api "repos/$UPSTREAM_REPO/contents/$UPSTREAM_FILE" --jq '.content' \
-            | tr -d '\n' | base64 -d > /tmp/upstream_content.mjs
-
-          # ヘッダー（SHA更新済み）+ アップストリームコンテンツでファイルを再構築
-          {
-            head -n $HEADER_LINES "$LOCAL_FILE" \
-              | sed "s|^// Upstream-SHA:.*|// Upstream-SHA: $CURRENT_SHA|"
-            cat /tmp/upstream_content.mjs
-          } > /tmp/new_file.mjs
-          mv /tmp/new_file.mjs "$LOCAL_FILE"
-
-          echo "updated=true" >> "$GITHUB_OUTPUT"
-          echo "recorded_sha=$RECORDED_SHA" >> "$GITHUB_OUTPUT"
-          echo "current_sha=$CURRENT_SHA" >> "$GITHUB_OUTPUT"
-          echo "mml2abc を $RECORDED_SHA -> $CURRENT_SHA に更新しました"
+          python .github/scripts/sync_vendor.py \
+            cat2151/obsidian-plugin-mmlabc mml/mml2abc.mjs src/mml2abc.mjs 9
 
       - name: Setup Bun
         if: steps.chord2mml.outputs.updated == 'true' || steps.mml2abc.outputs.updated == 'true'
