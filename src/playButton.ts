@@ -305,6 +305,10 @@ export function addPlayButton(postEl: HTMLElement): void {
   textarea.addEventListener('click', e => { e.stopPropagation(); });
   textarea.addEventListener('mousedown', e => { e.stopPropagation(); });
 
+  // templateSelect上でのポインタイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
+  templateSelect.addEventListener('click', e => { e.stopPropagation(); });
+  templateSelect.addEventListener('mousedown', e => { e.stopPropagation(); });
+
   // ---- エラートーストを表示する ----
   let errorToastTimer: ReturnType<typeof setTimeout> | null = null;
   function showErrorToast(message: string): void {
