@@ -9,6 +9,11 @@ on:
 jobs:
   sync-vendor:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      issues: write
+
     steps:
       - uses: actions/checkout@v4
 
@@ -96,3 +101,19 @@ jobs:
 
           git diff --cached --quiet || git commit -m "$COMMIT_MSG"
           git push
+
+      - name: Create issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --title "CI失敗: Sync Vendored Libraries" \
+            --body-file - << 'EOF'
+          ## CI失敗通知
+          ワークフロー **Sync Vendored Libraries** が失敗しました。
+          - コミット: ${{ github.sha }}
+          - ブランチ: ${{ github.ref_name }}
+          - 実行URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          EOF

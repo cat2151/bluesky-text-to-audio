@@ -13,6 +13,7 @@ jobs:
 
     permissions:
       contents: write
+      issues: write
 
     steps:
       - uses: actions/checkout@v4
@@ -34,3 +35,19 @@ jobs:
           git add dist/
           git diff --cached --quiet || git commit -m "chore: build dist"
           git push
+
+      - name: Create issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --title "CI失敗: Build and commit dist (${{ github.sha }})" \
+            --body-file - << 'EOF'
+          ## CI失敗通知
+          ワークフロー **Build and commit dist** が失敗しました。
+          - コミット: ${{ github.sha }}
+          - ブランチ: ${{ github.ref_name }}
+          - 実行URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          EOF
