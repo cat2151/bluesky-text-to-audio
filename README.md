@@ -4,34 +4,34 @@ A Chrome extension that displays a play button on Bluesky timeline posts.
 
 ## Features
 
-- Display a play button on each post in the Bluesky (bsky.app) timeline.
+- Displays a play button on each post in the Bluesky (bsky.app) timeline.
 - When the play button is pressed, the post content is parsed as MML and played by mmlabc.
 
-## User Installation Guide
+## Installation Guide for Users
 
 1. Clone or download this repository
    ```
    git clone https://github.com/cat2151/bluesky-text-to-audio.git
    ```
 2. Open `chrome://extensions/` in Chrome
-3. Enable "Developer mode"
-4. Click "Load unpacked" and select the `dist` folder
+3. Enable 'Developer mode'
+4. Click 'Load unpacked' and select the `dist` folder
 
 > **Note:** The pre-built `dist/` folder is included in the repository, so installing Bun or build tools is not required.
 
 ## Usage
 
 1. Open [Bluesky](https://bsky.app/)
-2. Click the "▶ Open textarea" button displayed on each timeline post to open the textarea.
-3. Enter MML strings into the textarea.
-4. Click the "🎵 Play with mmlabc" button to parse the MML, display the musical staff, and play.
-5. Click the "▶ Play" button to directly play the textarea content as ABC notation.
+2. Click the '▶ Open textarea' button that appears on each timeline post to open the textarea
+3. Enter an MML string into the textarea
+4. Click the '🎵 Play with mmlabc' button to parse the MML, display the sheet music, and play it
+5. Click the '▶ Play' button to directly play the textarea content as ABC notation
 
 ## Automatic Mode Detection per Post
 
-If specific keywords are present in the first or last line of each post, the initial button mode will be automatically determined.
+If a post's first or last line contains specific keywords, the initial button mode will be automatically determined.
 
-| Keyword (priority order) | Automatically selected mode |
+| Keyword (Priority) | Automatically Selected Mode |
 |---|---|
 | `Chord` or `コード` | 🎸 Play with chord2mml |
 | `YM2151` or `OPM` | 🎶 Play with YM2151 |
@@ -40,20 +40,20 @@ If specific keywords are present in the first or last line of each post, the ini
 | `abc` | ▶ Play with abcjs |
 | (Otherwise) | 🔊 Read post aloud (Zundamon) |
 
-The line used for detection (first or last line) will be automatically removed when the content is set in the textarea.
+The line used for detection (first or last) is automatically removed when setting the content in the textarea.
 
-> **Priority details**: The first line is scanned first according to the order in the table above. If no match is found, the last line is scanned in the same order.
+> **Priority Details**: The first line is scanned first according to the order in the table above. If no match is found, the last line is scanned in the same order.
 
 ## For Developers
 
 ### Tech Stack
 
-- [Bun](https://bun.sh/) — Package manager and runtime
-- [Vite](https://vitejs.dev/) — Build tool
-- [CRXJS Vite Plugin](https://crxjs.dev/) — Vite plugin for Chrome extensions
-- [TypeScript](https://www.typescriptlang.org/) — Type-safe development
+- [Bun](https://bun.sh/) — Package Manager / Runtime
+- [Vite](https://vitejs.dev/) — Build Tool
+- [CRXJS Vite Plugin](https://crxjs.dev/) — Vite Plugin for Chrome Extensions
+- [TypeScript](https://www.typescriptlang.org/) — Type-safe Development
 
-### Setup Steps
+### Setup Instructions
 
 #### 1. Install Bun
 
@@ -80,13 +80,13 @@ bun install
 bun run build
 ```
 
-Build artifacts will be output to the `dist/` directory.
+Build artifacts are output to the `dist/` directory.
 
 #### 5. Load into Chrome
 
 1. Open `chrome://extensions/` in Chrome
-2. Enable "Developer mode"
-3. Click "Load unpacked" and select the `dist` folder
+2. Enable 'Developer mode'
+3. Click 'Load unpacked' and select the `dist` folder
 
 ### Development Commands
 
@@ -94,7 +94,7 @@ Build artifacts will be output to the `dist/` directory.
 |---|---|
 | `bun run dev` | Development mode (watch + HMR) |
 | `bun run build` | Production build |
-| `bun run type-check` | TypeScript type checking |
+| `bun run type-check` | TypeScript type check |
 
 ### Directory Structure
 
@@ -102,51 +102,52 @@ Build artifacts will be output to the `dist/` directory.
 bluesky-text-to-audio/
 ├── src/
 │   └── content.ts      # Content script (TypeScript)
-├── manifest.json        # Chrome extension manifest (Manifest V3)
+├── manifest.json        # Chrome Extension Manifest (Manifest V3)
 ├── vite.config.ts       # Vite configuration
 ├── tsconfig.json        # TypeScript configuration
-├── package.json         # Package configuration and scripts
-└── dist/                # Build artifacts (CI auto-committed)
+├── package.json         # Package configuration / scripts
+└── dist/                # Build artifacts (CI auto-commits)
 ```
 
-## Purpose: Why This Feature Exists
+## Purpose: Why This Feature Exists?
 
-- Past Challenges
-  - Even if a chord progression or MML is written in a Bluesky post,
-  - it often requires several steps to turn it into actual sound.
+- Previous Challenges
+  - Even if chord progressions or MML were written in Bluesky posts,
+  - It often required several steps to turn them into actual sound.
   - For example, not everyone has a MIDI keyboard readily available,
-  - nor does everyone have a virtual MIDI keyboard app running that can be quickly launched with a hotkey.
+  - Nor does everyone have a virtual MIDI keyboard app running residently, ready to launch with a hotkey.
 - What This App Solves
   - Just press a button on the post screen.
-  - This will intuitively open an "editing area (textarea) to define the sound to be played."
-    - Automatically extracting sound from a post, no matter how intelligent the system or sophisticated the heuristics, carries a risk of error and would never be satisfying from a UX perspective.
+  - This intuitively opens an 'editing area (textarea) to define the sound to be played'.
+    - Automatically extracting sound from posts, no matter how intelligent the system or well-crafted the heuristics, carries the risk of errors and would never provide a satisfactory UX.
     - Hence, the textarea.
-  - Then, just intuitively press the play button.
+  - Then, simply press the play button intuitively.
   - Overall, the priority is to lower the user's cognitive load and reduce the barrier to playing (make it easy).
 
 # PoC
 
-- This is essentially a PoC, so it requires a playful spirit to use. It will take time to reach a practical stage.
-- Since destructive changes will be frequent, expecting the desired UX at this stage is not advised.
+- In reality, it's a PoC, so it requires a playful spirit to use. It will take time to reach a practical stage.
+- Destructive changes will be frequent, so expecting a perfect UX at this stage will likely lead to disappointment.
 
-# Goal
+# Goals
 
-- PoC. To demonstrate that text-based music can be easily realized on SNS using existing library tech stacks through "vibe coding" (in a broad sense). (Currently, it's roughly demonstrated.)
+- PoC. To demonstrate that text-based music can be easily realized on SNS using an existing library-based tech stack through vibecoding (in a broad sense) (currently roughly demonstrated).
+- Playback. To enable 'Do-Re-Mi' (cde) to play in the textarea using this (if the environment or libraries change and it stops playing after initially working, the goal is to make it play easily if possible).
 
-# Postponed Features
+# Future Work
 
-- Save as WAV file, SMF, or intermediate representations supported by other libraries (for development).
+- Save as WAV file, SMF file, and other intermediate representations supported by each library (for development).
 - Tone.js offline rendering mode (already implemented in the library).
-- Utilize Tone.js offline rendering mode to simultaneously play Tone.js / YM2151. Provisional specification: write Tone.js or YM2151 at the beginning of the track.
-- Alternatively, even with the same format, a provisional specification: pre-render only with YM2151, and then Tone.js uses the rendering result as a WAV for its sampler.
-- Render mmlabc using abcjs's "WAV-only mode" to simultaneously play with Tone.js / YM2151.
-- Use abcjs's musical staff rendering to display musical staff for Tone.js / YM2151 as well.
-- Investigate if musical staff display is possible without relying on abcjs.
-- Simple piano roll-style visualization, already implemented in web-ym2151.
+- Utilize Tone.js offline rendering mode for simultaneous playback of Tone.js / YM2151. Provisional specification to write Tone.js or YM2151 at the beginning of a track.
+  - Alternatively, even with the same format, a provisional specification where pre-rendering is done only with YM2151, and Tone.js uses that rendered result as a WAV for a sampler.
+- Render mmlabc using abcjs's 'WAV-only mode' for simultaneous playback with Tone.js / YM2151.
+- Utilize abcjs's sheet music rendering to display sheet music for Tone.js / YM2151 as well.
+- Explore if sheet music can be displayed without relying on abcjs.
+- Simple piano-roll-like visualization already implemented in web-ym2151.
 
-# Not Aiming For (Out of Scope)
+# Out of Scope
 
-- Responsiveness. Responding to bug reports and requests from users, or addressing concerns and suggestions from non-users.
-- Visualization. Building even more elaborate visualizers than those in library demos. Developing opulent visualizers beyond what's needed for debugging.
-- Stability. Establishing a common standard and maintaining compatibility so that music written on SNS will always play later.
+- Responsiveness. Responding to bug reports or requests from users, or concerns and suggestions from non-users.
+- Visualization. Visualizers. Making visualizers even more elaborate than those in each library's demo. Developing luxurious visualizers to a level unnecessary for debugging.
+- Stability. Establishing common standards and maintaining compatibility so that text written on SNS will always play later.
 - Conversion. Automatically detecting, converting, and perfectly playing all text-based music written on all SNS platforms.
