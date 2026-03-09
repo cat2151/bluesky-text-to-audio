@@ -108,7 +108,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh issue create \
+            --repo "${{ github.repository }}" \
             --title "CI失敗: Sync Vendored Libraries" \
-            --body "## CI失敗通知
+            --body-file - << 'EOF'
+          ## CI失敗通知
           ワークフロー **Sync Vendored Libraries** が失敗しました。
-          - 実行URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          - コミット: ${{ github.sha }}
+          - ブランチ: ${{ github.ref_name }}
+          - 実行URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          EOF
