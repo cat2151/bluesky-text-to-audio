@@ -301,11 +301,11 @@ export function addPlayButton(postEl: HTMLElement): void {
     margin: 4px 0;
   `;
 
-  // textarea上でのポインタイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
+  // textarea上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
   textarea.addEventListener('click', e => { e.stopPropagation(); });
   textarea.addEventListener('mousedown', e => { e.stopPropagation(); });
 
-  // templateSelect上でのポインタイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
+  // templateSelect上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
   templateSelect.addEventListener('click', e => { e.stopPropagation(); });
   templateSelect.addEventListener('mousedown', e => { e.stopPropagation(); });
 
