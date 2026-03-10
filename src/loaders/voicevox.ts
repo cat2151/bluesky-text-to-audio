@@ -1,7 +1,17 @@
 import { getAudioContext } from '../audioContext';
 
+// ---- 現在再生中のソースノード（多重再生防止） ----
+let currentSource: AudioBufferSourceNode | null = null;
+
 // ---- VOICEVOX で音声合成・再生 ----
 export async function playWithVoicevox(text: string): Promise<void> {
+  // 再生中の音声を停止してから新しい再生を開始する
+  if (currentSource) {
+    currentSource.onended = null;
+    try { currentSource.stop(); } catch { /* already stopped */ }
+    currentSource = null;
+  }
+
   const response = await new Promise<{ success: boolean; audio?: string; error?: string }>(
     (resolve, reject) => {
       chrome.runtime.sendMessage({ type: 'speak', text }, res => {
@@ -34,6 +44,14 @@ export async function playWithVoicevox(text: string): Promise<void> {
   const source = audioContext.createBufferSource();
   source.buffer = decoded;
   source.connect(audioContext.destination);
-  source.onended = () => { source.disconnect(); };
-  source.start();
+  currentSource = source;
+
+  await new Promise<void>(resolve => {
+    source.onended = () => {
+      source.disconnect();
+      if (currentSource === source) currentSource = null;
+      resolve();
+    };
+    source.start();
+  });
 }
