@@ -272,10 +272,10 @@ export async function playWithYm2151(mml: string): Promise<void> {
   audioBuffer.getChannelData(1).set(right);
 
   // 再生中の音声を停止してから新しい再生を開始する
+  // onendedはそのまま残す（stop()でonendedが発火し、待機中のpromiseが解決される）
+  // currentSourceのnull化はonendedハンドラーに委ねる
   if (currentSource) {
-    currentSource.onended = null;
     try { currentSource.stop(); } catch { /* already stopped */ }
-    currentSource = null;
   }
 
   const source = audioCtx.createBufferSource();
