@@ -189,7 +189,27 @@ function getAudioContext(): AudioContext {
 let currentSource: AudioBufferSourceNode | null = null;
 
 // ---- WAVデータキャッシュ（MMLテキストをkey、AudioBufferをvalueとして保持） ----
-const audioCache = new Map<string, AudioBuffer>();
+// YM2151のAudioBufferはサイズが大きくなりやすいため、エントリ数に上限を設けて古いものから破棄する。
+const MAX_AUDIO_CACHE_ENTRIES = 32;
+
+class BoundedMap<K, V> extends Map<K, V> {
+  override set(key: K, value: V): this {
+    if (this.size >= MAX_AUDIO_CACHE_ENTRIES) {
+      const oldestKey = this.keys().next().value as K | undefined;
+      if (oldestKey !== undefined) {
+        this.delete(oldestKey);
+      }
+    }
+    return super.set(key, value);
+  }
+}
+
+const audioCache = new BoundedMap<string, AudioBuffer>();
+
+// 外部から明示的にキャッシュをクリアしたい場合のフック
+export function clearYm2151AudioCache(): void {
+  audioCache.clear();
+}
 
 export async function playWithYm2151(mml: string): Promise<void> {
   // Play audio via Web Audio API (available in content script isolated world).

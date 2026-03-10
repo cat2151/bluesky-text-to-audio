@@ -4,7 +4,22 @@ import { getAudioContext } from '../audioContext';
 let currentSource: AudioBufferSourceNode | null = null;
 
 // ---- WAVデータキャッシュ（textをkey、AudioBufferをvalueとして保持） ----
-const audioCache = new Map<string, AudioBuffer>();
+// エントリ数に上限を設けて古いものから破棄する（メモリ使用量の無制限増大を防ぐ）
+const MAX_AUDIO_CACHE_ENTRIES = 32;
+
+class BoundedMap<K, V> extends Map<K, V> {
+  override set(key: K, value: V): this {
+    if (this.size >= MAX_AUDIO_CACHE_ENTRIES) {
+      const oldestKey = this.keys().next().value as K | undefined;
+      if (oldestKey !== undefined) {
+        this.delete(oldestKey);
+      }
+    }
+    return super.set(key, value);
+  }
+}
+
+const audioCache = new BoundedMap<string, AudioBuffer>();
 
 // ---- VOICEVOX で音声合成・再生 ----
 export async function playWithVoicevox(text: string): Promise<void> {
