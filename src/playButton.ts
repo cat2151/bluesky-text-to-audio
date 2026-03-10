@@ -353,16 +353,18 @@ export function addPlayButton(postEl: HTMLElement): void {
     showErrorToast(message);
   }
 
-  // textarea編集1secデバウンスで自動play
+  // textarea編集デバウンスで自動play（ym2151はレンダリング中にキーボード入力が止まるため1sec、それ以外は0）
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   textarea.addEventListener('input', () => {
     if (debounceTimer !== null) clearTimeout(debounceTimer);
+    const mode = (playBtn.dataset.btaMode as PlayMode) || selectedMode;
+    const delay = mode === 'ym2151' ? 1000 : 0;
     debounceTimer = setTimeout(() => {
       debounceTimer = null;
       if (playBtn.dataset.btaMode !== 'textarea') {
         playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
       }
-    }, 1000);
+    }, delay);
   });
 
   // 投稿ごとのシンセインスタンス
