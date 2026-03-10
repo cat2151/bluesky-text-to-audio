@@ -466,10 +466,13 @@ export function addPlayButton(postEl: HTMLElement): void {
 
     if (mode === 'ym2151') {
       const mml = textarea.value;
+      playBtn.disabled = true;
       try {
         await playWithYm2151(mml);
       } catch (e2: unknown) {
         handleError('YM2151 play error:', 'YM2151 play error', e2);
+      } finally {
+        playBtn.disabled = false;
       }
       return;
     }

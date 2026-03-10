@@ -185,6 +185,9 @@ function getAudioContext(): AudioContext {
   return sharedAudioContext;
 }
 
+// ---- 現在再生中のソースノード（多重再生防止） ----
+let currentSource: AudioBufferSourceNode | null = null;
+
 export async function playWithYm2151(mml: string): Promise<void> {
   const { parser, ym2151Memory, malloc, free, generate_sound, get_buffer_ptr, free_buffer } =
     await ensureLibs();
@@ -267,11 +270,25 @@ export async function playWithYm2151(mml: string): Promise<void> {
   const audioBuffer = audioCtx.createBuffer(2, actualFrames, OPM_SAMPLE_RATE);
   audioBuffer.getChannelData(0).set(left);
   audioBuffer.getChannelData(1).set(right);
+
+  // 再生中の音声を停止してから新しい再生を開始する
+  // onendedはそのまま残す（stop()でonendedが発火し、待機中のpromiseが解決される）
+  // currentSourceのnull化はonendedハンドラーに委ねる
+  if (currentSource) {
+    try { currentSource.stop(); } catch { /* already stopped */ }
+  }
+
   const source = audioCtx.createBufferSource();
   source.buffer = audioBuffer;
   source.connect(audioCtx.destination);
-  source.onended = () => {
-    source.disconnect();
-  };
-  source.start();
+  currentSource = source;
+
+  await new Promise<void>(resolve => {
+    source.onended = () => {
+      source.disconnect();
+      if (currentSource === source) currentSource = null;
+      resolve();
+    };
+    source.start();
+  });
 }
