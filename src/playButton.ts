@@ -361,7 +361,8 @@ export function addPlayButton(postEl: HTMLElement): void {
     const delay = mode === 'ym2151' ? 1000 : 0;
     debounceTimer = setTimeout(() => {
       debounceTimer = null;
-      if (playBtn.dataset.btaMode !== 'textarea') {
+      // 再生中（playボタンがdisabled）の間は自動playを抑止し、多重実行を防ぐ
+      if (!playBtn.disabled && mode !== 'textarea') {
         playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
       }
     }, delay);
