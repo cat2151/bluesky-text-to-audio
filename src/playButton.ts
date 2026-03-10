@@ -137,6 +137,20 @@ export function addPlayButton(postEl: HTMLElement): void {
     });
     menuItem.addEventListener('click', e => {
       e.stopPropagation();
+      menu.style.display = 'none';
+      dropBtn.setAttribute('aria-expanded', 'false');
+      // textareaモードはメニューから選んだ場合は「必ず開く」（閉じない）
+      // selectedModeやdata-bta-modeは変えない（再生モードを保持する）
+      if (item.mode === 'textarea') {
+        if (textarea.style.display === 'none') {
+          if (!textarea.value) {
+            textarea.value = detectedCleanedText;
+          }
+          textarea.style.display = 'block';
+          showTemplateSelectIfNeeded();
+        }
+        return;
+      }
       selectedMode = item.mode;
       // DOMに存在する全playボタンのtitle/aria-label/data-bta-modeを同期（Setを使わずliveクエリでメモリリーク防止）
       document.querySelectorAll<HTMLButtonElement>('[data-bta-play]').forEach(btn => {
@@ -144,21 +158,12 @@ export function addPlayButton(postEl: HTMLElement): void {
         btn.setAttribute('aria-label', item.label);
         btn.dataset.btaMode = item.mode;
       });
-      menu.style.display = 'none';
-      dropBtn.setAttribute('aria-expanded', 'false');
       // モード変更時にtextareaが開いていればテンプレートプルダウンを更新
       if (textarea.style.display !== 'none') {
         showTemplateSelectIfNeeded();
       }
       // メニュー選択時に即座に実行する（disabled状態でもハンドラが動くようにdispatchEventを使う）
-      // textareaモードはメニューから選んだ場合は「必ず開く」（閉じない）
-      if (item.mode === 'textarea') {
-        if (textarea.style.display === 'none') {
-          playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-        }
-      } else {
-        playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-      }
+      playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
     });
     menu.append(menuItem);
   }
