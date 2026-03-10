@@ -10,6 +10,7 @@ import { chordToMml } from './chordToMml';
 import { getPostText } from './postText';
 import { detectModeFromText } from './detectModeFromText';
 import { type PlayMode, menuItems, modeTemplates } from './playModes';
+import { createErrorToast } from './errorToast';
 
 const LOG_PREFIX = '[BTA:playButton]';
 
@@ -315,35 +316,7 @@ export function addPlayButton(postEl: HTMLElement): void {
   templateSelect.addEventListener('mousedown', e => { e.stopPropagation(); });
 
   // ---- エラートーストを表示する ----
-  let errorToastTimer: ReturnType<typeof setTimeout> | null = null;
-  function showErrorToast(message: string): void {
-    row.querySelector('[data-bta-toast]')?.remove();
-    if (errorToastTimer !== null) {
-      clearTimeout(errorToastTimer);
-      errorToastTimer = null;
-    }
-    const toast = document.createElement('div');
-    toast.setAttribute('data-bta-toast', '');
-    toast.setAttribute('role', 'alert');
-    toast.textContent = message;
-    toast.style.cssText = `
-      margin-left: 8px;
-      padding: 4px 10px;
-      background: #d32f2f;
-      color: #fff;
-      border-radius: 4px;
-      font-size: 12px;
-      max-width: 260px;
-      white-space: normal;
-      word-break: break-word;
-      pointer-events: none;
-    `;
-    row.append(toast);
-    errorToastTimer = setTimeout(() => {
-      toast.remove();
-      errorToastTimer = null;
-    }, 5000);
-  }
+  const showErrorToast = createErrorToast(row);
 
   // ---- エラー時にtextareaを表示してトーストを出す ----
   function handleError(logLabel: string, message: string, error: unknown): void {
