@@ -188,78 +188,10 @@ function getAudioContext(): AudioContext {
 // ---- 現在再生中のソースノード（多重再生防止） ----
 let currentSource: AudioBufferSourceNode | null = null;
 
+// ---- WAVデータキャッシュ（MMLテキストをkey、AudioBufferをvalueとして保持） ----
+const audioCache = new Map<string, AudioBuffer>();
+
 export async function playWithYm2151(mml: string): Promise<void> {
-  const { parser, ym2151Memory, malloc, free, generate_sound, get_buffer_ptr, free_buffer } =
-    await ensureLibs();
-
-  // MML → parse tree → parse tree JSON
-  const tree = parser.parse(mml);
-  const treeJson = JSON.stringify(treeToJson(tree.rootNode, mml));
-
-  // Parse tree JSON → SMF binary
-  const smfData = parse_tree_json_to_smf(treeJson, mml);
-  const smfUint8 = smfData instanceof Uint8Array ? smfData : new Uint8Array(smfData);
-
-  // SMF binary + piano preset attachment → YM2151 log JSON
-  const pianoPresetStr = JSON.stringify(PIANO_PRESET_ATTACHMENT_OBJ);
-  const attachmentBytes = new TextEncoder().encode(pianoPresetStr);
-  const ym2151LogJson = smf_to_ym2151_json_with_attachment(smfUint8, attachmentBytes);
-
-  // Parse YM2151 log
-  const data = JSON.parse(ym2151LogJson) as {
-    error?: string;
-    events?: Array<{ time: string; addr: string; data: string }>;
-  };
-  if (data.error) throw new Error(data.error);
-  const events = data.events;
-  if (!events || !Array.isArray(events) || events.length === 0) {
-    throw new Error('YM2151 log に events がありません');
-  }
-
-  // YM2151 log → audio samples via WASM
-  const OPM_CLOCK = 3579545;
-  const CLOCK_STEP = 64;
-  const OPM_SAMPLE_RATE = OPM_CLOCK / CLOCK_STEP; // ~55930 Hz
-
-  // Use a loop instead of Math.max(...spread) to avoid argument-count limits.
-  let maxTime = -Infinity;
-  for (const evt of events) {
-    const t = parseFloat(evt.time);
-    if (t > maxTime) maxTime = t;
-  }
-  const durationSec = maxTime + 0.5; // extra tail
-  const numFrames = Math.floor(durationSec * OPM_SAMPLE_RATE);
-
-  // Struct layout (must match C): float time (4 bytes) + uint8 addr (1) + uint8 data (1) + padding (2) = 8
-  const STRUCT_SIZE = 8;
-  const dataPtr = malloc(events.length * STRUCT_SIZE);
-  // Recreate typed array views in case memory was reallocated (defensive practice).
-  const HEAPU8 = new Uint8Array(ym2151Memory.buffer);
-  const view = new DataView(ym2151Memory.buffer);
-  events.forEach((evt, i) => {
-    const baseAddr = dataPtr + i * STRUCT_SIZE;
-    view.setFloat32(baseAddr, parseFloat(evt.time), true); // little-endian float32
-    HEAPU8[baseAddr + 4] = parseInt(evt.addr); // 0x-prefixed hex → auto-detects base-16
-    HEAPU8[baseAddr + 5] = parseInt(evt.data);
-  });
-
-  const actualFrames = generate_sound(dataPtr, events.length, numFrames);
-  free(dataPtr);
-  if (actualFrames <= 0) throw new Error('YM2151 audio generation に失敗しました');
-
-  // Copy stereo interleaved float32 samples from WASM memory.
-  const bufPtr = get_buffer_ptr();
-  const HEAPF32 = new Float32Array(ym2151Memory.buffer);
-  const floatOffset = bufPtr >> 2; // byte address → Float32Array index
-  const interleaved = HEAPF32.subarray(floatOffset, floatOffset + actualFrames * 2);
-  const left = new Float32Array(actualFrames);
-  const right = new Float32Array(actualFrames);
-  for (let i = 0; i < actualFrames; i++) {
-    left[i] = interleaved[i * 2];
-    right[i] = interleaved[i * 2 + 1];
-  }
-  free_buffer();
-
   // Play audio via Web Audio API (available in content script isolated world).
   const audioCtx = getAudioContext();
   if (audioCtx.state === 'suspended') {
@@ -267,9 +199,85 @@ export async function playWithYm2151(mml: string): Promise<void> {
     // will auto-resume when start() is called after a user gesture.
     audioCtx.resume().catch(() => {});
   }
-  const audioBuffer = audioCtx.createBuffer(2, actualFrames, OPM_SAMPLE_RATE);
-  audioBuffer.getChannelData(0).set(left);
-  audioBuffer.getChannelData(1).set(right);
+
+  let audioBuffer = audioCache.get(mml);
+  if (!audioBuffer) {
+    const { parser, ym2151Memory, malloc, free, generate_sound, get_buffer_ptr, free_buffer } =
+      await ensureLibs();
+
+    // MML → parse tree → parse tree JSON
+    const tree = parser.parse(mml);
+    const treeJson = JSON.stringify(treeToJson(tree.rootNode, mml));
+
+    // Parse tree JSON → SMF binary
+    const smfData = parse_tree_json_to_smf(treeJson, mml);
+    const smfUint8 = smfData instanceof Uint8Array ? smfData : new Uint8Array(smfData);
+
+    // SMF binary + piano preset attachment → YM2151 log JSON
+    const pianoPresetStr = JSON.stringify(PIANO_PRESET_ATTACHMENT_OBJ);
+    const attachmentBytes = new TextEncoder().encode(pianoPresetStr);
+    const ym2151LogJson = smf_to_ym2151_json_with_attachment(smfUint8, attachmentBytes);
+
+    // Parse YM2151 log
+    const data = JSON.parse(ym2151LogJson) as {
+      error?: string;
+      events?: Array<{ time: string; addr: string; data: string }>;
+    };
+    if (data.error) throw new Error(data.error);
+    const events = data.events;
+    if (!events || !Array.isArray(events) || events.length === 0) {
+      throw new Error('YM2151 log に events がありません');
+    }
+
+    // YM2151 log → audio samples via WASM
+    const OPM_CLOCK = 3579545;
+    const CLOCK_STEP = 64;
+    const OPM_SAMPLE_RATE = OPM_CLOCK / CLOCK_STEP; // ~55930 Hz
+
+    // Use a loop instead of Math.max(...spread) to avoid argument-count limits.
+    let maxTime = -Infinity;
+    for (const evt of events) {
+      const t = parseFloat(evt.time);
+      if (t > maxTime) maxTime = t;
+    }
+    const durationSec = maxTime + 0.5; // extra tail
+    const numFrames = Math.floor(durationSec * OPM_SAMPLE_RATE);
+
+    // Struct layout (must match C): float time (4 bytes) + uint8 addr (1) + uint8 data (1) + padding (2) = 8
+    const STRUCT_SIZE = 8;
+    const dataPtr = malloc(events.length * STRUCT_SIZE);
+    // Recreate typed array views in case memory was reallocated (defensive practice).
+    const HEAPU8 = new Uint8Array(ym2151Memory.buffer);
+    const view = new DataView(ym2151Memory.buffer);
+    events.forEach((evt, i) => {
+      const baseAddr = dataPtr + i * STRUCT_SIZE;
+      view.setFloat32(baseAddr, parseFloat(evt.time), true); // little-endian float32
+      HEAPU8[baseAddr + 4] = parseInt(evt.addr); // 0x-prefixed hex → auto-detects base-16
+      HEAPU8[baseAddr + 5] = parseInt(evt.data);
+    });
+
+    const actualFrames = generate_sound(dataPtr, events.length, numFrames);
+    free(dataPtr);
+    if (actualFrames <= 0) throw new Error('YM2151 audio generation に失敗しました');
+
+    // Copy stereo interleaved float32 samples from WASM memory.
+    const bufPtr = get_buffer_ptr();
+    const HEAPF32 = new Float32Array(ym2151Memory.buffer);
+    const floatOffset = bufPtr >> 2; // byte address → Float32Array index
+    const interleaved = HEAPF32.subarray(floatOffset, floatOffset + actualFrames * 2);
+    const left = new Float32Array(actualFrames);
+    const right = new Float32Array(actualFrames);
+    for (let i = 0; i < actualFrames; i++) {
+      left[i] = interleaved[i * 2];
+      right[i] = interleaved[i * 2 + 1];
+    }
+    free_buffer();
+
+    audioBuffer = audioCtx.createBuffer(2, actualFrames, OPM_SAMPLE_RATE);
+    audioBuffer.getChannelData(0).set(left);
+    audioBuffer.getChannelData(1).set(right);
+    audioCache.set(mml, audioBuffer);
+  }
 
   // 再生中の音声を停止してから新しい再生を開始する
   // onendedはそのまま残す（stop()でonendedが発火し、待機中のpromiseが解決される）
