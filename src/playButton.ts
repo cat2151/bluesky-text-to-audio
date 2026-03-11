@@ -3,7 +3,7 @@ import type { SequencerNodes } from './types';
 import { loadTone } from './loaders/tone';
 import { loadSequencer } from './loaders/sequencer';
 import { parseMmlViaLibrary } from './loaders/mmlToJson';
-import { playWithYm2151 } from './loaders/ym2151';
+import { playWithYm2151, renderYm2151AudioBuffer } from './loaders/ym2151';
 import { playWithVoicevox } from './loaders/voicevox';
 import { AbcjsPlayer } from './loaders/abcjsPlayer';
 import { chordToMml } from './chordToMml';
@@ -11,6 +11,7 @@ import { getPostText } from './postText';
 import { detectModeFromText } from './detectModeFromText';
 import { type PlayMode, menuItems, modeTemplates } from './playModes';
 import { createErrorToast } from './errorToast';
+import { audioBufferToWavBlob } from './wavEncoder';
 
 const LOG_PREFIX = '[BTA:playButton]';
 
@@ -149,6 +150,7 @@ export function addPlayButton(postEl: HTMLElement): void {
           }
           textarea.style.display = 'block';
           showTemplateSelectIfNeeded();
+          showWavExportBtnIfNeeded();
         }
         return;
       }
@@ -162,6 +164,7 @@ export function addPlayButton(postEl: HTMLElement): void {
       // モード変更時にtextareaが開いていればテンプレートプルダウンを更新
       if (textarea.style.display !== 'none') {
         showTemplateSelectIfNeeded();
+        showWavExportBtnIfNeeded();
       }
       // メニュー選択時に即座に実行する（disabled状態でもハンドラが動くようにdispatchEventを使う）
       playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
@@ -207,6 +210,7 @@ export function addPlayButton(postEl: HTMLElement): void {
     if (wasVisible) {
       textarea.style.display = 'block';
       showTemplateSelectIfNeeded();
+      showWavExportBtnIfNeeded();
     }
     menu.style.display = 'none';
     dropBtn.setAttribute('aria-expanded', 'false');
@@ -276,7 +280,34 @@ export function addPlayButton(postEl: HTMLElement): void {
     }
   });
 
-  row.append(playBtn, dropBtn, menu, templateSelect);
+  // ---- WAV exportボタン（ym2151モードでtextareaが開いている時のみ表示） ----
+  const wavExportBtn = document.createElement('button');
+  wavExportBtn.type = 'button';
+  wavExportBtn.setAttribute('data-bta-wav-export', '');
+  wavExportBtn.textContent = '💾 WAV';
+  wavExportBtn.title = 'WAVファイルをエクスポート';
+  wavExportBtn.style.cssText = `
+    display: none;
+    margin-left: 8px;
+    padding: 4px 8px;
+    font-size: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    background: white;
+    white-space: nowrap;
+  `;
+
+  function showWavExportBtnIfNeeded(): void {
+    const mode = (playBtn.dataset.btaMode as PlayMode) || selectedMode;
+    if (mode === 'ym2151' && textarea.style.display !== 'none') {
+      wavExportBtn.style.display = 'inline-block';
+    } else {
+      wavExportBtn.style.display = 'none';
+    }
+  }
+
+  row.append(playBtn, dropBtn, menu, templateSelect, wavExportBtn);
 
   // textarea
   const textarea = document.createElement('textarea');
@@ -315,6 +346,33 @@ export function addPlayButton(postEl: HTMLElement): void {
   templateSelect.addEventListener('click', e => { e.stopPropagation(); });
   templateSelect.addEventListener('mousedown', e => { e.stopPropagation(); });
 
+  // wavExportBtn上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
+  wavExportBtn.addEventListener('click', async e => {
+    e.stopPropagation();
+    const mml = textarea.value;
+    if (!mml) return;
+    let audioBuffer: AudioBuffer;
+    try {
+      wavExportBtn.disabled = true;
+      audioBuffer = await renderYm2151AudioBuffer(mml);
+    } catch (err: unknown) {
+      console.error(LOG_PREFIX, 'WAV export error:', err);
+      showErrorToast('WAV export error');
+      return;
+    } finally {
+      wavExportBtn.disabled = false;
+    }
+    const blob = audioBufferToWavBlob(audioBuffer);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    a.download = `ym2151_${timestamp}.wav`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+  wavExportBtn.addEventListener('mousedown', e => { e.stopPropagation(); });
+
   // ---- エラートーストを表示する ----
   const showErrorToast = createErrorToast(row);
 
@@ -323,6 +381,7 @@ export function addPlayButton(postEl: HTMLElement): void {
     console.error(LOG_PREFIX, logLabel, error);
     textarea.style.display = 'block';
     showTemplateSelectIfNeeded();
+    showWavExportBtnIfNeeded();
     showErrorToast(message);
   }
 
@@ -368,9 +427,11 @@ export function addPlayButton(postEl: HTMLElement): void {
         }
         textarea.style.display = 'block';
         showTemplateSelectIfNeeded();
+        showWavExportBtnIfNeeded();
       } else {
         textarea.style.display = 'none';
         templateSelect.style.display = 'none';
+        wavExportBtn.style.display = 'none';
       }
       return;
     }
