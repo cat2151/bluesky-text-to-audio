@@ -21,20 +21,10 @@ class BoundedMap<K, V> extends Map<K, V> {
 
 const audioCache = new BoundedMap<string, AudioBuffer>();
 
-// ---- VOICEVOX で音声合成・再生 ----
-export async function playWithVoicevox(text: string): Promise<void> {
-  // 再生中の音声を停止してから新しい再生を開始する
-  // onendedはそのまま残す（stop()でonendedが発火し、待機中のpromiseが解決される）
-  // currentSourceのnull化はonendedハンドラーに委ねる
-  if (currentSource) {
-    try { currentSource.stop(); } catch { /* already stopped */ }
-  }
-
+// ---- VOICEVOX: テキスト → AudioBuffer（キャッシュ付き）----
+// mix.ts からも利用できるよう export する。
+export async function renderVoicevoxAudioBuffer(text: string): Promise<AudioBuffer> {
   const audioContext = getAudioContext();
-  if (audioContext.state === 'suspended') {
-    await audioContext.resume();
-  }
-
   let decoded = audioCache.get(text);
   if (!decoded) {
     const response = await new Promise<{ success: boolean; audio?: string; error?: string }>(
@@ -64,6 +54,24 @@ export async function playWithVoicevox(text: string): Promise<void> {
     decoded = await audioContext.decodeAudioData(bytes.buffer);
     audioCache.set(text, decoded);
   }
+  return decoded;
+}
+
+// ---- VOICEVOX で音声合成・再生 ----
+export async function playWithVoicevox(text: string): Promise<void> {
+  // 再生中の音声を停止してから新しい再生を開始する
+  // onendedはそのまま残す（stop()でonendedが発火し、待機中のpromiseが解決される）
+  // currentSourceのnull化はonendedハンドラーに委ねる
+  if (currentSource) {
+    try { currentSource.stop(); } catch { /* already stopped */ }
+  }
+
+  const audioContext = getAudioContext();
+  if (audioContext.state === 'suspended') {
+    await audioContext.resume();
+  }
+
+  const decoded = await renderVoicevoxAudioBuffer(text);
 
   const source = audioContext.createBufferSource();
   source.buffer = decoded;

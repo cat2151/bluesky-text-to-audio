@@ -5,6 +5,7 @@ import { loadSequencer } from './loaders/sequencer';
 import { parseMmlViaLibrary } from './loaders/mmlToJson';
 import { playWithYm2151, renderYm2151AudioBuffer } from './loaders/ym2151';
 import { playWithVoicevox } from './loaders/voicevox';
+import { playMixMode } from './loaders/mix';
 import { AbcjsPlayer } from './loaders/abcjsPlayer';
 import { chordToMml } from './chordToMml';
 import { getPostText } from './postText';
@@ -519,6 +520,19 @@ export function addPlayButton(postEl: HTMLElement): void {
         await playWithYm2151(mml);
       } catch (e2: unknown) {
         handleError('YM2151 play error:', 'YM2151 play error', e2);
+      } finally {
+        playBtn.disabled = false;
+      }
+      return;
+    }
+
+    if (mode === 'mix') {
+      const text = textarea.value;
+      playBtn.disabled = true;
+      try {
+        await playMixMode(text);
+      } catch (e2: unknown) {
+        handleError('Mix play error:', 'Mix play error', e2);
       } finally {
         playBtn.disabled = false;
       }

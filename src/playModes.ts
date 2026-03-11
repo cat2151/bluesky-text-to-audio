@@ -2,7 +2,7 @@ import { mmlTemplates } from './mmlTemplates';
 import { chordTemplates } from './chordTemplates';
 import { tonejsTemplates } from './tonejsTemplates';
 
-export type PlayMode = 'voicevox' | 'mmlabc' | 'chord2mml' | 'tonejs' | 'ym2151' | 'textarea';
+export type PlayMode = 'voicevox' | 'mmlabc' | 'chord2mml' | 'tonejs' | 'ym2151' | 'mix' | 'textarea';
 
 export type TemplateItem = { name: string; text: string };
 
@@ -12,6 +12,7 @@ export const menuItems: { mode: PlayMode; label: string }[] = [
   { mode: 'chord2mml', label: '🎸 chord2mmlでplay' },
   { mode: 'tonejs',   label: '🎹 Tone.jsでplay' },
   { mode: 'ym2151',   label: '🎶 YM2151でplay' },
+  { mode: 'mix',      label: '🎚️ Mixでplay' },
   { mode: 'textarea', label: '📝 textareaを開く' },
 ];
 
@@ -36,5 +37,11 @@ export const modeTemplates: Partial<Record<PlayMode, TemplateItem[]>> = {
     { name: 'ドレミ', text: 'cde' },
     { name: 'ドミソシの和音', text: "v11 'c1egb'" },
     { name: 'メロディー', text: 'o4 l16 e f g+ a b a g+ f e8. <e8. >e8' },
+  ],
+  mix: [
+    {
+      name: 'VOICEVOX + YM2151 + Tone.js',
+      text: 'VOICEVOX ずんだもんなのだ;\nYM2151 rc;\nTone.js rrg',
+    },
   ],
 };

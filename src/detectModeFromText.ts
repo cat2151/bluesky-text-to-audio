@@ -8,6 +8,15 @@ export function detectModeFromText(text: string): { mode: PlayMode; cleanedText:
   const firstLine = lines[0];
   const lastLine = lines[lines.length - 1];
 
+  // mixモード: セミコロン区切りで先頭trackがVOICEVOX/YM2151/Tone.jsキーワードで始まる場合
+  // キーワードはtrack内容と同行に書くため、cleanedTextはそのまま保持する
+  if (text.includes(';')) {
+    const firstTrack = text.split(';')[0].trim();
+    if (/^(VOICEVOX|YM2151|Tonejs|Tone\.js)\s/.test(firstTrack)) {
+      return { mode: 'mix', cleanedText: text };
+    }
+  }
+
   const checks: [RegExp, PlayMode][] = [
     [/Chord|コード/, 'chord2mml'],
     [/YM2151|OPM/, 'ym2151'],
