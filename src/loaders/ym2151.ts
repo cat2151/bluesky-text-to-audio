@@ -211,15 +211,8 @@ export function clearYm2151AudioCache(): void {
   audioCache.clear();
 }
 
-export async function playWithYm2151(mml: string): Promise<void> {
-  // Play audio via Web Audio API (available in content script isolated world).
-  const audioCtx = getAudioContext();
-  if (audioCtx.state === 'suspended') {
-    // resume() can fail if no user gesture has occurred yet; AudioContext
-    // will auto-resume when start() is called after a user gesture.
-    audioCtx.resume().catch(() => {});
-  }
-
+// ---- MML → AudioBuffer（キャッシュ付き、再生なし） ----
+async function generateYm2151AudioBuffer(mml: string): Promise<AudioBuffer> {
   let audioBuffer = audioCache.get(mml);
   if (!audioBuffer) {
     const { parser, ym2151Memory, malloc, free, generate_sound, get_buffer_ptr, free_buffer } =
@@ -293,11 +286,30 @@ export async function playWithYm2151(mml: string): Promise<void> {
     }
     free_buffer();
 
+    const audioCtx = getAudioContext();
     audioBuffer = audioCtx.createBuffer(2, actualFrames, OPM_SAMPLE_RATE);
     audioBuffer.getChannelData(0).set(left);
     audioBuffer.getChannelData(1).set(right);
     audioCache.set(mml, audioBuffer);
   }
+  return audioBuffer;
+}
+
+// ---- MML → AudioBuffer を返す（WAV export 等で利用） ----
+export async function renderYm2151AudioBuffer(mml: string): Promise<AudioBuffer> {
+  return generateYm2151AudioBuffer(mml);
+}
+
+export async function playWithYm2151(mml: string): Promise<void> {
+  // Play audio via Web Audio API (available in content script isolated world).
+  const audioCtx = getAudioContext();
+  if (audioCtx.state === 'suspended') {
+    // resume() can fail if no user gesture has occurred yet; AudioContext
+    // will auto-resume when start() is called after a user gesture.
+    audioCtx.resume().catch(() => {});
+  }
+
+  const audioBuffer = await generateYm2151AudioBuffer(mml);
 
   // 再生中の音声を停止してから新しい再生を開始する
   // onendedはそのまま残す（stop()でonendedが発火し、待機中のpromiseが解決される）
