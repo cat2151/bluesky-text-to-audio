@@ -12,7 +12,7 @@ export function detectModeFromText(text: string): { mode: PlayMode; cleanedText:
   // キーワードはtrack内容と同行に書くため、cleanedTextはそのまま保持する
   if (text.includes(';')) {
     const firstTrack = text.split(';')[0].trim();
-    if (/^(VOICEVOX|YM2151|Tone\.js)\s/.test(firstTrack)) {
+    if (/^(VOICEVOX|YM2151|Tonejs|Tone\.js)\s/.test(firstTrack)) {
       return { mode: 'mix', cleanedText: text };
     }
   }

@@ -100,13 +100,30 @@ describe('detectModeFromText', () => {
     expect(result.cleanedText).toBe(text);
   });
 
+  it('mixモード: VOICEVOX + YM2151 + Tonejsのマルチトラック', () => {
+    const text = 'VOICEVOX ずんだもんなのだ;\nYM2151 rc;\nTonejs rrg';
+    const result = detectModeFromText(text);
+    expect(result.mode).toBe('mix');
+    expect(result.cleanedText).toBe(text);
+  });
+
   it('mixモード: YM2151 から始まるマルチトラック', () => {
     const result = detectModeFromText('YM2151 rc;\nTone.js rrg');
     expect(result.mode).toBe('mix');
   });
 
+  it('mixモード: YM2151 から始まるマルチトラック (Tonejs)', () => {
+    const result = detectModeFromText('YM2151 rc;\nTonejs rrg');
+    expect(result.mode).toBe('mix');
+  });
+
   it('mixモード: Tone.js から始まるマルチトラック', () => {
     const result = detectModeFromText('Tone.js rrg;\nYM2151 cde');
+    expect(result.mode).toBe('mix');
+  });
+
+  it('mixモード: Tonejs から始まるマルチトラック', () => {
+    const result = detectModeFromText('Tonejs rrg;\nYM2151 cde');
     expect(result.mode).toBe('mix');
   });
 

@@ -23,6 +23,13 @@ describe('parseTracks', () => {
     expect(tracks[0].text).toBe('rrg');
   });
 
+  it('Tonejsトラックを解析する', () => {
+    const tracks = parseTracks('Tonejs rrg');
+    expect(tracks).toHaveLength(1);
+    expect(tracks[0].type).toBe('TONE_JS');
+    expect(tracks[0].text).toBe('rrg');
+  });
+
   it('セミコロン区切りで複数トラックを解析する', () => {
     const tracks = parseTracks('VOICEVOX ずんだもんなのだ;\nYM2151 rc;\nTone.js rrg');
     expect(tracks).toHaveLength(3);

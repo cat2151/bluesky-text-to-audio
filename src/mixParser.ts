@@ -26,9 +26,9 @@ export function parseTracks(text: string): Track[] {
     } else if (/^YM2151\s+/.test(raw)) {
       type = 'YM2151';
       trackText = raw.replace(/^YM2151\s+/, '');
-    } else if (/^Tone\.js\s+/.test(raw)) {
+    } else if (/^Tone\.?js\s+/i.test(raw)) {
       type = 'TONE_JS';
-      trackText = raw.replace(/^Tone\.js\s+/, '');
+      trackText = raw.replace(/^Tone\.?js\s+/i, '');
     } else {
       // デフォルト: 先頭trackはTone.js、以降は前のtrackを引き継ぐ
       type = i === 0 ? 'TONE_JS' : prevType;
