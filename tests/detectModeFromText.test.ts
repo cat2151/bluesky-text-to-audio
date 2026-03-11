@@ -92,4 +92,32 @@ describe('detectModeFromText', () => {
     expect(result.mode).toBe('mmlabc');
     expect(result.cleanedText).toBe('');
   });
+
+  it('mixモード: VOICEVOX + YM2151 + Tone.jsのマルチトラック', () => {
+    const text = 'VOICEVOX ずんだもんなのだ;\nYM2151 rc;\nTone.js rrg';
+    const result = detectModeFromText(text);
+    expect(result.mode).toBe('mix');
+    expect(result.cleanedText).toBe(text);
+  });
+
+  it('mixモード: YM2151 から始まるマルチトラック', () => {
+    const result = detectModeFromText('YM2151 rc;\nTone.js rrg');
+    expect(result.mode).toBe('mix');
+  });
+
+  it('mixモード: Tone.js から始まるマルチトラック', () => {
+    const result = detectModeFromText('Tone.js rrg;\nYM2151 cde');
+    expect(result.mode).toBe('mix');
+  });
+
+  it('セミコロンがあってもキーワードなしはvoicevox', () => {
+    const result = detectModeFromText('こんにちは; 世界');
+    expect(result.mode).toBe('voicevox');
+  });
+
+  it('YM2151が先頭行だけ (セミコロンなし) はym2151', () => {
+    const result = detectModeFromText('YM2151\ncde');
+    expect(result.mode).toBe('ym2151');
+    expect(result.cleanedText).toBe('cde');
+  });
 });
