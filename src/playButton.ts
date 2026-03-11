@@ -9,7 +9,7 @@ import {
   playChord2mmlMode,
   playToneJsMode,
   playYm2151Mode,
-  playMixModeHandler,
+  playMixMode as playMixModeHandler,
   playVoicevoxMode,
   exportWavHandler,
 } from './playModeHandlers';

@@ -5,8 +5,8 @@ import { loadSequencer } from './loaders/sequencer';
 import { parseMmlViaLibrary } from './loaders/mmlToJson';
 import { playWithYm2151, renderYm2151AudioBuffer } from './loaders/ym2151';
 import { playWithVoicevox } from './loaders/voicevox';
-import { playMixMode } from './loaders/mix';
-import { AbcjsPlayer } from './loaders/abcjsPlayer';
+import { playMixMode as playMixModeImpl } from './loaders/mix';
+import type { AbcjsPlayer } from './loaders/abcjsPlayer';
 import { chordToMml } from './chordToMml';
 import { audioBufferToWavBlob } from './wavEncoder';
 
@@ -95,12 +95,12 @@ export async function playYm2151Mode(
   }
 }
 
-export async function playMixModeHandler(
+export async function playMixMode(
   text: string,
   handleError: ErrorHandler
 ): Promise<void> {
   try {
-    await playMixMode(text);
+    await playMixModeImpl(text);
   } catch (e2: unknown) {
     handleError('Mix play error:', 'Mix play error', e2);
   }
