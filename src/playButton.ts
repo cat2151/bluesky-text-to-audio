@@ -286,6 +286,7 @@ export function addPlayButton(postEl: HTMLElement): void {
   wavExportBtn.setAttribute('data-bta-wav-export', '');
   wavExportBtn.textContent = '💾 WAV';
   wavExportBtn.title = 'WAVファイルをエクスポート';
+  wavExportBtn.setAttribute('aria-label', 'WAVファイルをエクスポート');
   wavExportBtn.style.cssText = `
     display: none;
     margin-left: 8px;
@@ -362,14 +363,27 @@ export function addPlayButton(postEl: HTMLElement): void {
     } finally {
       wavExportBtn.disabled = false;
     }
+    // Convert WAV Blob → ArrayBuffer → base64 and send to background script for download.
+    // Using chrome.downloads.download (via background) avoids the Chrome user-activation
+    // restriction that can block programmatic a.click() after an await.
     const blob = audioBufferToWavBlob(audioBuffer);
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
+    const arrayBuf = await blob.arrayBuffer();
+    const uint8 = new Uint8Array(arrayBuf);
+    const chunkSize = 0x8000;
+    const chunks: string[] = [];
+    for (let i = 0; i < uint8.length; i += chunkSize) {
+      chunks.push(String.fromCharCode(...uint8.subarray(i, i + chunkSize)));
+    }
+    const base64 = btoa(chunks.join(''));
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    a.download = `ym2151_${timestamp}.wav`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const filename = `ym2151_${timestamp}.wav`;
+    chrome.runtime.sendMessage({ type: 'downloadWav', base64, filename }, res => {
+      const result = res as { success: boolean; error?: string } | undefined;
+      if (!result?.success) {
+        console.error(LOG_PREFIX, 'WAV download error:', result?.error);
+        showErrorToast('WAV download error');
+      }
+    });
   });
   wavExportBtn.addEventListener('mousedown', e => { e.stopPropagation(); });
 

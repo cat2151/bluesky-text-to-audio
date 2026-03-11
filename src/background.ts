@@ -99,7 +99,7 @@ async function speakText(text: string): Promise<string> {
 }
 
 chrome.runtime.onMessage.addListener(
-  (message: { type: string; text: string }, _sender, sendResponse) => {
+  (message: { type: string; text?: string; base64?: string; filename?: string }, _sender, sendResponse) => {
     if (message.type === 'speak') {
       const text = message.text;
       if (typeof text !== 'string' || text.trim().length === 0) {
@@ -120,6 +120,26 @@ chrome.runtime.onMessage.addListener(
             error: error instanceof Error ? error.message : String(error),
           });
         });
+      return true; // Keep the message channel open for async response
+    }
+
+    if (message.type === 'downloadWav') {
+      const base64 = message.base64;
+      const filename = message.filename ?? 'export.wav';
+      if (typeof base64 !== 'string' || base64.length === 0) {
+        sendResponse({ success: false, error: 'Invalid WAV data' });
+        return false;
+      }
+      chrome.downloads.download(
+        { url: `data:audio/wav;base64,${base64}`, filename, saveAs: false },
+        downloadId => {
+          if (chrome.runtime.lastError || downloadId === undefined) {
+            sendResponse({ success: false, error: chrome.runtime.lastError?.message ?? 'download failed' });
+          } else {
+            sendResponse({ success: true });
+          }
+        },
+      );
       return true; // Keep the message channel open for async response
     }
   },

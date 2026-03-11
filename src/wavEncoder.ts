@@ -1,7 +1,8 @@
 // Convert an AudioBuffer to a WAV Blob (PCM 16-bit, little-endian).
 export function audioBufferToWavBlob(audioBuffer: AudioBuffer): Blob {
   const numChannels = audioBuffer.numberOfChannels;
-  const sampleRate = audioBuffer.sampleRate;
+  // Round to integer: WAV header fields are uint32/uint16; fractional values (e.g. YM2151's ~55930.39 Hz) would be truncated silently causing pitch drift.
+  const sampleRate = Math.round(audioBuffer.sampleRate);
   const numFrames = audioBuffer.length;
 
   const bitsPerSample = 16;
@@ -42,7 +43,8 @@ export function audioBufferToWavBlob(audioBuffer: AudioBuffer): Blob {
   for (let i = 0; i < numFrames; i++) {
     for (let c = 0; c < numChannels; c++) {
       const sample = Math.max(-1, Math.min(1, channels[c][i]));
-      const int16 = sample < 0 ? sample * 32768 : sample * 32767;
+      const scaled = sample < 0 ? sample * 32768 : sample * 32767;
+      const int16 = Math.max(-32768, Math.min(32767, Math.round(scaled)));
       view.setInt16(offset, int16, true);
       offset += 2;
     }
