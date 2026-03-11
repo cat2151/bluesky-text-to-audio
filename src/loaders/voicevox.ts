@@ -3,6 +3,24 @@ import { getAudioContext } from '../audioContext';
 // ---- 現在再生中のソースノード（多重再生防止） ----
 let currentSource: AudioBufferSourceNode | null = null;
 
+// ---- WAVデータキャッシュ（textをkey、AudioBufferをvalueとして保持） ----
+// エントリ数に上限を設けて古いものから破棄する（メモリ使用量の無制限増大を防ぐ）
+const MAX_AUDIO_CACHE_ENTRIES = 32;
+
+class BoundedMap<K, V> extends Map<K, V> {
+  override set(key: K, value: V): this {
+    if (this.size >= MAX_AUDIO_CACHE_ENTRIES) {
+      const oldestKey = this.keys().next().value as K | undefined;
+      if (oldestKey !== undefined) {
+        this.delete(oldestKey);
+      }
+    }
+    return super.set(key, value);
+  }
+}
+
+const audioCache = new BoundedMap<string, AudioBuffer>();
+
 // ---- VOICEVOX で音声合成・再生 ----
 export async function playWithVoicevox(text: string): Promise<void> {
   // 再生中の音声を停止してから新しい再生を開始する
@@ -12,35 +30,41 @@ export async function playWithVoicevox(text: string): Promise<void> {
     try { currentSource.stop(); } catch { /* already stopped */ }
   }
 
-  const response = await new Promise<{ success: boolean; audio?: string; error?: string }>(
-    (resolve, reject) => {
-      chrome.runtime.sendMessage({ type: 'speak', text }, res => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-        } else if (!res) {
-          reject(new Error('VOICEVOX: no response from background script'));
-        } else {
-          resolve(res as { success: boolean; audio?: string; error?: string });
-        }
-      });
-    },
-  );
-
-  if (!response.success || !response.audio) {
-    throw new Error(response.error ?? 'VOICEVOX error');
-  }
-
-  const binaryString = atob(response.audio);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-
   const audioContext = getAudioContext();
   if (audioContext.state === 'suspended') {
     await audioContext.resume();
   }
-  const decoded = await audioContext.decodeAudioData(bytes.buffer);
+
+  let decoded = audioCache.get(text);
+  if (!decoded) {
+    const response = await new Promise<{ success: boolean; audio?: string; error?: string }>(
+      (resolve, reject) => {
+        chrome.runtime.sendMessage({ type: 'speak', text }, res => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else if (!res) {
+            reject(new Error('VOICEVOX: no response from background script'));
+          } else {
+            resolve(res as { success: boolean; audio?: string; error?: string });
+          }
+        });
+      },
+    );
+
+    if (!response.success || !response.audio) {
+      throw new Error(response.error ?? 'VOICEVOX error');
+    }
+
+    const binaryString = atob(response.audio);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+
+    decoded = await audioContext.decodeAudioData(bytes.buffer);
+    audioCache.set(text, decoded);
+  }
+
   const source = audioContext.createBufferSource();
   source.buffer = decoded;
   source.connect(audioContext.destination);
