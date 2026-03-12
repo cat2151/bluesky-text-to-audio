@@ -1,18 +1,18 @@
-import { parse as mml2abcParse } from './mml2abc.mjs';
-import type { SequencerNodes } from './types';
-import { loadTone } from './loaders/tone';
-import { loadSequencer } from './loaders/sequencer';
-import { parseMmlViaLibrary } from './loaders/mmlToJson';
-import { playWithYm2151, renderYm2151AudioBuffer } from './loaders/ym2151';
-import { playWithVoicevox } from './loaders/voicevox';
-import { playMixMode } from './loaders/mix';
 import { AbcjsPlayer } from './loaders/abcjsPlayer';
-import { chordToMml } from './chordToMml';
 import { getPostText } from './postText';
 import { detectModeFromText } from './detectModeFromText';
 import { type PlayMode, menuItems, modeTemplates } from './playModes';
 import { createErrorToast } from './errorToast';
-import { audioBufferToWavBlob } from './wavEncoder';
+import {
+  type TonejsRef,
+  playMmlabcMode,
+  playChord2mmlMode,
+  playToneJsMode,
+  playYm2151Mode,
+  playMixMode as playMixModeHandler,
+  playVoicevoxMode,
+  exportWavHandler,
+} from './playModeHandlers';
 
 const LOG_PREFIX = '[BTA:playButton]';
 
@@ -353,38 +353,12 @@ export function addPlayButton(postEl: HTMLElement): void {
     e.stopPropagation();
     const mml = textarea.value;
     if (!mml) return;
-    let audioBuffer: AudioBuffer;
+    wavExportBtn.disabled = true;
     try {
-      wavExportBtn.disabled = true;
-      audioBuffer = await renderYm2151AudioBuffer(mml);
-    } catch (err: unknown) {
-      console.error(LOG_PREFIX, 'WAV export error:', err);
-      showErrorToast('WAV export error');
-      return;
+      await exportWavHandler(mml, showErrorToast);
     } finally {
       wavExportBtn.disabled = false;
     }
-    // Convert WAV Blob → ArrayBuffer → base64 and send to background script for download.
-    // Using chrome.downloads.download (via background) avoids the Chrome user-activation
-    // restriction that can block programmatic a.click() after an await.
-    const blob = audioBufferToWavBlob(audioBuffer);
-    const arrayBuf = await blob.arrayBuffer();
-    const uint8 = new Uint8Array(arrayBuf);
-    const chunkSize = 0x8000;
-    const chunks: string[] = [];
-    for (let i = 0; i < uint8.length; i += chunkSize) {
-      chunks.push(String.fromCharCode(...uint8.subarray(i, i + chunkSize)));
-    }
-    const base64 = btoa(chunks.join(''));
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    const filename = `ym2151_${timestamp}.wav`;
-    chrome.runtime.sendMessage({ type: 'downloadWav', base64, filename }, res => {
-      const result = res as { success: boolean; error?: string } | undefined;
-      if (!result?.success) {
-        console.error(LOG_PREFIX, 'WAV download error:', result?.error);
-        showErrorToast('WAV download error');
-      }
-    });
   });
   wavExportBtn.addEventListener('mousedown', e => { e.stopPropagation(); });
 
@@ -426,9 +400,8 @@ export function addPlayButton(postEl: HTMLElement): void {
     dropBtn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
   });
 
-  // ---- playボタン：選択中モードを実行 ----
   // 投稿ごとのSequencerNodesインスタンス（Tone.jsシーケンサー用）
-  let tonejsNodes: SequencerNodes | null = null;
+  const tonejsRef: TonejsRef = { nodes: null };
 
   playBtn.addEventListener('click', async e => {
     e.stopPropagation();
@@ -457,69 +430,24 @@ export function addPlayButton(postEl: HTMLElement): void {
     }
 
     if (mode === 'mmlabc') {
-      const mml = textarea.value;
-      let abcText = '';
-      try {
-        abcText = mml2abcParse(mml);
-      } catch (error) {
-        handleError('MML parse error:', 'MML parse error', error);
-        return;
-      }
-      abcjsPlayer.renderAndPlay(scoreDiv, abcText);
+      await playMmlabcMode(textarea.value, abcjsPlayer, scoreDiv, handleError);
       return;
     }
 
     if (mode === 'chord2mml') {
-      const chord = textarea.value;
-      let abcText = '';
-      try {
-        const mml = await chordToMml(chord);
-        abcText = mml2abcParse(mml);
-      } catch (error) {
-        handleError('chord2mml error (load or parse):', 'chord2mml error', error);
-        return;
-      }
-      abcjsPlayer.renderAndPlay(scoreDiv, abcText);
+      await playChord2mmlMode(textarea.value, abcjsPlayer, scoreDiv, handleError);
       return;
     }
 
     if (mode === 'tonejs') {
-      const mml = textarea.value;
-      let Tone;
-      let sequencer;
-      try {
-        [Tone, sequencer] = await Promise.all([loadTone(), loadSequencer()]);
-      } catch (e2: unknown) {
-        handleError('Tone.js または tonejs-json-sequencer の読み込みに失敗しました:', 'ライブラリ読み込みエラー', e2);
-        return;
-      }
-      let sequence;
-      try {
-        sequence = await parseMmlViaLibrary(mml);
-      } catch (e2: unknown) {
-        handleError('MML parse error:', 'MML parse error', e2);
-        return;
-      }
-      try {
-        await Tone.start();
-        if (!tonejsNodes) {
-          tonejsNodes = new sequencer.SequencerNodes();
-        }
-        await sequencer.playSequence(Tone, tonejsNodes, sequence);
-        Tone.Transport.start();
-      } catch (e2: unknown) {
-        handleError('Tone.js play error:', 'Tone.js play error', e2);
-      }
+      await playToneJsMode(textarea.value, tonejsRef, handleError);
       return;
     }
 
     if (mode === 'ym2151') {
-      const mml = textarea.value;
       playBtn.disabled = true;
       try {
-        await playWithYm2151(mml);
-      } catch (e2: unknown) {
-        handleError('YM2151 play error:', 'YM2151 play error', e2);
+        await playYm2151Mode(textarea.value, handleError);
       } finally {
         playBtn.disabled = false;
       }
@@ -527,12 +455,9 @@ export function addPlayButton(postEl: HTMLElement): void {
     }
 
     if (mode === 'mix') {
-      const text = textarea.value;
       playBtn.disabled = true;
       try {
-        await playMixMode(text);
-      } catch (e2: unknown) {
-        handleError('Mix play error:', 'Mix play error', e2);
+        await playMixModeHandler(textarea.value, handleError);
       } finally {
         playBtn.disabled = false;
       }
@@ -546,12 +471,9 @@ export function addPlayButton(postEl: HTMLElement): void {
         textarea.value = text;
       }
       if (!text) return;
-
       playBtn.disabled = true;
       try {
-        await playWithVoicevox(text);
-      } catch (err: unknown) {
-        handleError('VOICEVOX error:', 'VOICEVOX error', err);
+        await playVoicevoxMode(text, handleError);
       } finally {
         playBtn.disabled = false;
       }
