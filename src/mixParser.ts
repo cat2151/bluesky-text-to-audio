@@ -1,5 +1,5 @@
 // ---- MixモードのトラックParsing ----
-// セミコロンでtrack分割し、各trackのtype(VOICEVOX/YM2151/TONE_JS)とtextを返す。
+// セミコロンでtrack分割し、各trackのtype(VOICEVOX/YM2151/TONE_JS/SURGE_XT)とtextを返す。
 // ブラウザAPIに依存しない純粋な関数のため、単体テスト可能。
 
 export type TrackType = 'VOICEVOX' | 'YM2151' | 'TONE_JS' | 'SURGE_XT';
@@ -10,8 +10,8 @@ export interface Track {
 }
 
 // ---- セミコロン区切りテキストをTrack配列に変換 ----
-// 例: 'VOICEVOX ずんだもんなのだ;\nYM2151 rc;\nTone.js rrg'
-// → [{ type: 'VOICEVOX', text: 'ずんだもんなのだ' }, { type: 'YM2151', text: 'rc' }, { type: 'TONE_JS', text: 'rrg' }]
+// 例: 'VOICEVOX ずんだもんなのだ;\nYM2151 rc;\nTone.js rrg;\nSurge XT cde'
+// → [{ type: 'VOICEVOX', text: 'ずんだもんなのだ' }, { type: 'YM2151', text: 'rc' }, { type: 'TONE_JS', text: 'rrg' }, { type: 'SURGE_XT', text: 'cde' }]
 export function parseTracks(text: string): Track[] {
   const rawTracks = text.split(';').map(t => t.trim()).filter(t => t !== '');
   let prevType: TrackType = 'TONE_JS';
