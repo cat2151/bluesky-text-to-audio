@@ -1,10 +1,10 @@
-// Mix mode: Tone.js + YM2151 + VOICEVOX を1つのwavデータにmixして演奏する (検証用)
+// Mix mode: Tone.js + YM2151 + VOICEVOX + Surge XT を1つのwavデータにmixして演奏する (検証用)
 //
 // 各処理フェーズにconsole.logしており、動作確認しやすくしている。
 //
 // Pipeline:
 //   テキスト → parseTracks() → tracks[]
-//   → 各trackを並列にオフラインレンダリング (VOICEVOX/YM2151/Tone.js)
+//   → 各trackを並列にオフラインレンダリング (VOICEVOX/YM2151/Tone.js/Surge XT)
 //   → AudioBuffer[]を共通サンプルレートにリサンプリング
 //   → 全AudioBufferをmix (1/N ゲイン加算でクリップ防止)
 //   → Web Audio API で再生
