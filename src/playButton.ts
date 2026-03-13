@@ -47,6 +47,10 @@ export function addPlayButton(postEl: HTMLElement): void {
   const rawPostText = getPostText(postEl);
   const { mode: detectedMode, cleanedText: detectedCleanedText } = detectModeFromText(rawPostText);
 
+  // 投稿テキストのauto-fill済みかどうか（一度でも再生またはtextareaを開いたらtrue）
+  // trueになると、textareaが空でもdetectedCleanedTextで上書きしない
+  let textareaInitialized = false;
+
   // ---- playボタン（SVG三角） ----
   const playBtn = document.createElement('button');
   playBtn.type = 'button';
@@ -404,9 +408,6 @@ export function addPlayButton(postEl: HTMLElement): void {
 
   // 投稿ごとのSequencerNodesインスタンス（Tone.jsシーケンサー用）
   const tonejsRef: TonejsRef = { nodes: null };
-
-  // textareaがユーザーに一度でも表示されたかどうか（表示済みならauto-fillしない）
-  let textareaInitialized = false;
 
   playBtn.addEventListener('click', async e => {
     e.stopPropagation();
