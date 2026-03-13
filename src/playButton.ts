@@ -11,6 +11,7 @@ import {
   playYm2151Mode,
   playMixMode as playMixModeHandler,
   playVoicevoxMode,
+  playSurgeXtMode,
   exportWavHandler,
 } from './playModeHandlers';
 
@@ -478,6 +479,17 @@ export function addPlayButton(postEl: HTMLElement): void {
       playBtn.disabled = true;
       try {
         await playVoicevoxMode(text, handleError);
+      } finally {
+        playBtn.disabled = false;
+      }
+    }
+
+    if (mode === 'surgext') {
+      const text = textarea.value;
+      if (!text) return;
+      playBtn.disabled = true;
+      try {
+        await playSurgeXtMode(text, handleError);
       } finally {
         playBtn.disabled = false;
       }

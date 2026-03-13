@@ -30,6 +30,28 @@ describe('parseTracks', () => {
     expect(tracks[0].text).toBe('rrg');
   });
 
+  it('Surge XTトラックを解析する', () => {
+    const tracks = parseTracks('Surge XT hello world');
+    expect(tracks).toHaveLength(1);
+    expect(tracks[0].type).toBe('SURGE_XT');
+    expect(tracks[0].text).toBe('hello world');
+  });
+
+  it('SurgeXTトラックを解析する（スペースなし）', () => {
+    const tracks = parseTracks('SurgeXT hello world');
+    expect(tracks).toHaveLength(1);
+    expect(tracks[0].type).toBe('SURGE_XT');
+    expect(tracks[0].text).toBe('hello world');
+  });
+
+  it('セミコロン区切りで複数トラックを解析する（Surge XTを含む）', () => {
+    const tracks = parseTracks('VOICEVOX ずんだもんなのだ;\nSurge XT hello;\nTone.js rrg');
+    expect(tracks).toHaveLength(3);
+    expect(tracks[0]).toEqual({ type: 'VOICEVOX', text: 'ずんだもんなのだ' });
+    expect(tracks[1]).toEqual({ type: 'SURGE_XT', text: 'hello' });
+    expect(tracks[2]).toEqual({ type: 'TONE_JS', text: 'rrg' });
+  });
+
   it('セミコロン区切りで複数トラックを解析する', () => {
     const tracks = parseTracks('VOICEVOX ずんだもんなのだ;\nYM2151 rc;\nTone.js rrg');
     expect(tracks).toHaveLength(3);

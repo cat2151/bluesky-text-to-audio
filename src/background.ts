@@ -1,6 +1,8 @@
 const VOICEVOX_API_BASE = 'http://localhost:50021';
 const SPEAKER_ID = 3; // ずんだもん ノーマル
 
+const SURGEXT_PORT = 62151;
+
 const LOG_PREFIX = '[BTA:background]';
 
 // ---- ON/OFFトグル ----
@@ -73,6 +75,19 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(chunks.join(''));
 }
 
+async function renderSurgeXt(text: string): Promise<string> {
+  const response = await fetch(`http://localhost:${SURGEXT_PORT}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: text,
+  });
+  if (!response.ok) {
+    throw new Error(`Surge XT render failed (localhost:${SURGEXT_PORT}): ${response.status} ${response.statusText}`);
+  }
+  const audioBuffer = await response.arrayBuffer();
+  return arrayBufferToBase64(audioBuffer);
+}
+
 async function speakText(text: string): Promise<string> {
   const queryResponse = await fetch(
     `${VOICEVOX_API_BASE}/audio_query?text=${encodeURIComponent(text)}&speaker=${SPEAKER_ID}`,
@@ -115,6 +130,29 @@ chrome.runtime.onMessage.addListener(
         .then(base64Audio => sendResponse({ success: true, audio: base64Audio }))
         .catch((error: unknown) => {
           console.error(LOG_PREFIX, 'VOICEVOX error:', error);
+          sendResponse({
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        });
+      return true; // Keep the message channel open for async response
+    }
+
+    if (message.type === 'surgextRender') {
+      const text = message.text;
+      if (typeof text !== 'string' || text.trim().length === 0) {
+        console.error(LOG_PREFIX, 'Invalid text for surgextRender request:', text);
+        sendResponse({
+          success: false,
+          error: 'Invalid text for surgextRender request',
+        });
+        return false;
+      }
+
+      renderSurgeXt(text)
+        .then(base64Audio => sendResponse({ success: true, audio: base64Audio }))
+        .catch((error: unknown) => {
+          console.error(LOG_PREFIX, 'Surge XT error:', error);
           sendResponse({
             success: false,
             error: error instanceof Error ? error.message : String(error),
