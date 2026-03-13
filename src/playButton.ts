@@ -47,6 +47,10 @@ export function addPlayButton(postEl: HTMLElement): void {
   const rawPostText = getPostText(postEl);
   const { mode: detectedMode, cleanedText: detectedCleanedText } = detectModeFromText(rawPostText);
 
+  // 投稿テキストのauto-fill済みかどうか（一度でも再生またはtextareaを開いたらtrue）
+  // trueになると、textareaが空でもdetectedCleanedTextで上書きしない
+  let textareaInitialized = false;
+
   // ---- playボタン（SVG三角） ----
   const playBtn = document.createElement('button');
   playBtn.type = 'button';
@@ -146,9 +150,10 @@ export function addPlayButton(postEl: HTMLElement): void {
       // selectedModeやdata-bta-modeは変えない（再生モードを保持する）
       if (item.mode === 'textarea') {
         if (textarea.style.display === 'none') {
-          if (!textarea.value) {
+          if (!textareaInitialized && !textarea.value) {
             textarea.value = detectedCleanedText;
           }
+          textareaInitialized = true;
           textarea.style.display = 'block';
           showTemplateSelectIfNeeded();
           showWavExportBtnIfNeeded();
@@ -368,6 +373,7 @@ export function addPlayButton(postEl: HTMLElement): void {
   // ---- エラー時にtextareaを表示してトーストを出す ----
   function handleError(logLabel: string, message: string, error: unknown): void {
     console.error(LOG_PREFIX, logLabel, error);
+    textareaInitialized = true;
     textarea.style.display = 'block';
     showTemplateSelectIfNeeded();
     showWavExportBtnIfNeeded();
@@ -410,9 +416,10 @@ export function addPlayButton(postEl: HTMLElement): void {
     if (mode === 'textarea') {
       if (textarea.style.display === 'none') {
         // 初回のみ投稿テキストをセット（ユーザー編集を保持）
-        if (!textarea.value) {
+        if (!textareaInitialized && !textarea.value) {
           textarea.value = detectedCleanedText;
         }
+        textareaInitialized = true;
         textarea.style.display = 'block';
         showTemplateSelectIfNeeded();
         showWavExportBtnIfNeeded();
@@ -425,9 +432,10 @@ export function addPlayButton(postEl: HTMLElement): void {
     }
 
     // 未初期化の場合は投稿テキスト（検出行削除済み）をセット
-    if (!textarea.value) {
+    if (!textareaInitialized && !textarea.value) {
       textarea.value = detectedCleanedText;
     }
+    textareaInitialized = true;
 
     if (mode === 'mmlabc') {
       await playMmlabcMode(textarea.value, abcjsPlayer, scoreDiv, handleError);
@@ -465,11 +473,7 @@ export function addPlayButton(postEl: HTMLElement): void {
     }
 
     if (mode === 'voicevox') {
-      let text = textarea.value;
-      if (!text) {
-        text = detectedCleanedText;
-        textarea.value = text;
-      }
+      const text = textarea.value;
       if (!text) return;
       playBtn.disabled = true;
       try {
