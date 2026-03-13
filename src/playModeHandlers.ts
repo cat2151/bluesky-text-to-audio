@@ -5,6 +5,7 @@ import { loadSequencer } from './loaders/sequencer';
 import { parseMmlViaLibrary } from './loaders/mmlToJson';
 import { playWithYm2151, renderYm2151AudioBuffer } from './loaders/ym2151';
 import { playWithVoicevox } from './loaders/voicevox';
+import { playWithSurgeXT } from './loaders/surgeXT';
 import { playMixMode as playMixModeImpl } from './loaders/mix';
 import type { AbcjsPlayer } from './loaders/abcjsPlayer';
 import { chordToMml } from './chordToMml';
@@ -114,6 +115,17 @@ export async function playVoicevoxMode(
     await playWithVoicevox(text);
   } catch (err: unknown) {
     handleError('VOICEVOX error:', 'VOICEVOX error', err);
+  }
+}
+
+export async function playSurgeXTMode(
+  text: string,
+  handleError: ErrorHandler
+): Promise<void> {
+  try {
+    await playWithSurgeXT(text);
+  } catch (err: unknown) {
+    handleError('Surge XT error:', 'Surge XT error', err);
   }
 }
 

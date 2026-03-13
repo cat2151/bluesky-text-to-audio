@@ -15,12 +15,13 @@
     "type": "module"
   },
   "host_permissions": [
-    "http://localhost:50021/*"
+    "http://localhost:50021/*",
+    "http://localhost:62151/*"
   ],
   "content_scripts": [
     {
       "js": [
-        "assets/content.ts-loader-GUKQREsw.js"
+        "assets/content.ts-loader-Ci_muODB.js"
       ],
       "matches": [
         "https://bsky.app/*"
@@ -42,7 +43,7 @@
         "assets/tree-sitter-mml-DQvQg2JC.wasm",
         "assets/ym2151-Ccu-8unz.wasm",
         "assets/__vite-browser-external-BIHI7g3E.js",
-        "assets/content.ts-BaaOqp3B.js"
+        "assets/content.ts-BU5VRvbE.js"
       ],
       "use_dynamic_url": false
     }

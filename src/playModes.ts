@@ -2,7 +2,7 @@ import { mmlTemplates } from './mmlTemplates';
 import { chordTemplates } from './chordTemplates';
 import { tonejsTemplates } from './tonejsTemplates';
 
-export type PlayMode = 'voicevox' | 'mmlabc' | 'chord2mml' | 'tonejs' | 'ym2151' | 'mix' | 'textarea';
+export type PlayMode = 'voicevox' | 'mmlabc' | 'chord2mml' | 'tonejs' | 'ym2151' | 'mix' | 'surgeXT' | 'textarea';
 
 export type TemplateItem = { name: string; text: string };
 
@@ -13,6 +13,7 @@ export const menuItems: { mode: PlayMode; label: string }[] = [
   { mode: 'tonejs',   label: '🎹 Tone.jsでplay' },
   { mode: 'ym2151',   label: '🎶 YM2151でplay' },
   { mode: 'mix',      label: '🎚️ Mixでplay' },
+  { mode: 'surgeXT',  label: '🎛️ Surge XTでplay' },
   { mode: 'textarea', label: '📝 textareaを開く' },
 ];
 

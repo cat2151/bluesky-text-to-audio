@@ -67,4 +67,25 @@ describe('parseTracks', () => {
     const tracks = parseTracks(';');
     expect(tracks).toHaveLength(0);
   });
+
+  it('Surge XTトラックを解析する', () => {
+    const tracks = parseTracks('Surge XT cde');
+    expect(tracks).toHaveLength(1);
+    expect(tracks[0].type).toBe('SURGE_XT');
+    expect(tracks[0].text).toBe('cde');
+  });
+
+  it('SurgeXTトラックを解析する（SurgeとXTの間にスペースなし）', () => {
+    const tracks = parseTracks('SurgeXT cde');
+    expect(tracks).toHaveLength(1);
+    expect(tracks[0].type).toBe('SURGE_XT');
+    expect(tracks[0].text).toBe('cde');
+  });
+
+  it('セミコロン区切りでSurge XTを含む複数トラックを解析する', () => {
+    const tracks = parseTracks('VOICEVOX ずんだもんなのだ;\nSurge XT cde');
+    expect(tracks).toHaveLength(2);
+    expect(tracks[0]).toEqual({ type: 'VOICEVOX', text: 'ずんだもんなのだ' });
+    expect(tracks[1]).toEqual({ type: 'SURGE_XT', text: 'cde' });
+  });
 });

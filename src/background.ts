@@ -1,5 +1,6 @@
 const VOICEVOX_API_BASE = 'http://localhost:50021';
 const SPEAKER_ID = 3; // ずんだもん ノーマル
+const SURGE_XT_API_BASE = 'http://localhost:62151';
 
 const LOG_PREFIX = '[BTA:background]';
 
@@ -98,6 +99,19 @@ async function speakText(text: string): Promise<string> {
   return arrayBufferToBase64(audioBuffer);
 }
 
+async function renderSurgeXT(text: string): Promise<string> {
+  const response = await fetch(SURGE_XT_API_BASE, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: text,
+  });
+  if (!response.ok) {
+    throw new Error(`Surge XT request failed: ${response.status} ${response.statusText}`);
+  }
+  const audioBuffer = await response.arrayBuffer();
+  return arrayBufferToBase64(audioBuffer);
+}
+
 chrome.runtime.onMessage.addListener(
   (message: { type: string; text?: string; base64?: string; filename?: string }, _sender, sendResponse) => {
     if (message.type === 'speak') {
@@ -115,6 +129,29 @@ chrome.runtime.onMessage.addListener(
         .then(base64Audio => sendResponse({ success: true, audio: base64Audio }))
         .catch((error: unknown) => {
           console.error(LOG_PREFIX, 'VOICEVOX error:', error);
+          sendResponse({
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        });
+      return true; // Keep the message channel open for async response
+    }
+
+    if (message.type === 'surgeXT') {
+      const text = message.text;
+      if (typeof text !== 'string' || text.trim().length === 0) {
+        console.error(LOG_PREFIX, 'Invalid text for surgeXT request:', text);
+        sendResponse({
+          success: false,
+          error: 'Invalid text for surgeXT request',
+        });
+        return false;
+      }
+
+      renderSurgeXT(text)
+        .then(base64Audio => sendResponse({ success: true, audio: base64Audio }))
+        .catch((error: unknown) => {
+          console.error(LOG_PREFIX, 'Surge XT error:', error);
           sendResponse({
             success: false,
             error: error instanceof Error ? error.message : String(error),
