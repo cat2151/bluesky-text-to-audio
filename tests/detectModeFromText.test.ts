@@ -137,4 +137,23 @@ describe('detectModeFromText', () => {
     expect(result.mode).toBe('ym2151');
     expect(result.cleanedText).toBe('cde');
   });
+
+  it('先頭行がSurge XTのときsurgext', () => {
+    const result = detectModeFromText('Surge XT\nhello world');
+    expect(result.mode).toBe('surgext');
+    expect(result.cleanedText).toBe('hello world');
+  });
+
+  it('先頭行がSurgeXTのときsurgext', () => {
+    const result = detectModeFromText('SurgeXT\nhello world');
+    expect(result.mode).toBe('surgext');
+    expect(result.cleanedText).toBe('hello world');
+  });
+
+  it('mixモード: Surge XT から始まるマルチトラック', () => {
+    const text = 'Surge XT hello;\nYM2151 rc';
+    const result = detectModeFromText(text);
+    expect(result.mode).toBe('mix');
+    expect(result.cleanedText).toBe(text);
+  });
 });

@@ -12,7 +12,8 @@
     "type": "module"
   },
   "host_permissions": [
-    "http://localhost:50021/*"
+    "http://localhost:50021/*",
+    "http://localhost:62151/*"
   ],
   "content_scripts": [
     {

@@ -1,10 +1,10 @@
-// Mix mode: Tone.js + YM2151 + VOICEVOX を1つのwavデータにmixして演奏する (検証用)
+// Mix mode: Tone.js + YM2151 + VOICEVOX + Surge XT を1つのwavデータにmixして演奏する (検証用)
 //
 // 各処理フェーズにconsole.logしており、動作確認しやすくしている。
 //
 // Pipeline:
 //   テキスト → parseTracks() → tracks[]
-//   → 各trackを並列にオフラインレンダリング (VOICEVOX/YM2151/Tone.js)
+//   → 各trackを並列にオフラインレンダリング (VOICEVOX/YM2151/Tone.js/Surge XT)
 //   → AudioBuffer[]を共通サンプルレートにリサンプリング
 //   → 全AudioBufferをmix (1/N ゲイン加算でクリップ防止)
 //   → Web Audio API で再生
@@ -13,6 +13,7 @@ import * as ToneModule from 'tone';
 import type { ToneLib } from '../types';
 import { renderYm2151AudioBuffer } from './ym2151';
 import { renderVoicevoxAudioBuffer } from './voicevox';
+import { renderSurgeXtAudioBuffer } from './surgext';
 import { loadSequencer } from './sequencer';
 import { parseMmlViaLibrary } from './mmlToJson';
 import { getAudioContext } from '../audioContext';
@@ -146,6 +147,10 @@ export async function playMixMode(text: string): Promise<void> {
       } else if (track.type === 'YM2151') {
         const buf = await renderYm2151AudioBuffer(track.text);
         console.log(LOG_PREFIX, `[track ${i}] YM2151 rendered: ${buf.duration.toFixed(2)}s`);
+        return buf;
+      } else if (track.type === 'SURGE_XT') {
+        const buf = await renderSurgeXtAudioBuffer(track.text);
+        console.log(LOG_PREFIX, `[track ${i}] Surge XT rendered: ${buf.duration.toFixed(2)}s`);
         return buf;
       } else {
         return renderToneJsAudioBuffer(track.text);

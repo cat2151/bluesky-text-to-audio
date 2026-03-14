@@ -8,11 +8,11 @@ export function detectModeFromText(text: string): { mode: PlayMode; cleanedText:
   const firstLine = lines[0];
   const lastLine = lines[lines.length - 1];
 
-  // mixモード: セミコロン区切りで先頭trackがVOICEVOX/YM2151/Tone.jsキーワードで始まる場合
+  // mixモード: セミコロン区切りで先頭trackがVOICEVOX/YM2151/Tone.js/Surge XTキーワードで始まる場合
   // キーワードはtrack内容と同行に書くため、cleanedTextはそのまま保持する
   if (text.includes(';')) {
     const firstTrack = text.split(';')[0].trim();
-    if (/^(VOICEVOX|YM2151|Tonejs|Tone\.js)\s/.test(firstTrack)) {
+    if (/^(VOICEVOX|YM2151|Tonejs|Tone\.js|Surge\s*XT)\s/i.test(firstTrack)) {
       return { mode: 'mix', cleanedText: text };
     }
   }
@@ -22,6 +22,7 @@ export function detectModeFromText(text: string): { mode: PlayMode; cleanedText:
     [/YM2151|OPM/, 'ym2151'],
     [/Tonejs|Tone\.js/, 'tonejs'],
     [/MML/, 'mmlabc'],
+    [/Surge\s*XT/i, 'surgext'],
   ];
 
   for (const [re, mode] of checks) {
