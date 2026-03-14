@@ -5,7 +5,7 @@
 // Pipeline:
 //   MML → (web-tree-sitter + mmlabc tree-sitter-mml.wasm) → parse tree JSON
 //       → (mmlabc-to-smf-wasm WASM) → SMF binary
-//       → (smf-to-ym2151log-rust WASM + piano preset) → YM2151 log JSON
+//       → (smf-to-ym2151log-rust WASM + random tone attachment) → YM2151 log JSON
 //       → (ym2151.wasm via WebAssembly.instantiate + Web Audio API) → audio
 //
 // cat2151ライブラリは常に最新mainを使用、バージョン固定しない。
@@ -16,47 +16,9 @@ import mmlabcInit, { parse_tree_json_to_smf } from '../mmlabc-to-smf-wasm/pkg/mm
 import smfYm2151Init, { smf_to_ym2151_json_with_attachment } from '../smf-to-ym2151log-rust/pkg/smf_to_ym2151log.js';
 import treeSitterMmlUrl from '../mmlabc-tree-sitter-mml/tree-sitter-mml.wasm?url';
 import ym2151WasmUrl from '../web-ym2151/ym2151.wasm?url';
+import { generateRandomToneAttachment, type ToneAttachmentEntry } from '../ym2151RandomTone';
 
 const LOG_PREFIX = '[BTA:loaders/ym2151]';
-
-// Piano-like preset tone (Acoustic Grand Piano, MIDI program 0)
-// Based on tones/000.json from smf-to-ym2151log-rust, wrapped in attachment format.
-// CON=7 (all 4 operators as carriers, parallel), stereo output.
-const PIANO_PRESET_ATTACHMENT_OBJ = [
-  {
-    ProgramChange: 0,
-    Tone: {
-      events: [
-        { time: 0.0, addr: '0x20', data: '0xC7' },
-        { time: 0.0, addr: '0x38', data: '0x00' },
-        { time: 0.0, addr: '0x40', data: '0x01' },
-        { time: 0.0, addr: '0x60', data: '0x00' },
-        { time: 0.0, addr: '0x80', data: '0x1F' },
-        { time: 0.0, addr: '0xA0', data: '0x05' },
-        { time: 0.0, addr: '0xC0', data: '0x05' },
-        { time: 0.0, addr: '0xE0', data: '0xF7' },
-        { time: 0.0, addr: '0x48', data: '0x01' },
-        { time: 0.0, addr: '0x68', data: '0x7F' },
-        { time: 0.0, addr: '0x88', data: '0x1F' },
-        { time: 0.0, addr: '0xA8', data: '0x05' },
-        { time: 0.0, addr: '0xC8', data: '0x05' },
-        { time: 0.0, addr: '0xE8', data: '0xF7' },
-        { time: 0.0, addr: '0x50', data: '0x01' },
-        { time: 0.0, addr: '0x70', data: '0x7F' },
-        { time: 0.0, addr: '0x90', data: '0x1F' },
-        { time: 0.0, addr: '0xB0', data: '0x05' },
-        { time: 0.0, addr: '0xD0', data: '0x05' },
-        { time: 0.0, addr: '0xF0', data: '0xF7' },
-        { time: 0.0, addr: '0x58', data: '0x01' },
-        { time: 0.0, addr: '0x78', data: '0x7F' },
-        { time: 0.0, addr: '0x98', data: '0x1F' },
-        { time: 0.0, addr: '0xB8', data: '0x05' },
-        { time: 0.0, addr: '0xD8', data: '0x05' },
-        { time: 0.0, addr: '0xF8', data: '0xF7' },
-      ],
-    },
-  },
-];
 
 // YM2151 WASM export interface.
 // Export names (b, c, d, ...) come from ym2151.js's assignWasmExports function and map to:
@@ -188,7 +150,7 @@ function getAudioContext(): AudioContext {
 // ---- 現在再生中のソースノード（多重再生防止） ----
 let currentSource: AudioBufferSourceNode | null = null;
 
-// ---- WAVデータキャッシュ（MMLテキストをkey、AudioBufferをvalueとして保持） ----
+// ---- WAVデータキャッシュ（MMLテキストとトーン文字列をkeyとして保持） ----
 // YM2151のAudioBufferはサイズが大きくなりやすいため、エントリ数に上限を設けて古いものから破棄する。
 const MAX_AUDIO_CACHE_ENTRIES = 32;
 
@@ -212,8 +174,9 @@ export function clearYm2151AudioCache(): void {
 }
 
 // ---- MML → AudioBuffer（キャッシュ付き、再生なし） ----
-async function generateYm2151AudioBuffer(mml: string): Promise<AudioBuffer> {
-  let audioBuffer = audioCache.get(mml);
+async function generateYm2151AudioBuffer(mml: string, attachment: ToneAttachmentEntry[], toneString: string): Promise<AudioBuffer> {
+  const cacheKey = mml + '\x00' + toneString;
+  let audioBuffer = audioCache.get(cacheKey);
   if (!audioBuffer) {
     const { parser, ym2151Memory, malloc, free, generate_sound, get_buffer_ptr, free_buffer } =
       await ensureLibs();
@@ -226,9 +189,9 @@ async function generateYm2151AudioBuffer(mml: string): Promise<AudioBuffer> {
     const smfData = parse_tree_json_to_smf(treeJson, mml);
     const smfUint8 = smfData instanceof Uint8Array ? smfData : new Uint8Array(smfData);
 
-    // SMF binary + piano preset attachment → YM2151 log JSON
-    const pianoPresetStr = JSON.stringify(PIANO_PRESET_ATTACHMENT_OBJ);
-    const attachmentBytes = new TextEncoder().encode(pianoPresetStr);
+    // SMF binary + random tone attachment → YM2151 log JSON
+    const attachmentStr = JSON.stringify(attachment);
+    const attachmentBytes = new TextEncoder().encode(attachmentStr);
     const ym2151LogJson = smf_to_ym2151_json_with_attachment(smfUint8, attachmentBytes);
 
     // Parse YM2151 log
@@ -290,14 +253,17 @@ async function generateYm2151AudioBuffer(mml: string): Promise<AudioBuffer> {
     audioBuffer = audioCtx.createBuffer(2, actualFrames, OPM_SAMPLE_RATE);
     audioBuffer.getChannelData(0).set(left);
     audioBuffer.getChannelData(1).set(right);
-    audioCache.set(mml, audioBuffer);
+    audioCache.set(cacheKey, audioBuffer);
   }
   return audioBuffer;
 }
 
 // ---- MML → AudioBuffer を返す（WAV export 等で利用） ----
+// 注意: 呼び出しのたびに新しいランダム音色を生成する（仮仕様）。
+// WAV exportを複数回実行すると毎回異なる音色のWAVが生成される。
 export async function renderYm2151AudioBuffer(mml: string): Promise<AudioBuffer> {
-  return generateYm2151AudioBuffer(mml);
+  const { attachment, toneString } = generateRandomToneAttachment();
+  return generateYm2151AudioBuffer(mml, attachment, toneString);
 }
 
 export async function playWithYm2151(mml: string, onPlayStart?: () => void): Promise<void> {
@@ -309,7 +275,10 @@ export async function playWithYm2151(mml: string, onPlayStart?: () => void): Pro
     audioCtx.resume().catch(() => {});
   }
 
-  const audioBuffer = await generateYm2151AudioBuffer(mml);
+  // 再生のたびに新しいランダム音色を生成する（仮仕様: issue #142）。
+  // 同じMMLでも毎回異なる音色が使われるため、キャッシュはMML+音色文字列をkeyとする。
+  const { attachment, toneString } = generateRandomToneAttachment();
+  const audioBuffer = await generateYm2151AudioBuffer(mml, attachment, toneString);
 
   // 再生中の音声を停止してから新しい再生を開始する
   // onendedはそのまま残す（stop()でonendedが発火し、待機中のpromiseが解決される）
