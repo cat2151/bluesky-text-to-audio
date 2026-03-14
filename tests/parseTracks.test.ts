@@ -154,6 +154,79 @@ describe('parseTracks', () => {
     expect(tracks[1]).toEqual({ type: 'VOICEVOX', text: 'ずんだもんなのだ' });
   });
 
+  it('chord YM2151トラックを解析する（targetEngine=YM2151）', () => {
+    const tracks = parseTracks('chord YM2151 C-Am-F-G');
+    expect(tracks).toHaveLength(1);
+    expect(tracks[0].type).toBe('CHORD');
+    expect(tracks[0].text).toBe('C-Am-F-G');
+    expect(tracks[0].targetEngine).toBe('YM2151');
+  });
+
+  it('chord Tone.jsトラックを解析する（targetEngine=TONE_JS）', () => {
+    const tracks = parseTracks('chord Tone.js I IV V');
+    expect(tracks).toHaveLength(1);
+    expect(tracks[0].type).toBe('CHORD');
+    expect(tracks[0].text).toBe('I IV V');
+    expect(tracks[0].targetEngine).toBe('TONE_JS');
+  });
+
+  it('chord Tonejsトラックを解析する（targetEngine=TONE_JS）', () => {
+    const tracks = parseTracks('chord Tonejs I IV V');
+    expect(tracks).toHaveLength(1);
+    expect(tracks[0].type).toBe('CHORD');
+    expect(tracks[0].text).toBe('I IV V');
+    expect(tracks[0].targetEngine).toBe('TONE_JS');
+  });
+
+  it('chord Surge XTトラックを解析する（targetEngine=SURGE_XT）', () => {
+    const tracks = parseTracks('chord Surge XT I IV V');
+    expect(tracks).toHaveLength(1);
+    expect(tracks[0].type).toBe('CHORD');
+    expect(tracks[0].text).toBe('I IV V');
+    expect(tracks[0].targetEngine).toBe('SURGE_XT');
+  });
+
+  it('chord SurgeXTトラックを解析する（targetEngine=SURGE_XT、スペースなし）', () => {
+    const tracks = parseTracks('chord SurgeXT I IV V');
+    expect(tracks).toHaveLength(1);
+    expect(tracks[0].type).toBe('CHORD');
+    expect(tracks[0].text).toBe('I IV V');
+    expect(tracks[0].targetEngine).toBe('SURGE_XT');
+  });
+
+  it('chord mmlabcトラックを解析する（targetEngine=MMLABC）', () => {
+    const tracks = parseTracks('chord mmlabc I IV V');
+    expect(tracks).toHaveLength(1);
+    expect(tracks[0].type).toBe('CHORD');
+    expect(tracks[0].text).toBe('I IV V');
+    expect(tracks[0].targetEngine).toBe('MMLABC');
+  });
+
+  it('Surge XT Chordトラックを解析する（targetEngine=SURGE_XT）', () => {
+    const tracks = parseTracks('Surge XT Chord I IV V');
+    expect(tracks).toHaveLength(1);
+    expect(tracks[0].type).toBe('CHORD');
+    expect(tracks[0].text).toBe('I IV V');
+    expect(tracks[0].targetEngine).toBe('SURGE_XT');
+  });
+
+  it('SurgeXT Chordトラックを解析する（targetEngine=SURGE_XT、スペースなし）', () => {
+    const tracks = parseTracks('SurgeXT Chord I IV V');
+    expect(tracks).toHaveLength(1);
+    expect(tracks[0].type).toBe('CHORD');
+    expect(tracks[0].text).toBe('I IV V');
+    expect(tracks[0].targetEngine).toBe('SURGE_XT');
+  });
+
+  it('chord+engineトラックはtargetEngineなしのchordトラックと共存できる', () => {
+    const tracks = parseTracks('chord C-Am-F-G;\nchord YM2151 I IV V');
+    expect(tracks).toHaveLength(2);
+    expect(tracks[0]).toEqual({ type: 'CHORD', text: 'C-Am-F-G' });
+    expect(tracks[1].type).toBe('CHORD');
+    expect(tracks[1].text).toBe('I IV V');
+    expect(tracks[1].targetEngine).toBe('YM2151');
+  });
+
   it('mmlabcトラックの後続キーワードなしトラックはmmlabcを引き継ぐ', () => {
     const tracks = parseTracks('mmlabc cde;fga');
     expect(tracks).toHaveLength(2);

@@ -13,6 +13,7 @@ import {
   playVoicevoxMode,
   playSurgeXtMode,
   exportWavHandler,
+  chordPreprocessMixText,
 } from './playModeHandlers';
 import {
   createPlayBtn,
@@ -599,7 +600,23 @@ export function addPlayButton(postEl: HTMLElement): void {
       playBtn.disabled = true;
       showStatusToast('prerendering...');
       try {
-        await playMixModeHandler(textarea.value, handleError, clearStatusToast);
+        // chord+engineトラックがあれば、chord2mmlで展開したMMLをtextareaに表示する
+        const originalText = textarea.value;
+        let playText = originalText;
+        try {
+          const { preprocessed, changed } = await chordPreprocessMixText(originalText);
+          if (changed) {
+            textarea.value = preprocessed;
+            textareaInitialized = true;
+            textarea.style.display = 'block';
+            showTemplateSelectIfNeeded();
+            showWavExportBtnIfNeeded();
+            playText = preprocessed;
+          }
+        } catch {
+          // chord preprocessing に失敗した場合はそのまま続行（エラーはplayMixModeHandlerで処理）
+        }
+        await playMixModeHandler(playText, handleError, clearStatusToast);
       } finally {
         clearStatusToast();
         playBtn.disabled = false;

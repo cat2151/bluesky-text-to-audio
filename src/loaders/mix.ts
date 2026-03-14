@@ -80,12 +80,21 @@ async function renderMmlabcAudioBuffer(mml: string): Promise<AudioBuffer> {
   return renderAbcAudioBuffer(abcText);
 }
 
-// ---- chord: コード進行 → MML → ABC → AudioBuffer ----
-async function renderChordAudioBuffer(chord: string): Promise<AudioBuffer> {
-  console.log(LOG_PREFIX, '[chord] offline rendering:', chord.substring(0, 50));
+// ---- chord: コード進行 → MML → (ターゲットエンジン) → AudioBuffer ----
+async function renderChordAudioBuffer(chord: string, targetEngine?: import('../mixParser').ChordTargetEngine): Promise<AudioBuffer> {
+  console.log(LOG_PREFIX, '[chord] offline rendering:', chord.substring(0, 50), targetEngine ? `→ ${targetEngine}` : '→ MMLABC');
   const mml = await chordToMml(chord);
-  const abcText = mml2abcParse(mml);
-  return renderAbcAudioBuffer(abcText);
+  if (targetEngine === 'YM2151') {
+    return renderYm2151AudioBuffer(mml);
+  } else if (targetEngine === 'TONE_JS') {
+    return renderToneJsAudioBuffer(mml);
+  } else if (targetEngine === 'SURGE_XT') {
+    return renderSurgeXtAudioBuffer(mml);
+  } else {
+    // MMLABC (default, targetEngine未指定またはMMLABC)
+    const abcText = mml2abcParse(mml);
+    return renderAbcAudioBuffer(abcText);
+  }
 }
 
 // ---- Tone.js: MML → AudioBuffer (オフラインレンダリング + 末尾無音トリム) ----
@@ -248,7 +257,7 @@ export async function playMixMode(text: string, onPlayStart?: () => void): Promi
         console.log(LOG_PREFIX, `[track ${i}] mmlabc rendered: ${buf.duration.toFixed(2)}s`);
         return buf;
       } else if (track.type === 'CHORD') {
-        const buf = await renderChordAudioBuffer(track.text);
+        const buf = await renderChordAudioBuffer(track.text, track.targetEngine);
         console.log(LOG_PREFIX, `[track ${i}] chord rendered: ${buf.duration.toFixed(2)}s`);
         return buf;
       } else {

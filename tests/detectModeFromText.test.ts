@@ -156,4 +156,48 @@ describe('detectModeFromText', () => {
     expect(result.mode).toBe('mix');
     expect(result.cleanedText).toBe(text);
   });
+
+  it('mixモード: chord YM2151 単独（セミコロンなし）', () => {
+    const result = detectModeFromText('chord YM2151 C-Am-F-G');
+    expect(result.mode).toBe('mix');
+    expect(result.cleanedText).toBe('chord YM2151 C-Am-F-G');
+  });
+
+  it('mixモード: chord Tone.js 単独', () => {
+    const result = detectModeFromText('chord Tone.js I IV V');
+    expect(result.mode).toBe('mix');
+    expect(result.cleanedText).toBe('chord Tone.js I IV V');
+  });
+
+  it('mixモード: chord Tonejs 単独', () => {
+    const result = detectModeFromText('chord Tonejs I IV V');
+    expect(result.mode).toBe('mix');
+    expect(result.cleanedText).toBe('chord Tonejs I IV V');
+  });
+
+  it('mixモード: chord Surge XT 単独', () => {
+    const result = detectModeFromText('chord Surge XT I IV V');
+    expect(result.mode).toBe('mix');
+    expect(result.cleanedText).toBe('chord Surge XT I IV V');
+  });
+
+  it('mixモード: Surge XT Chord 単独', () => {
+    const result = detectModeFromText('Surge XT Chord I IV V');
+    expect(result.mode).toBe('mix');
+    expect(result.cleanedText).toBe('Surge XT Chord I IV V');
+  });
+
+  it('mixモード: chord YM2151 がセミコロン区切りの先頭トラック', () => {
+    const text = 'chord YM2151 C;\nVOICEVOX ずんだもんなのだ';
+    const result = detectModeFromText(text);
+    expect(result.mode).toBe('mix');
+    expect(result.cleanedText).toBe(text);
+  });
+
+  it('mixモード: Surge XT Chord がセミコロン区切りの先頭トラック', () => {
+    const text = 'Surge XT Chord I IV V;\nYM2151 rc';
+    const result = detectModeFromText(text);
+    expect(result.mode).toBe('mix');
+    expect(result.cleanedText).toBe(text);
+  });
 });

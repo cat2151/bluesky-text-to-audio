@@ -44,5 +44,17 @@ export const modeTemplates: Partial<Record<PlayMode, TemplateItem[]>> = {
       name: 'VOICEVOX + YM2151 + Tone.js',
       text: 'VOICEVOX ずんだもんなのだ;\nYM2151 rc;\nTone.js rrg',
     },
+    {
+      name: 'chord YM2151',
+      text: 'chord YM2151 I IV V I',
+    },
+    {
+      name: 'Surge XT Chord',
+      text: 'Surge XT Chord I IV V I',
+    },
+    {
+      name: 'chord Tone.js',
+      text: 'chord Tone.js I IV V I',
+    },
   ],
 };
