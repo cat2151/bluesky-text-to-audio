@@ -495,6 +495,21 @@ export function addPlayButton(postEl: HTMLElement): void {
     }
   }
 
+  // ---- mixモードエラー時: Surge XT / VOICEVOXポートエラーならserver起動の導線を表示 ----
+  function isSurgeXtPortError(err: unknown): boolean {
+    if (!(err instanceof Error)) return false;
+    return err.message.startsWith('Surge XT:') && isPortError(err);
+  }
+
+  function handleMixError(logLabel: string, message: string, error: unknown): void {
+    handleError(logLabel, message, error);
+    if (isSurgeXtPortError(error)) {
+      surgextDownloadRow.style.display = 'block';
+    } else if (isPortError(error)) {
+      voicevoxDownloadRow.style.display = 'block';
+    }
+  }
+
   // textarea編集デバウンスで自動play（ym2151/mixはレンダリング中にキーボード入力が止まるため1sec、それ以外は0）
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   textarea.addEventListener('input', () => {
@@ -616,7 +631,7 @@ export function addPlayButton(postEl: HTMLElement): void {
         } catch (preprocessErr) {
           console.warn(LOG_PREFIX, 'chord preprocessing failed, playing original text:', preprocessErr);
         }
-        await playMixModeHandler(playText, handleError, clearStatusToast);
+        await playMixModeHandler(playText, handleMixError, clearStatusToast);
       } finally {
         clearStatusToast();
         playBtn.disabled = false;

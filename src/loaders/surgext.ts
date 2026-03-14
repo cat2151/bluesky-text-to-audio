@@ -22,7 +22,8 @@ export async function renderSurgeXtAudioBuffer(text: string): Promise<AudioBuffe
   );
 
   if (!response.success || !response.audio) {
-    throw new Error(response.error ?? 'Surge XT error');
+    const errMsg = response.error ?? 'error';
+    throw new Error(errMsg.startsWith('Surge XT') ? errMsg : `Surge XT: ${errMsg}`);
   }
 
   const binaryString = atob(response.audio);
