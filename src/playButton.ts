@@ -208,6 +208,8 @@ export function addPlayButton(postEl: HTMLElement): void {
   historyToggleBtn.addEventListener('click', e => {
     e.stopPropagation();
     historyOpen = !historyOpen;
+    menu.style.display = 'none';
+    dropBtn.setAttribute('aria-expanded', 'false');
     if (historyOpen) {
       historyToggleBtn.textContent = '📖 historyを閉じる';
       void renderHistory().then(() => {
@@ -219,7 +221,7 @@ export function addPlayButton(postEl: HTMLElement): void {
     }
   });
 
-  menu.append(historyToggleBtn, historyContainer);
+  menu.append(historyToggleBtn);
 
   row.append(playBtn, dropBtn, menu, templateSelect, wavExportBtn);
 
@@ -271,6 +273,10 @@ export function addPlayButton(postEl: HTMLElement): void {
       wavExportBtn.style.display = 'none';
     }
   }
+
+  // historyContainer上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
+  historyContainer.addEventListener('click', e => { e.stopPropagation(); });
+  historyContainer.addEventListener('mousedown', e => { e.stopPropagation(); });
 
   // textarea上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
   textarea.addEventListener('click', e => { e.stopPropagation(); });
@@ -449,7 +455,7 @@ export function addPlayButton(postEl: HTMLElement): void {
   });
 
   const wrapper = createWrapper();
-  wrapper.append(row, textarea, scoreDiv);
+  wrapper.append(row, historyContainer, textarea, scoreDiv);
 
   postEl.prepend(wrapper);
 }
