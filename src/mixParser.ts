@@ -1,5 +1,5 @@
 // ---- MixモードのトラックParsing ----
-// セミコロンでtrack分割し、各trackのtype(VOICEVOX/YM2151/TONE_JS/SURGE_XT/EFFECT)とtextを返す。
+// セミコロンでtrack分割し、各trackのtype(VOICEVOX/YM2151/TONE_JS/SURGE_XT/MMLABC/CHORD/EFFECT)とtextを返す。
 // ブラウザAPIに依存しない純粋な関数のため、単体テスト可能。
 
 export type TrackType = 'VOICEVOX' | 'YM2151' | 'TONE_JS' | 'SURGE_XT' | 'MMLABC' | 'CHORD' | 'EFFECT';

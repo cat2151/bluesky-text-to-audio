@@ -60,7 +60,8 @@ function trimTrailingSilence(buffer: AudioBuffer, threshold = 0.0001): AudioBuff
 // ---- abcjs: ABC text → AudioBuffer (オフラインレンダリング) ----
 async function renderAbcAudioBuffer(abcText: string): Promise<AudioBuffer> {
   console.log(LOG_PREFIX, '[abcjs] offline rendering ABC text...');
-  const tuneObjects = ABCJS.renderAbc('*', abcText);
+  const dummyDiv = document.createElement('div');
+  const tuneObjects = ABCJS.renderAbc(dummyDiv, abcText);
   const visualObj = tuneObjects[0];
   if (!visualObj) throw new Error('abcjs could not parse ABC text');
   const synth = new ABCJS.synth.CreateSynth();
