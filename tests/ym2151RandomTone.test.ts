@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   getDefaultConfig,
   generateRandomToneString,
@@ -7,6 +7,10 @@ import {
 
 describe('ym2151RandomTone', () => {
   describe('generateRandomToneString', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
     it('デフォルト設定でトーン文字列を生成する', () => {
       const config = getDefaultConfig();
       const toneString = generateRandomToneString(config);
@@ -40,14 +44,32 @@ describe('ym2151RandomTone', () => {
       }
     });
 
-    it('呼び出しのたびに異なるトーン文字列を生成する（確率的）', () => {
+    it('同一の乱数列であれば同一のトーン文字列を生成する（決定的）', () => {
       const config = getDefaultConfig();
-      const results = new Set<string>();
-      for (let i = 0; i < 20; i++) {
-        results.add(generateRandomToneString(config));
-      }
-      // 20回生成すれば少なくとも2種類以上のユニークなトーンが生成されるはず
-      expect(results.size).toBeGreaterThan(1);
+
+      // 同じ固定シーケンスで2回生成 → 同一結果になるはず
+      const fixedValues = [0.1, 0.5, 0.9, 0.2, 0.7, 0.3, 0.8, 0.4, 0.6, 0.0,
+                           0.1, 0.5, 0.9, 0.2, 0.7, 0.3, 0.8, 0.4, 0.6, 0.0];
+      let callCount = 0;
+      const spy = vi.spyOn(Math, 'random').mockImplementation(() => fixedValues[callCount++ % fixedValues.length]);
+      const first = generateRandomToneString(config);
+      callCount = 0; // シーケンスをリセット
+      const second = generateRandomToneString(config);
+      spy.mockRestore();
+
+      expect(first).toBe(second);
+    });
+
+    it('異なる乱数列であれば異なるトーン文字列を生成する（決定的）', () => {
+      const config = getDefaultConfig();
+
+      const spy = vi.spyOn(Math, 'random').mockReturnValue(0.0);
+      const allLow = generateRandomToneString(config);
+      spy.mockReturnValue(1.0);
+      const allHigh = generateRandomToneString(config);
+      spy.mockRestore();
+
+      expect(allLow).not.toBe(allHigh);
     });
   });
 
