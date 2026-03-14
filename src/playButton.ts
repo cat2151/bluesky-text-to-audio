@@ -26,6 +26,7 @@ import {
   createTemplateSelect,
   createWavExportBtn,
   createTextarea,
+  createTextarea2,
   createScoreDiv,
   createWrapper,
   createPortErrorRow,
@@ -95,6 +96,7 @@ export function addPlayButton(postEl: HTMLElement): void {
   const templateSelect = createTemplateSelect();
   const wavExportBtn = createWavExportBtn();
   const textarea = createTextarea();
+  const textarea2 = createTextarea2();
   const scoreDiv = createScoreDiv();
   const voicevoxDownloadRow = createPortErrorRow(
     'https://cat2151.github.io/voicevox-playground/',
@@ -418,6 +420,10 @@ export function addPlayButton(postEl: HTMLElement): void {
   textarea.addEventListener('click', e => { e.stopPropagation(); });
   textarea.addEventListener('mousedown', e => { e.stopPropagation(); });
 
+  // textarea2上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
+  textarea2.addEventListener('click', e => { e.stopPropagation(); });
+  textarea2.addEventListener('mousedown', e => { e.stopPropagation(); });
+
   // templateSelect上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
   templateSelect.addEventListener('click', e => { e.stopPropagation(); });
   templateSelect.addEventListener('mousedown', e => { e.stopPropagation(); });
@@ -526,6 +532,25 @@ export function addPlayButton(postEl: HTMLElement): void {
     }, delay);
   });
 
+  // textarea2編集デバウンスで自動play（mixモードのMMLを直接演奏、1sec）
+  let debounceTimer2: ReturnType<typeof setTimeout> | null = null;
+  textarea2.addEventListener('input', () => {
+    if (debounceTimer2 !== null) clearTimeout(debounceTimer2);
+    debounceTimer2 = setTimeout(async () => {
+      debounceTimer2 = null;
+      if (playBtn.disabled) return;
+      clearErrorToast();
+      playBtn.disabled = true;
+      showStatusToast('prerendering...');
+      try {
+        await playMixModeHandler(textarea2.value, handleMixError, clearStatusToast);
+      } finally {
+        clearStatusToast();
+        playBtn.disabled = false;
+      }
+    }, 1000);
+  });
+
   // 投稿ごとのシンセインスタンス
   const abcjsPlayer = new AbcjsPlayer();
 
@@ -615,17 +640,14 @@ export function addPlayButton(postEl: HTMLElement): void {
       playBtn.disabled = true;
       showStatusToast('prerendering...');
       try {
-        // chord+engineトラックがあれば、chord2mmlで展開したMMLをtextareaに表示する
+        // chord+engineトラックがあれば、chord2mmlで展開したMMLをtextarea2に表示する（textareaの内容は維持する）
         const originalText = textarea.value;
         let playText = originalText;
         try {
           const { preprocessed, changed } = await chordPreprocessMixText(originalText);
           if (changed) {
-            textarea.value = preprocessed;
-            textareaInitialized = true;
-            textarea.style.display = 'block';
-            showTemplateSelectIfNeeded();
-            showWavExportBtnIfNeeded();
+            textarea2.value = preprocessed;
+            textarea2.style.display = 'block';
             playText = preprocessed;
           }
         } catch (preprocessErr) {
@@ -669,7 +691,7 @@ export function addPlayButton(postEl: HTMLElement): void {
   });
 
   const wrapper = createWrapper();
-  wrapper.append(row, voicevoxDownloadRow, surgextDownloadRow, historyHeader, historyContainer, favoritesHeader, favoritesContainer, textarea, scoreDiv);
+  wrapper.append(row, voicevoxDownloadRow, surgextDownloadRow, historyHeader, historyContainer, favoritesHeader, favoritesContainer, textarea, textarea2, scoreDiv);
 
   postEl.prepend(wrapper);
 }
