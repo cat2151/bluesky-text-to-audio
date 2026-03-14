@@ -9,12 +9,26 @@ export function detectModeFromText(text: string): { mode: PlayMode; cleanedText:
   const lastLine = lines[lines.length - 1];
 
   // mixモード: セミコロン区切りで先頭trackがVOICEVOX/YM2151/Tone.js/Surge XTキーワードで始まる場合
+  // または、chord+engineフォーマット（例: "chord YM2151 C", "Surge XT Chord I"）で始まる場合
   // キーワードはtrack内容と同行に書くため、cleanedTextはそのまま保持する
   if (text.includes(';')) {
     const firstTrack = text.split(';')[0].trim();
-    if (/^(VOICEVOX|YM2151|Tonejs|Tone\.js|Surge\s*XT)\s/i.test(firstTrack)) {
+    if (
+      /^(VOICEVOX|YM2151|Tonejs|Tone\.js|Surge\s*XT)\s/i.test(firstTrack) ||
+      /^chord\s+(YM2151|Tone\.?js|Surge\s*XT|mmlabc)\s+/i.test(firstTrack) ||
+      /^Surge\s*XT\s+Chord\s+/i.test(firstTrack)
+    ) {
       return { mode: 'mix', cleanedText: text };
     }
+  }
+
+  // chord+engine単独（セミコロンなし）もmixモードとして扱う
+  // 例: "chord YM2151 C", "Surge XT Chord I", "chord tone.js 3"
+  if (
+    /^chord\s+(YM2151|Tone\.?js|Surge\s*XT|mmlabc)\s+/i.test(firstLine) ||
+    /^Surge\s*XT\s+Chord\s+/i.test(firstLine)
+  ) {
+    return { mode: 'mix', cleanedText: text };
   }
 
   const checks: [RegExp, PlayMode][] = [

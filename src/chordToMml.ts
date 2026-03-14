@@ -1,4 +1,5 @@
 import { parseChordViaLibrary } from './loaders/chord2mml';
+import { parseTracks, type ChordTargetEngine } from './mixParser';
 
 // ---- コード進行テキストをMMLに変換（方言を正規化しつつパース、成功したMMLを直接返す） ----
 export async function chordToMml(chord: string): Promise<string> {
@@ -51,4 +52,52 @@ export async function chordToMml(chord: string): Promise<string> {
   }
   // すべての候補が失敗した場合は最後のエラーを投げる
   throw lastError;
+}
+
+// ---- CHORDターゲットエンジン → テキストプレフィックスのマッピング ----
+function engineToPrefix(engine: ChordTargetEngine): string {
+  switch (engine) {
+    case 'YM2151': return 'YM2151';
+    case 'TONE_JS': return 'Tone.js';
+    case 'SURGE_XT': return 'Surge XT';
+    case 'MMLABC': return 'mmlabc';
+  }
+}
+
+// ---- トラックをテキスト表現に戻す ----
+function trackToText(track: import('./mixParser').Track): string {
+  switch (track.type) {
+    case 'VOICEVOX': return `VOICEVOX ${track.text}`;
+    case 'YM2151': return `YM2151 ${track.text}`;
+    case 'TONE_JS': return `Tone.js ${track.text}`;
+    case 'SURGE_XT': return `Surge XT ${track.text}`;
+    case 'MMLABC': return `mmlabc ${track.text}`;
+    case 'CHORD':
+      if (track.targetEngine !== undefined) {
+        return `chord ${engineToPrefix(track.targetEngine)} ${track.text}`;
+      }
+      return `chord ${track.text}`;
+    case 'EFFECT': return `effect ${track.text}`;
+  }
+}
+
+// ---- mixテキストのchord+engineトラックをエンジン+MMLテキストに展開する ----
+// chord+engineトラックがある場合のみ変換し、textareaへの表示用テキストを返す。
+// 変換がなかった場合は changed=false を返す。
+export async function chordPreprocessMixText(text: string): Promise<{ preprocessed: string; changed: boolean }> {
+  const tracks = parseTracks(text);
+  const hasChordWithEngine = tracks.some(t => t.type === 'CHORD' && t.targetEngine !== undefined);
+  if (!hasChordWithEngine) return { preprocessed: text, changed: false };
+
+  const processedParts = await Promise.all(
+    tracks.map(async (track) => {
+      if (track.type === 'CHORD' && track.targetEngine !== undefined) {
+        const mml = await chordToMml(track.text);
+        return `${engineToPrefix(track.targetEngine)} ${mml}`;
+      }
+      return trackToText(track);
+    }),
+  );
+
+  return { preprocessed: processedParts.join(';\n'), changed: true };
 }

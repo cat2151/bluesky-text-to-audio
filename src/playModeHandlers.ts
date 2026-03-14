@@ -8,7 +8,7 @@ import { playWithVoicevox } from './loaders/voicevox';
 import { playWithSurgeXt } from './loaders/surgext';
 import { playMixMode as playMixModeImpl } from './loaders/mix';
 import type { AbcjsPlayer } from './loaders/abcjsPlayer';
-import { chordToMml } from './chordToMml';
+import { chordToMml, chordPreprocessMixText } from './chordToMml';
 import { audioBufferToWavBlob } from './wavEncoder';
 
 const LOG_PREFIX = '[BTA:playButton]';
@@ -108,6 +108,8 @@ export async function playMixMode(
     handleError('Mix play error:', 'Mix play error', e2);
   }
 }
+
+export { chordPreprocessMixText };
 
 export async function playVoicevoxMode(
   text: string,
