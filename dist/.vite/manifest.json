@@ -1,6 +1,6 @@
 {
   "../../../../../@crx/manifest": {
-    "file": "assets/crx-manifest.js-XsPPjxbo.js",
+    "file": "assets/crx-manifest.js-DtJoPEa6.js",
     "name": "crx-manifest.js",
     "src": "../../../../../@crx/manifest",
     "isEntry": true
@@ -11,18 +11,18 @@
     "src": "__vite-browser-external",
     "isDynamicEntry": true
   },
-  "_content.ts-loader-DV7mai6a.js": {
-    "file": "assets/content.ts-loader-DV7mai6a.js",
-    "src": "_content.ts-loader-DV7mai6a.js"
+  "_content.ts-loader-JvaOP-GD.js": {
+    "file": "assets/content.ts-loader-JvaOP-GD.js",
+    "src": "_content.ts-loader-JvaOP-GD.js"
   },
   "src/background.ts": {
-    "file": "assets/background.ts-BlC912L8.js",
+    "file": "assets/background.ts-BCDKgwlJ.js",
     "name": "background.ts",
     "src": "src/background.ts",
     "isEntry": true
   },
   "src/content.ts": {
-    "file": "assets/content.ts-CnxdDGwV.js",
+    "file": "assets/content.ts-BtXL8fBd.js",
     "name": "content.ts",
     "src": "src/content.ts",
     "isEntry": true,
