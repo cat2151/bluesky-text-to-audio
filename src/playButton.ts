@@ -539,6 +539,10 @@ export function addPlayButton(postEl: HTMLElement): void {
     debounceTimer2 = setTimeout(async () => {
       debounceTimer2 = null;
       if (playBtn.disabled) return;
+      // mixモードかつtextarea2が表示中の場合のみ再生する
+      const currentMode = (playBtn.dataset.btaMode as PlayMode) || selectedMode;
+      if (currentMode !== 'mix' || textarea2.style.display === 'none') return;
+      clearPortErrorRows();
       clearErrorToast();
       playBtn.disabled = true;
       showStatusToast('prerendering...');
@@ -649,6 +653,10 @@ export function addPlayButton(postEl: HTMLElement): void {
             textarea2.value = preprocessed;
             textarea2.style.display = 'block';
             playText = preprocessed;
+          } else {
+            // chord+engineトラックがなくなった場合はtextarea2を非表示・クリアする
+            textarea2.style.display = 'none';
+            textarea2.value = '';
           }
         } catch (preprocessErr) {
           console.warn(LOG_PREFIX, 'chord preprocessing failed, playing original text:', preprocessErr);

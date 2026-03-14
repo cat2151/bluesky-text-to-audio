@@ -215,6 +215,9 @@ export function createTextarea(): HTMLTextAreaElement {
 export function createTextarea2(): HTMLTextAreaElement {
   const textarea2 = document.createElement('textarea');
   textarea2.setAttribute('data-bta-textarea2', '');
+  textarea2.setAttribute('aria-label', 'chord2mml展開結果');
+  textarea2.title = 'chord2mml展開結果（編集可能・1秒後に自動再生）';
+  textarea2.placeholder = 'chord2mml展開結果';
   textarea2.style.cssText = `
     display: none;
     width: 100%;
