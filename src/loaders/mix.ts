@@ -124,29 +124,35 @@ let currentSource: AudioBufferSourceNode | null = null;
 
 // ---- effect トラック: mixedBuffer に Tone.js エフェクトをかけて再生 ----
 // mixedBuffer を WAV blob → blob URL → @Sampler MML → Tone.js で再生する (検証用仮実装)
-// t60 l1 c = tempo 60、全音符1つ = 4秒固定でサンプラーをトリガーする。
+// ノート長はサンプル長をカバーできるようにテンポを動的計算する。
 // エフェクトのテール含め (mixedBuffer.duration + EFFECT_TAIL_SECONDS) 秒待ってから停止する。
 const EFFECT_TAIL_SECONDS = 4;
 
 async function applyEffectAndPlay(mixedBuffer: AudioBuffer, effectText: string): Promise<void> {
-  // effectText は '@EffectName' 形式であることを確認する (検証用)
-  if (!/^@\S/.test(effectText)) {
+  // effectText は '@EffectName' 形式（英数字・アンダースコアのみ）であることを確認する (検証用)
+  if (!/^@[A-Za-z0-9_]+$/.test(effectText)) {
     throw new Error(`Invalid effect format: "${effectText}". Expected "@EffectName" (e.g. "@PingPongDelay")`);
   }
   const blob = audioBufferToWavBlob(mixedBuffer);
   const blobUrl = URL.createObjectURL(blob);
   console.log(LOG_PREFIX, `[Effect] Created blob URL for ${mixedBuffer.duration.toFixed(2)}s buffer`);
+  // SequencerNodes はノード再利用・disposeAllによる掃除のために関数スコープで管理する
+  let nodes: InstanceType<Awaited<ReturnType<typeof loadSequencer>>['SequencerNodes']> | null = null;
   try {
-    const mml = `@Sampler{ "urls": { "C4": "${blobUrl}" } } ${effectText} t60 l1 c`;
+    // l1（全音符）が mixedBuffer.duration + テールをカバーするようにテンポを動的計算する。
+    // 全音符 = 240/T 秒、T = floor(240 / totalDuration)、最小1
+    const totalDuration = mixedBuffer.duration + EFFECT_TAIL_SECONDS;
+    const tempo = Math.max(1, Math.floor(240 / totalDuration));
+    const mml = `@Sampler{ "urls": { "C4": "${blobUrl}" } } ${effectText} t${tempo} l1 c`;
     console.log(LOG_PREFIX, '[Effect] MML:', mml.substring(0, 100));
     const sequencer = await loadSequencer();
     const sequence = await parseMmlViaLibrary(mml);
     await ToneModule.start();
-    const nodes = new sequencer.SequencerNodes();
+    nodes = new sequencer.SequencerNodes();
     await sequencer.playSequence(ToneModule as unknown as ToneLib, nodes, sequence);
     ToneModule.Transport.start();
     // エフェクトのテール含め (mixedBuffer.duration + EFFECT_TAIL_SECONDS) 秒待つ (検証用)
-    const waitMs = (mixedBuffer.duration + EFFECT_TAIL_SECONDS) * 1000;
+    const waitMs = totalDuration * 1000;
     await new Promise<void>(resolve => {
       setTimeout(() => {
         ToneModule.Transport.stop();
@@ -154,8 +160,12 @@ async function applyEffectAndPlay(mixedBuffer: AudioBuffer, effectText: string):
       }, waitMs);
     });
   } finally {
+    ToneModule.Transport.cancel();
+    if (nodes) {
+      nodes.disposeAll();
+    }
     URL.revokeObjectURL(blobUrl);
-    console.log(LOG_PREFIX, '[Effect] Revoked blob URL');
+    console.log(LOG_PREFIX, '[Effect] Revoked blob URL and disposed nodes');
   }
 }
 
