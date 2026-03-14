@@ -10,6 +10,8 @@
 //   → Web Audio API で再生
 
 import * as ToneModule from 'tone';
+import * as ABCJS from 'abcjs';
+import { parse as mml2abcParse } from '../mml2abc.mjs';
 import type { ToneLib } from '../types';
 import { renderYm2151AudioBuffer } from './ym2151';
 import { renderVoicevoxAudioBuffer } from './voicevox';
@@ -19,6 +21,7 @@ import { parseMmlViaLibrary } from './mmlToJson';
 import { getAudioContext } from '../audioContext';
 import { parseTracks } from '../mixParser';
 import { audioBufferToWavBlob } from '../wavEncoder';
+import { chordToMml } from '../chordToMml';
 
 export { parseTracks };
 
@@ -52,6 +55,37 @@ function trimTrailingSilence(buffer: AudioBuffer, threshold = 0.0001): AudioBuff
     `[Tone.js] trimmed silence: ${buffer.duration.toFixed(2)}s → ${trimmed.duration.toFixed(2)}s`,
   );
   return trimmed;
+}
+
+// ---- abcjs: ABC text → AudioBuffer (オフラインレンダリング) ----
+async function renderAbcAudioBuffer(abcText: string): Promise<AudioBuffer> {
+  console.log(LOG_PREFIX, '[abcjs] offline rendering ABC text...');
+  const dummyDiv = document.createElement('div');
+  const tuneObjects = ABCJS.renderAbc(dummyDiv, abcText);
+  const visualObj = tuneObjects[0];
+  if (!visualObj) throw new Error('abcjs could not parse ABC text');
+  const synth = new ABCJS.synth.CreateSynth();
+  await synth.init({ visualObj, options: {} });
+  await synth.prime();
+  const buffer = synth.getAudioBuffer();
+  if (!buffer) throw new Error('abcjs getAudioBuffer returned null');
+  console.log(LOG_PREFIX, `[abcjs] offline rendered: ${buffer.duration.toFixed(2)}s`);
+  return buffer;
+}
+
+// ---- mmlabc: MML → ABC → AudioBuffer ----
+async function renderMmlabcAudioBuffer(mml: string): Promise<AudioBuffer> {
+  console.log(LOG_PREFIX, '[mmlabc] offline rendering:', mml.substring(0, 50));
+  const abcText = mml2abcParse(mml);
+  return renderAbcAudioBuffer(abcText);
+}
+
+// ---- chord: コード進行 → MML → ABC → AudioBuffer ----
+async function renderChordAudioBuffer(chord: string): Promise<AudioBuffer> {
+  console.log(LOG_PREFIX, '[chord] offline rendering:', chord.substring(0, 50));
+  const mml = await chordToMml(chord);
+  const abcText = mml2abcParse(mml);
+  return renderAbcAudioBuffer(abcText);
 }
 
 // ---- Tone.js: MML → AudioBuffer (オフラインレンダリング + 末尾無音トリム) ----
@@ -208,6 +242,14 @@ export async function playMixMode(text: string, onPlayStart?: () => void): Promi
       } else if (track.type === 'SURGE_XT') {
         const buf = await renderSurgeXtAudioBuffer(track.text);
         console.log(LOG_PREFIX, `[track ${i}] Surge XT rendered: ${buf.duration.toFixed(2)}s`);
+        return buf;
+      } else if (track.type === 'MMLABC') {
+        const buf = await renderMmlabcAudioBuffer(track.text);
+        console.log(LOG_PREFIX, `[track ${i}] mmlabc rendered: ${buf.duration.toFixed(2)}s`);
+        return buf;
+      } else if (track.type === 'CHORD') {
+        const buf = await renderChordAudioBuffer(track.text);
+        console.log(LOG_PREFIX, `[track ${i}] chord rendered: ${buf.duration.toFixed(2)}s`);
         return buf;
       } else {
         return renderToneJsAudioBuffer(track.text);
