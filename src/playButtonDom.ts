@@ -234,4 +234,31 @@ export function createWrapper(): HTMLDivElement {
   return wrapper;
 }
 
+/** ポートエラー時のダウンロード誘導リンク行を生成する */
+export function createPortErrorRow(url: string, linkText: string, description: string): HTMLDivElement {
+  const div = document.createElement('div');
+  div.setAttribute('data-bta-port-error-row', '');
+  div.style.cssText = `
+    display: none;
+    margin: 4px 0 0 0;
+    padding: 6px 8px;
+    font-size: 12px;
+    border: 1px solid #f0c040;
+    border-radius: 4px;
+    background: #fffbea;
+    color: #555;
+  `;
+  const link = document.createElement('a');
+  link.href = url;
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  link.textContent = linkText;
+  link.style.cssText = `color: #0085ff; text-decoration: underline;`;
+  const descSpan = document.createElement('span');
+  descSpan.textContent = ` — ${description}`;
+  div.appendChild(link);
+  div.appendChild(descSpan);
+  return div;
+}
+
 // historyおよびお気に入りのUIファクトリ関数は、それぞれ historyDom.ts / favoritesDom.ts へ移動済み。

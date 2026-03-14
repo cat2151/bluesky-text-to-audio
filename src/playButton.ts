@@ -27,6 +27,7 @@ import {
   createTextarea,
   createScoreDiv,
   createWrapper,
+  createPortErrorRow,
 } from './playButtonDom';
 import {
   createHistoryToggleMenuItem,
@@ -94,6 +95,16 @@ export function addPlayButton(postEl: HTMLElement): void {
   const wavExportBtn = createWavExportBtn();
   const textarea = createTextarea();
   const scoreDiv = createScoreDiv();
+  const voicevoxDownloadRow = createPortErrorRow(
+    'https://cat2151.github.io/voicevox-playground/',
+    'VOICEVOXをダウンロード',
+    'このchrome拡張は voicevox-playground と同じ技術で、ずんだもん読み上げができます'
+  );
+  const surgextDownloadRow = createPortErrorRow(
+    'https://github.com/cat2151/clap-mml-render-tui/blob/main/README.ja.md',
+    'Surge XTのサーバーをダウンロード',
+    'このchrome拡張は clap-mml-render-tui のserverモードと接続して、Surge XTを演奏できます'
+  );
   const historyToggleBtn = createHistoryToggleMenuItem();
   const historyHeader = createHistoryCollapseHeader();
   const historyCollapseBtn = historyHeader.querySelector<HTMLButtonElement>('[data-bta-history-collapse-btn]')!;
@@ -448,6 +459,35 @@ export function addPlayButton(postEl: HTMLElement): void {
     showErrorToast(message);
   }
 
+  // ---- ポートエラー検出（サーバーが起動していない場合） ----
+  function isPortError(err: unknown): boolean {
+    if (!(err instanceof Error)) return false;
+    const msg = err.message;
+    return msg.includes('Failed to fetch') || msg.includes('ERR_CONNECTION_REFUSED') || msg.includes('ECONNREFUSED');
+  }
+
+  // ---- ポートエラー行のクリア ----
+  function clearPortErrorRows(): void {
+    voicevoxDownloadRow.style.display = 'none';
+    surgextDownloadRow.style.display = 'none';
+  }
+
+  // ---- VOICEVOXポートエラー時にtextareaとリンク行を表示 ----
+  function handleVoicevoxError(logLabel: string, message: string, error: unknown): void {
+    handleError(logLabel, message, error);
+    if (isPortError(error)) {
+      voicevoxDownloadRow.style.display = 'block';
+    }
+  }
+
+  // ---- Surge XTポートエラー時にtextareaとリンク行を表示 ----
+  function handleSurgextError(logLabel: string, message: string, error: unknown): void {
+    handleError(logLabel, message, error);
+    if (isPortError(error)) {
+      surgextDownloadRow.style.display = 'block';
+    }
+  }
+
   // textarea編集デバウンスで自動play（ym2151/mixはレンダリング中にキーボード入力が止まるため1sec、それ以外は0）
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   textarea.addEventListener('input', () => {
@@ -564,10 +604,11 @@ export function addPlayButton(postEl: HTMLElement): void {
       const text = textarea.value;
       if (!text) return;
       clearErrorToast();
+      clearPortErrorRows();
       playBtn.disabled = true;
       showStatusToast('fetching...');
       try {
-        await playVoicevoxMode(text, handleError, clearStatusToast);
+        await playVoicevoxMode(text, handleVoicevoxError, clearStatusToast);
       } finally {
         clearStatusToast();
         playBtn.disabled = false;
@@ -578,10 +619,11 @@ export function addPlayButton(postEl: HTMLElement): void {
       const text = textarea.value;
       if (!text) return;
       clearErrorToast();
+      clearPortErrorRows();
       playBtn.disabled = true;
       showStatusToast('prerendering...');
       try {
-        await playSurgeXtMode(text, handleError, clearStatusToast);
+        await playSurgeXtMode(text, handleSurgextError, clearStatusToast);
       } finally {
         clearStatusToast();
         playBtn.disabled = false;
@@ -590,7 +632,7 @@ export function addPlayButton(postEl: HTMLElement): void {
   });
 
   const wrapper = createWrapper();
-  wrapper.append(row, historyHeader, historyContainer, favoritesHeader, favoritesContainer, textarea, scoreDiv);
+  wrapper.append(row, voicevoxDownloadRow, surgextDownloadRow, historyHeader, historyContainer, favoritesHeader, favoritesContainer, textarea, scoreDiv);
 
   postEl.prepend(wrapper);
 }
