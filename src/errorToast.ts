@@ -1,3 +1,32 @@
+// ---- ステータストーストを表示するファクトリ ----
+// container にトーストを追加するハンドラを返す。show()はトーストを追加、clear()は即座に削除する（タイムアウトなし）
+export function createStatusToast(container: HTMLElement): { show: (message: string) => void; clear: () => void } {
+  function clear(): void {
+    container.querySelector('[data-bta-status-toast]')?.remove();
+  }
+  function show(message: string): void {
+    clear();
+    const toast = document.createElement('div');
+    toast.setAttribute('data-bta-status-toast', '');
+    toast.setAttribute('role', 'status');
+    toast.textContent = message;
+    toast.style.cssText = `
+      margin-left: 8px;
+      padding: 4px 10px;
+      background: #1565c0;
+      color: #fff;
+      border-radius: 4px;
+      font-size: 12px;
+      max-width: 260px;
+      white-space: normal;
+      word-break: break-word;
+      pointer-events: none;
+    `;
+    container.append(toast);
+  }
+  return { show, clear };
+}
+
 // ---- エラートーストを表示するファクトリ ----
 // container にトーストを追加するハンドラを返す。show()は5秒後に自動削除、clear()は即座に削除する
 export function createErrorToast(container: HTMLElement): { show: (message: string) => void; clear: () => void } {

@@ -87,10 +87,11 @@ export async function playToneJsMode(
 
 export async function playYm2151Mode(
   mml: string,
-  handleError: ErrorHandler
+  handleError: ErrorHandler,
+  onPlayStart?: () => void
 ): Promise<void> {
   try {
-    await playWithYm2151(mml);
+    await playWithYm2151(mml, onPlayStart);
   } catch (e2: unknown) {
     handleError('YM2151 play error:', 'YM2151 play error', e2);
   }
@@ -109,10 +110,11 @@ export async function playMixMode(
 
 export async function playVoicevoxMode(
   text: string,
-  handleError: ErrorHandler
+  handleError: ErrorHandler,
+  onPlayStart?: () => void
 ): Promise<void> {
   try {
-    await playWithVoicevox(text);
+    await playWithVoicevox(text, onPlayStart);
   } catch (err: unknown) {
     handleError('VOICEVOX error:', 'VOICEVOX error', err);
   }
@@ -120,10 +122,11 @@ export async function playVoicevoxMode(
 
 export async function playSurgeXtMode(
   text: string,
-  handleError: ErrorHandler
+  handleError: ErrorHandler,
+  onPlayStart?: () => void
 ): Promise<void> {
   try {
-    await playWithSurgeXt(text);
+    await playWithSurgeXt(text, onPlayStart);
   } catch (err: unknown) {
     handleError('Surge XT error:', 'Surge XT error', err);
   }
