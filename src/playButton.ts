@@ -37,9 +37,10 @@ import {
   createFavoritesToggleMenuItem,
   createFavoritesContainer,
   createFavoritesItem,
+  createFavoritesExportImportBar,
 } from './favoritesDom';
 import { addToHistory, loadHistory } from './historyStorage';
-import { addToFavorites, loadFavorites, removeFromFavorites } from './favoritesStorage';
+import { addToFavorites, loadFavorites, removeFromFavorites, exportFavoritesAsJson, importFavoritesFromJson } from './favoritesStorage';
 
 const LOG_PREFIX = '[BTA:playButton]';
 
@@ -97,6 +98,42 @@ export function addPlayButton(postEl: HTMLElement): void {
   const favoritesToggleBtn = createFavoritesToggleMenuItem();
   const favoritesContainer = createFavoritesContainer();
   let favoritesOpen = false;
+
+  const favoritesExportImportBar = createFavoritesExportImportBar(
+    async () => {
+      try {
+        const json = await exportFavoritesAsJson();
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'bta-favorites.json';
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error(LOG_PREFIX, 'お気に入りexport失敗', err);
+      }
+    },
+    () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json,application/json';
+      input.addEventListener('change', async () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          await importFavoritesFromJson(text);
+          if (favoritesOpen) {
+            void renderFavorites();
+          }
+        } catch (err) {
+          console.error(LOG_PREFIX, 'お気に入りimport失敗', err);
+        }
+      });
+      input.click();
+    }
+  );
 
   // ---- メニュー項目を追加（クリックハンドラを設定） ----
   for (const item of menuItems) {
@@ -165,6 +202,7 @@ export function addPlayButton(postEl: HTMLElement): void {
       empty.textContent = '履歴なし';
       empty.style.cssText = 'padding: 8px 14px; font-size: 12px; color: #999;';
       historyContainer.append(empty);
+      historyContainer.append(favoritesExportImportBar);
       return;
     }
     for (const text of items) {
@@ -188,6 +226,7 @@ export function addPlayButton(postEl: HTMLElement): void {
       });
       historyContainer.append(historyItem);
     }
+    historyContainer.append(favoritesExportImportBar);
   }
 
   historyToggleBtn.addEventListener('click', e => {

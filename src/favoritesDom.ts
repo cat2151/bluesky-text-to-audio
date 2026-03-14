@@ -99,3 +99,56 @@ export function createFavoritesItem(text: string, onPlay: () => void, onRemove: 
   item.append(playBtn, removeBtn, label);
   return item;
 }
+
+/** お気に入りのexport/importボタンバーを生成する（historyが開いているときに表示する） */
+export function createFavoritesExportImportBar(onExport: () => void, onImport: () => void): HTMLDivElement {
+  const bar = document.createElement('div');
+  bar.style.cssText = `
+    display: flex;
+    gap: 6px;
+    padding: 4px 8px 4px 14px;
+    border-top: 1px solid #e8e8e8;
+  `;
+
+  const btnStyle = `
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    padding: 2px 6px;
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    cursor: pointer;
+    color: #555;
+    white-space: nowrap;
+  `;
+
+  const exportBtn = document.createElement('button');
+  exportBtn.type = 'button';
+  exportBtn.textContent = '📤 export';
+  exportBtn.title = 'お気に入りをJSONファイルとしてダウンロード';
+  exportBtn.setAttribute('aria-label', 'お気に入りをJSONファイルとしてダウンロード');
+  exportBtn.style.cssText = btnStyle;
+  exportBtn.addEventListener('mouseenter', () => { exportBtn.style.background = '#f0f0f0'; });
+  exportBtn.addEventListener('mouseleave', () => { exportBtn.style.background = 'none'; });
+  exportBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    onExport();
+  });
+
+  const importBtn = document.createElement('button');
+  importBtn.type = 'button';
+  importBtn.textContent = '📥 import';
+  importBtn.title = 'JSONファイルからお気に入りを上書きインポート';
+  importBtn.setAttribute('aria-label', 'JSONファイルからお気に入りを上書きインポート');
+  importBtn.style.cssText = btnStyle;
+  importBtn.addEventListener('mouseenter', () => { importBtn.style.background = '#f0f0f0'; });
+  importBtn.addEventListener('mouseleave', () => { importBtn.style.background = 'none'; });
+  importBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    onImport();
+  });
+
+  bar.append(exportBtn, importBtn);
+  return bar;
+}
