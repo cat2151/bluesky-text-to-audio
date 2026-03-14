@@ -25,6 +25,7 @@ export function createHistoryCollapseHeader(): HTMLDivElement {
   btn.textContent = '▼ 📖 history';
   btn.title = 'historyを折りたたむ/展開する';
   btn.setAttribute('aria-label', 'historyを折りたたむ/展開する');
+  btn.setAttribute('aria-expanded', 'true');
   btn.style.cssText = `
     display: block;
     width: 100%;

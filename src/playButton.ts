@@ -240,6 +240,7 @@ export function addPlayButton(postEl: HTMLElement): void {
     historyHeader.style.display = 'block';
     historyHeader.style.borderRadius = '4px 4px 0 0';
     historyCollapseBtn.textContent = '▼ 📖 history';
+    historyCollapseBtn.setAttribute('aria-expanded', 'true');
     historyContainer.style.display = 'block';
     historyContainer.style.borderTop = 'none';
     historyContainer.style.borderRadius = '0 0 4px 4px';
@@ -257,9 +258,10 @@ export function addPlayButton(postEl: HTMLElement): void {
     e.stopPropagation();
     historyOpen = !historyOpen;
     if (historyOpen) {
-      showHistorySection();
+      void renderHistory().then(() => { showHistorySection(); });
     } else {
       historyCollapseBtn.textContent = '▶ 📖 history';
+      historyCollapseBtn.setAttribute('aria-expanded', 'false');
       historyContainer.style.display = 'none';
       historyHeader.style.borderRadius = '4px';
     }
@@ -304,6 +306,7 @@ export function addPlayButton(postEl: HTMLElement): void {
     favoritesHeader.style.display = 'block';
     favoritesHeader.style.borderRadius = '4px 4px 0 0';
     favoritesCollapseBtn.textContent = '▼ ★ お気に入り';
+    favoritesCollapseBtn.setAttribute('aria-expanded', 'true');
     favoritesContainer.style.display = 'block';
     favoritesContainer.style.borderTop = 'none';
     favoritesContainer.style.borderRadius = '0 0 4px 4px';
@@ -321,9 +324,10 @@ export function addPlayButton(postEl: HTMLElement): void {
     e.stopPropagation();
     favoritesOpen = !favoritesOpen;
     if (favoritesOpen) {
-      showFavoritesSection();
+      void renderFavorites().then(() => { showFavoritesSection(); });
     } else {
       favoritesCollapseBtn.textContent = '▶ ★ お気に入り';
+      favoritesCollapseBtn.setAttribute('aria-expanded', 'false');
       favoritesContainer.style.display = 'none';
       favoritesHeader.style.borderRadius = '4px';
     }

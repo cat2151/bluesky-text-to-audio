@@ -30,6 +30,7 @@ export function createFavoritesCollapseHeader(): HTMLDivElement {
   btn.textContent = '▼ ★ お気に入り';
   btn.title = 'お気に入りを折りたたむ/展開する';
   btn.setAttribute('aria-label', 'お気に入りを折りたたむ/展開する');
+  btn.setAttribute('aria-expanded', 'true');
   btn.style.cssText = `
     display: block;
     width: 100%;
