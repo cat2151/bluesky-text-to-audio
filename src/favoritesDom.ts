@@ -12,6 +12,42 @@ export function createFavoritesToggleMenuItem(): HTMLButtonElement {
   return createMenuItem('favorites-toggle', '★ お気に入りを開く');
 }
 
+/** お気に入り欄の先頭に表示する折りたたみヘッダーdivを生成する。内部のボタンでcontainerを折りたたむ。 */
+export function createFavoritesCollapseHeader(): HTMLDivElement {
+  const header = document.createElement('div');
+  header.setAttribute('data-bta-favorites-header', '');
+  header.style.cssText = `
+    display: none;
+    border: 1px solid #f0d080;
+    border-radius: 4px 4px 0 0;
+    margin: 2px 0 0;
+    background: #fffbe6;
+  `;
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.setAttribute('data-bta-favorites-collapse-btn', '');
+  btn.textContent = '▼ ★ お気に入り';
+  btn.title = 'お気に入りを折りたたむ/展開する';
+  btn.setAttribute('aria-label', 'お気に入りを折りたたむ/展開する');
+  btn.setAttribute('aria-expanded', 'true');
+  btn.style.cssText = `
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 4px 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    color: #555;
+  `;
+  addHoverHighlight(btn, '#f5e890');
+
+  header.append(btn);
+  return header;
+}
+
 /** お気に入りアイテムのコンテナdivを生成する（ボタン行の下に表示するエリア） */
 export function createFavoritesContainer(): HTMLDivElement {
   const container = document.createElement('div');
