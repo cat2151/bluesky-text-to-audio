@@ -211,6 +211,28 @@ export function createTextarea(): HTMLTextAreaElement {
   return textarea;
 }
 
+/** chord2mml展開結果表示・編集用 textarea2 を生成する（mixモードでchord+engineトラックがある場合に表示） */
+export function createTextarea2(): HTMLTextAreaElement {
+  const textarea2 = document.createElement('textarea');
+  textarea2.setAttribute('data-bta-textarea2', '');
+  textarea2.setAttribute('aria-label', 'chord2mml展開結果');
+  textarea2.title = 'chord2mml展開結果（編集可能・1秒後に自動再生）';
+  textarea2.placeholder = 'chord2mml展開結果';
+  textarea2.style.cssText = `
+    display: none;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 4px 0;
+    padding: 6px 8px;
+    font-size: 13px;
+    border: 1px solid #00aa44;
+    border-radius: 4px;
+    resize: vertical;
+    min-height: 80px;
+  `;
+  return textarea2;
+}
+
 /** abcjs SVG表示用divを生成する */
 export function createScoreDiv(): HTMLDivElement {
   const scoreDiv = document.createElement('div');
