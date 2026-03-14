@@ -274,6 +274,10 @@ export function addPlayButton(postEl: HTMLElement): void {
     }
   }
 
+  // historyContainer上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
+  historyContainer.addEventListener('click', e => { e.stopPropagation(); });
+  historyContainer.addEventListener('mousedown', e => { e.stopPropagation(); });
+
   // textarea上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
   textarea.addEventListener('click', e => { e.stopPropagation(); });
   textarea.addEventListener('mousedown', e => { e.stopPropagation(); });
