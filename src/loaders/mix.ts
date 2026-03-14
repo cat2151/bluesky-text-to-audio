@@ -58,6 +58,9 @@ async function renderToneJsAudioBuffer(mml: string): Promise<AudioBuffer> {
   console.log(LOG_PREFIX, '[Tone.js] offline rendering:', mml.substring(0, 50));
   const sequencer = await loadSequencer();
   const sequence = await parseMmlViaLibrary(mml);
+  if (!Array.isArray(sequence) || sequence.length === 0) {
+    throw new Error('Tone.js MML produced no playable events');
+  }
   console.log(LOG_PREFIX, '[Tone.js] sequence parsed, events:', sequence.length);
 
   console.log(LOG_PREFIX, `[Tone.js] starting offline render (max ${TONEJS_OFFLINE_MAX_DURATION}s)`);
