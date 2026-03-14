@@ -128,7 +128,7 @@ let currentSource: AudioBufferSourceNode | null = null;
 // エフェクトのテール含め (mixedBuffer.duration + EFFECT_TAIL_SECONDS) 秒待ってから停止する。
 const EFFECT_TAIL_SECONDS = 4;
 
-async function applyEffectAndPlay(mixedBuffer: AudioBuffer, effectText: string): Promise<void> {
+async function applyEffectAndPlay(mixedBuffer: AudioBuffer, effectText: string, onPlayStart?: () => void): Promise<void> {
   // effectText は '@EffectName' 形式（英数字・アンダースコアのみ）であることを確認する (検証用)
   if (!/^@[A-Za-z0-9_]+$/.test(effectText)) {
     throw new Error(`Invalid effect format: "${effectText}". Expected "@EffectName" (e.g. "@PingPongDelay")`);
@@ -151,6 +151,7 @@ async function applyEffectAndPlay(mixedBuffer: AudioBuffer, effectText: string):
     nodes = new sequencer.SequencerNodes();
     await sequencer.playSequence(ToneModule as unknown as ToneLib, nodes, sequence);
     ToneModule.Transport.start();
+    try { onPlayStart?.(); } catch { /* UI callback failure must not affect audio playback */ }
     // エフェクトのテール含め (mixedBuffer.duration + EFFECT_TAIL_SECONDS) 秒待つ (検証用)
     const waitMs = totalDuration * 1000;
     await new Promise<void>(resolve => {
@@ -170,7 +171,7 @@ async function applyEffectAndPlay(mixedBuffer: AudioBuffer, effectText: string):
 }
 
 // ---- メイン: 全trackをレンダリング → mix → 再生 ----
-export async function playMixMode(text: string): Promise<void> {
+export async function playMixMode(text: string, onPlayStart?: () => void): Promise<void> {
   const audioCtx = getAudioContext();
   if (audioCtx.state === 'suspended') {
     // resume() はユーザージェスチャーがない場合は失敗することがある。
@@ -238,7 +239,7 @@ export async function playMixMode(text: string): Promise<void> {
       console.warn(LOG_PREFIX, `Multiple effect tracks found (${effectTracks.length}). Only the first one will be applied.`);
     }
     console.log(LOG_PREFIX, `Applying effect: ${effectTracks[0].text}`);
-    await applyEffectAndPlay(mixedBuffer, effectTracks[0].text);
+    await applyEffectAndPlay(mixedBuffer, effectTracks[0].text, onPlayStart);
     console.log(LOG_PREFIX, 'Effect playback finished.');
     return;
   }
@@ -255,6 +256,7 @@ export async function playMixMode(text: string): Promise<void> {
       resolve();
     };
     source.start();
+    try { onPlayStart?.(); } catch { /* UI callback failure must not affect audio playback */ }
   });
 
   console.log(LOG_PREFIX, 'Playback finished.');

@@ -500,9 +500,11 @@ export function addPlayButton(postEl: HTMLElement): void {
     if (mode === 'mix') {
       clearErrorToast();
       playBtn.disabled = true;
+      showStatusToast('prerendering...');
       try {
-        await playMixModeHandler(textarea.value, handleError);
+        await playMixModeHandler(textarea.value, handleError, clearStatusToast);
       } finally {
+        clearStatusToast();
         playBtn.disabled = false;
       }
       return;
