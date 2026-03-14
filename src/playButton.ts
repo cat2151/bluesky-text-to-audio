@@ -21,6 +21,9 @@ import {
   createMenuItem,
   createMenuSeparator,
   createResetMenuItem,
+  createHistoryToggleMenuItem,
+  createHistoryContainer,
+  createHistoryItem,
   createRow,
   createTemplateSelect,
   createWavExportBtn,
@@ -30,6 +33,38 @@ import {
 } from './playButtonDom';
 
 const LOG_PREFIX = '[BTA:playButton]';
+
+// ---- history管理 ----
+const HISTORY_KEY = 'bta-history';
+const HISTORY_MAX = 20;
+
+function loadHistory(): string[] {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item): item is string => typeof item === 'string');
+  } catch {
+    return [];
+  }
+}
+
+function saveHistory(items: string[]): void {
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(items));
+  } catch {
+    // localStorage が使えない環境では無視
+  }
+}
+
+function addToHistory(text: string): void {
+  const trimmed = text.trim();
+  if (!trimmed) return;
+  const items = loadHistory().filter(item => item !== trimmed);
+  items.unshift(trimmed);
+  saveHistory(items.slice(0, HISTORY_MAX));
+}
 
 // ---- 処理済み投稿を管理 ----
 const processedPosts = new WeakSet<HTMLElement>();
@@ -66,6 +101,9 @@ export function addPlayButton(postEl: HTMLElement): void {
   // trueになると、textareaが空でもdetectedCleanedTextで上書きしない
   let textareaInitialized = false;
 
+  // historyからのplay中はhistoryを更新しない
+  let isPlayingFromHistory = false;
+
   // ---- DOM要素を生成 ----
   const initialPlayLabel = menuItems.find(m => m.mode === detectedMode)?.label ?? '再生';
   const playBtn = createPlayBtn(detectedMode, initialPlayLabel);
@@ -76,6 +114,9 @@ export function addPlayButton(postEl: HTMLElement): void {
   const wavExportBtn = createWavExportBtn();
   const textarea = createTextarea();
   const scoreDiv = createScoreDiv();
+  const historyToggleBtn = createHistoryToggleMenuItem();
+  const historyContainer = createHistoryContainer();
+  let historyOpen = false;
 
   // ---- メニュー項目を追加（クリックハンドラを設定） ----
   for (const item of menuItems) {
@@ -132,6 +173,50 @@ export function addPlayButton(postEl: HTMLElement): void {
     dropBtn.setAttribute('aria-expanded', 'false');
   });
   menu.append(resetBtn);
+
+  // ---- historyトグル＆historyアイテムリスト ----
+  menu.append(createMenuSeparator());
+
+  function renderHistory(): void {
+    historyContainer.innerHTML = '';
+    const items = loadHistory();
+    if (items.length === 0) {
+      const empty = document.createElement('div');
+      empty.textContent = '履歴なし';
+      empty.style.cssText = 'padding: 8px 14px; font-size: 12px; color: #999;';
+      historyContainer.append(empty);
+      return;
+    }
+    for (const text of items) {
+      const historyItem = createHistoryItem(text, () => {
+        isPlayingFromHistory = true;
+        textarea.value = text;
+        textareaInitialized = true;
+        textarea.style.display = 'block';
+        showTemplateSelectIfNeeded();
+        showWavExportBtnIfNeeded();
+        menu.style.display = 'none';
+        dropBtn.setAttribute('aria-expanded', 'false');
+        playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      });
+      historyContainer.append(historyItem);
+    }
+  }
+
+  historyToggleBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    historyOpen = !historyOpen;
+    if (historyOpen) {
+      historyToggleBtn.textContent = '📖 historyを閉じる';
+      renderHistory();
+      historyContainer.style.display = 'block';
+    } else {
+      historyToggleBtn.textContent = '📖 historyを開く';
+      historyContainer.style.display = 'none';
+    }
+  });
+
+  menu.append(historyToggleBtn, historyContainer);
 
   row.append(playBtn, dropBtn, menu, templateSelect, wavExportBtn);
 
@@ -278,6 +363,13 @@ export function addPlayButton(postEl: HTMLElement): void {
       textarea.value = detectedCleanedText;
     }
     textareaInitialized = true;
+
+    // historyからのplayでなければhistoryに追記する
+    const fromHistory = isPlayingFromHistory;
+    isPlayingFromHistory = false;
+    if (!fromHistory && textarea.value.trim()) {
+      addToHistory(textarea.value);
+    }
 
     if (mode === 'mmlabc') {
       clearErrorToast();
