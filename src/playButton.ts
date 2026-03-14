@@ -353,6 +353,10 @@ export function addPlayButton(postEl: HTMLElement): void {
     }
   }
 
+  // row上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
+  row.addEventListener('click', e => { e.stopPropagation(); });
+  row.addEventListener('mousedown', e => { e.stopPropagation(); });
+
   // historyContainer上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
   historyContainer.addEventListener('click', e => { e.stopPropagation(); });
   historyContainer.addEventListener('mousedown', e => { e.stopPropagation(); });
