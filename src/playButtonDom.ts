@@ -236,24 +236,7 @@ export function createWrapper(): HTMLDivElement {
 
 /** historyトグルメニュー項目ボタンを生成する（クリックハンドラは呼び出し元が設定する） */
 export function createHistoryToggleMenuItem(): HTMLButtonElement {
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.setAttribute('data-bta-menu-item', 'history-toggle');
-  btn.textContent = '📖 historyを開く';
-  btn.style.cssText = `
-    display: block;
-    width: 100%;
-    padding: 8px 14px;
-    background: none;
-    border: none;
-    text-align: left;
-    font-size: 13px;
-    cursor: pointer;
-    color: #000;
-    white-space: nowrap;
-  `;
-  addHoverHighlight(btn);
-  return btn;
+  return createMenuItem('history-toggle', '📖 historyを開く');
 }
 
 /** historyアイテムのコンテナdivを生成する */

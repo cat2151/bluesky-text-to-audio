@@ -38,32 +38,33 @@ const LOG_PREFIX = '[BTA:playButton]';
 const HISTORY_KEY = 'bta-history';
 const HISTORY_MAX = 20;
 
-function loadHistory(): string[] {
+async function loadHistory(): Promise<string[]> {
   try {
-    const raw = localStorage.getItem(HISTORY_KEY);
-    if (!raw) return [];
-    const parsed: unknown = JSON.parse(raw);
+    const result = await chrome.storage.local.get(HISTORY_KEY);
+    const parsed: unknown = result[HISTORY_KEY];
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((item): item is string => typeof item === 'string');
+    return (parsed as unknown[])
+      .filter((item): item is string => typeof item === 'string')
+      .slice(0, HISTORY_MAX);
   } catch {
     return [];
   }
 }
 
-function saveHistory(items: string[]): void {
+async function saveHistory(items: string[]): Promise<void> {
   try {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(items));
+    await chrome.storage.local.set({ [HISTORY_KEY]: items });
   } catch {
-    // localStorage が使えない環境では無視
+    // chrome.storage.local が使えない環境では無視
   }
 }
 
-function addToHistory(text: string): void {
+async function addToHistory(text: string): Promise<void> {
   const trimmed = text.trim();
   if (!trimmed) return;
-  const items = loadHistory().filter(item => item !== trimmed);
+  const items = (await loadHistory()).filter(item => item !== trimmed);
   items.unshift(trimmed);
-  saveHistory(items.slice(0, HISTORY_MAX));
+  await saveHistory(items.slice(0, HISTORY_MAX));
 }
 
 // ---- 処理済み投稿を管理 ----
@@ -177,9 +178,9 @@ export function addPlayButton(postEl: HTMLElement): void {
   // ---- historyトグル＆historyアイテムリスト ----
   menu.append(createMenuSeparator());
 
-  function renderHistory(): void {
+  async function renderHistory(): Promise<void> {
     historyContainer.innerHTML = '';
-    const items = loadHistory();
+    const items = await loadHistory();
     if (items.length === 0) {
       const empty = document.createElement('div');
       empty.textContent = '履歴なし';
@@ -189,6 +190,7 @@ export function addPlayButton(postEl: HTMLElement): void {
     }
     for (const text of items) {
       const historyItem = createHistoryItem(text, () => {
+        if (playBtn.disabled) return;
         isPlayingFromHistory = true;
         textarea.value = text;
         textareaInitialized = true;
@@ -208,8 +210,9 @@ export function addPlayButton(postEl: HTMLElement): void {
     historyOpen = !historyOpen;
     if (historyOpen) {
       historyToggleBtn.textContent = '📖 historyを閉じる';
-      renderHistory();
-      historyContainer.style.display = 'block';
+      void renderHistory().then(() => {
+        historyContainer.style.display = 'block';
+      });
     } else {
       historyToggleBtn.textContent = '📖 historyを開く';
       historyContainer.style.display = 'none';
@@ -368,7 +371,7 @@ export function addPlayButton(postEl: HTMLElement): void {
     const fromHistory = isPlayingFromHistory;
     isPlayingFromHistory = false;
     if (!fromHistory && textarea.value.trim()) {
-      addToHistory(textarea.value);
+      await addToHistory(textarea.value);
     }
 
     if (mode === 'mmlabc') {
