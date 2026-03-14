@@ -14,6 +14,20 @@ import {
   playSurgeXtMode,
   exportWavHandler,
 } from './playModeHandlers';
+import {
+  createPlayBtn,
+  createDropBtn,
+  createMenu,
+  createMenuItem,
+  createMenuSeparator,
+  createResetMenuItem,
+  createRow,
+  createTemplateSelect,
+  createWavExportBtn,
+  createTextarea,
+  createScoreDiv,
+  createWrapper,
+} from './playButtonDom';
 
 const LOG_PREFIX = '[BTA:playButton]';
 
@@ -52,97 +66,20 @@ export function addPlayButton(postEl: HTMLElement): void {
   // trueになると、textareaが空でもdetectedCleanedTextで上書きしない
   let textareaInitialized = false;
 
-  // ---- playボタン（SVG三角） ----
-  const playBtn = document.createElement('button');
-  playBtn.type = 'button';
-  playBtn.setAttribute('data-bta-play', '');
-  playBtn.style.cssText = `
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    background: #0085ff;
-    color: #fff;
-    border: none;
-    border-radius: 4px 0 0 0;
-    cursor: pointer;
-    z-index: 1;
-    flex-shrink: 0;
-  `;
-  playBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="white" xmlns="http://www.w3.org/2000/svg"><polygon points="4,2 14,8 4,14"/></svg>`;
+  // ---- DOM要素を生成 ----
   const initialPlayLabel = menuItems.find(m => m.mode === detectedMode)?.label ?? '再生';
-  playBtn.title = initialPlayLabel;
-  playBtn.setAttribute('aria-label', initialPlayLabel);
-  playBtn.dataset.btaMode = detectedMode;
+  const playBtn = createPlayBtn(detectedMode, initialPlayLabel);
+  const dropBtn = createDropBtn();
+  const menu = createMenu();
+  const row = createRow();
+  const templateSelect = createTemplateSelect();
+  const wavExportBtn = createWavExportBtn();
+  const textarea = createTextarea();
+  const scoreDiv = createScoreDiv();
 
-  // ---- ドロップダウン矢印ボタン ----
-  const dropBtn = document.createElement('button');
-  dropBtn.type = 'button';
-  dropBtn.setAttribute('data-bta-drop', '');
-  dropBtn.style.cssText = `
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 32px;
-    padding: 0;
-    background: #0085ff;
-    color: #fff;
-    border: none;
-    border-left: 1px solid rgba(255,255,255,0.3);
-    border-radius: 0 4px 0 0;
-    cursor: pointer;
-    z-index: 1;
-    flex-shrink: 0;
-  `;
-  dropBtn.innerHTML = `<svg width="10" height="10" viewBox="0 0 10 10" fill="white" xmlns="http://www.w3.org/2000/svg"><polygon points="1,3 9,3 5,8"/></svg>`;
-  dropBtn.title = 'メニューを開く';
-  dropBtn.setAttribute('aria-label', 'メニューを開く');
-  dropBtn.setAttribute('aria-haspopup', 'menu');
-  dropBtn.setAttribute('aria-expanded', 'false');
-
-  // ---- ポップアップメニュー ----
-  const menu = document.createElement('div');
-  menu.setAttribute('data-bta-menu', '');
-  menu.style.cssText = `
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    z-index: 9999;
-    min-width: 180px;
-    padding: 4px 0;
-  `;
-
+  // ---- メニュー項目を追加（クリックハンドラを設定） ----
   for (const item of menuItems) {
-    const menuItem = document.createElement('button');
-    menuItem.type = 'button';
-    menuItem.setAttribute('data-bta-menu-item', item.mode);
-    menuItem.textContent = item.label;
-    menuItem.style.cssText = `
-      display: block;
-      width: 100%;
-      padding: 8px 14px;
-      background: none;
-      border: none;
-      text-align: left;
-      font-size: 13px;
-      cursor: pointer;
-      color: #000;
-      white-space: nowrap;
-    `;
-    menuItem.addEventListener('mouseenter', () => {
-      menuItem.style.background = '#e8f0fe';
-    });
-    menuItem.addEventListener('mouseleave', () => {
-      menuItem.style.background = 'none';
-    });
+    const menuItem = createMenuItem(item.mode, item.label);
     menuItem.addEventListener('click', e => {
       e.stopPropagation();
       menu.style.display = 'none';
@@ -180,36 +117,8 @@ export function addPlayButton(postEl: HTMLElement): void {
   }
 
   // ---- リセットボタン（投稿テキストでtextareaをリセット） ----
-  const separator = document.createElement('hr');
-  separator.style.cssText = `
-    margin: 4px 0;
-    border: none;
-    border-top: 1px solid #e0e0e0;
-  `;
-  menu.append(separator);
-
-  const resetBtn = document.createElement('button');
-  resetBtn.type = 'button';
-  resetBtn.setAttribute('data-bta-menu-item', 'reset');
-  resetBtn.textContent = '🔄 リセット';
-  resetBtn.style.cssText = `
-    display: block;
-    width: 100%;
-    padding: 8px 14px;
-    background: none;
-    border: none;
-    text-align: left;
-    font-size: 13px;
-    cursor: pointer;
-    color: #000;
-    white-space: nowrap;
-  `;
-  resetBtn.addEventListener('mouseenter', () => {
-    resetBtn.style.background = '#e8f0fe';
-  });
-  resetBtn.addEventListener('mouseleave', () => {
-    resetBtn.style.background = 'none';
-  });
+  menu.append(createMenuSeparator());
+  const resetBtn = createResetMenuItem();
   resetBtn.addEventListener('click', e => {
     e.stopPropagation();
     const wasVisible = textarea.style.display !== 'none';
@@ -224,29 +133,7 @@ export function addPlayButton(postEl: HTMLElement): void {
   });
   menu.append(resetBtn);
 
-  // ボタン行コンテナ
-  const row = document.createElement('div');
-  row.setAttribute('data-bta-row', '');
-  row.style.cssText = `
-    display: flex;
-    align-items: center;
-    margin: 4px 0 0 0;
-    position: relative;
-  `;
-
-  // ---- テンプレートプルダウン（textareaが開いている時のみ表示） ----
-  const templateSelect = document.createElement('select');
-  templateSelect.setAttribute('data-bta-template-select', '');
-  templateSelect.style.cssText = `
-    display: none;
-    margin-left: 8px;
-    padding: 4px 6px;
-    font-size: 12px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    cursor: pointer;
-    max-width: 200px;
-  `;
+  row.append(playBtn, dropBtn, menu, templateSelect, wavExportBtn);
 
   function updateTemplateSelect(): void {
     const mode = (playBtn.dataset.btaMode as PlayMode) || selectedMode;
@@ -288,24 +175,6 @@ export function addPlayButton(postEl: HTMLElement): void {
   });
 
   // ---- WAV exportボタン（ym2151モードでtextareaが開いている時のみ表示） ----
-  const wavExportBtn = document.createElement('button');
-  wavExportBtn.type = 'button';
-  wavExportBtn.setAttribute('data-bta-wav-export', '');
-  wavExportBtn.textContent = '💾 WAV';
-  wavExportBtn.title = 'WAVファイルをエクスポート';
-  wavExportBtn.setAttribute('aria-label', 'WAVファイルをエクスポート');
-  wavExportBtn.style.cssText = `
-    display: none;
-    margin-left: 8px;
-    padding: 4px 8px;
-    font-size: 12px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    cursor: pointer;
-    background: white;
-    white-space: nowrap;
-  `;
-
   function showWavExportBtnIfNeeded(): void {
     const mode = (playBtn.dataset.btaMode as PlayMode) || selectedMode;
     if (mode === 'ym2151' && textarea.style.display !== 'none') {
@@ -314,37 +183,6 @@ export function addPlayButton(postEl: HTMLElement): void {
       wavExportBtn.style.display = 'none';
     }
   }
-
-  row.append(playBtn, dropBtn, menu, templateSelect, wavExportBtn);
-
-  // textarea
-  const textarea = document.createElement('textarea');
-  textarea.setAttribute('data-bta-textarea', '');
-  textarea.style.cssText = `
-    display: none;
-    width: 100%;
-    box-sizing: border-box;
-    margin: 4px 0;
-    padding: 6px 8px;
-    font-size: 13px;
-    border: 1px solid #0085ff;
-    border-radius: 4px;
-    resize: vertical;
-    min-height: 80px;
-  `;
-
-  // abcjs SVG表示用div
-  const scoreDiv = document.createElement('div');
-  scoreDiv.setAttribute('data-bta-score', '');
-  scoreDiv.style.cssText = `
-    display: none;
-    background: white;
-    color: black;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 4px;
-    margin: 4px 0;
-  `;
 
   // textarea上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
   textarea.addEventListener('click', e => { e.stopPropagation(); });
@@ -503,8 +341,7 @@ export function addPlayButton(postEl: HTMLElement): void {
     }
   });
 
-  const wrapper = document.createElement('div');
-  wrapper.setAttribute('data-bta-wrapper', '');
+  const wrapper = createWrapper();
   wrapper.append(row, textarea, scoreDiv);
 
   postEl.prepend(wrapper);
