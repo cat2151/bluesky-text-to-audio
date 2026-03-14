@@ -495,16 +495,18 @@ export function addPlayButton(postEl: HTMLElement): void {
     }
   }
 
-  // ---- mixモードエラー時: Surge XTポートエラーならserver起動の導線を表示 ----
-  function isSurgeXtError(err: unknown): boolean {
+  // ---- mixモードエラー時: Surge XT / VOICEVOXポートエラーならserver起動の導線を表示 ----
+  function isSurgeXtPortError(err: unknown): boolean {
     if (!(err instanceof Error)) return false;
     return err.message.startsWith('Surge XT:') && isPortError(err);
   }
 
   function handleMixError(logLabel: string, message: string, error: unknown): void {
     handleError(logLabel, message, error);
-    if (isSurgeXtError(error)) {
+    if (isSurgeXtPortError(error)) {
       surgextDownloadRow.style.display = 'block';
+    } else if (isPortError(error)) {
+      voicevoxDownloadRow.style.display = 'block';
     }
   }
 
