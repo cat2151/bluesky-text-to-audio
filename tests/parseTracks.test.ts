@@ -89,4 +89,26 @@ describe('parseTracks', () => {
     const tracks = parseTracks(';');
     expect(tracks).toHaveLength(0);
   });
+
+  it('effectトラックを解析する', () => {
+    const tracks = parseTracks('YM2151 cde;\neffect @PingPongDelay');
+    expect(tracks).toHaveLength(2);
+    expect(tracks[0]).toEqual({ type: 'YM2151', text: 'cde' });
+    expect(tracks[1]).toEqual({ type: 'EFFECT', text: '@PingPongDelay' });
+  });
+
+  it('effectトラックは後続トラックのprevTypeを変えない', () => {
+    const tracks = parseTracks('YM2151 cde;\neffect @PingPongDelay;\ncde');
+    expect(tracks).toHaveLength(3);
+    expect(tracks[0].type).toBe('YM2151');
+    expect(tracks[1].type).toBe('EFFECT');
+    expect(tracks[2].type).toBe('YM2151');
+  });
+
+  it('effectキーワードは大文字小文字を区別しない', () => {
+    const tracks = parseTracks('Effect @PingPongDelay');
+    expect(tracks).toHaveLength(1);
+    expect(tracks[0].type).toBe('EFFECT');
+    expect(tracks[0].text).toBe('@PingPongDelay');
+  });
 });

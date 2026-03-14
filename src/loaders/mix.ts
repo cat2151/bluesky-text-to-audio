@@ -18,6 +18,7 @@ import { loadSequencer } from './sequencer';
 import { parseMmlViaLibrary } from './mmlToJson';
 import { getAudioContext } from '../audioContext';
 import { parseTracks } from '../mixParser';
+import { audioBufferToWavBlob } from '../wavEncoder';
 
 export { parseTracks };
 
@@ -121,6 +122,53 @@ function mixAudioBuffers(buffers: AudioBuffer[]): AudioBuffer {
 // ---- 現在再生中のソースノード（多重再生防止） ----
 let currentSource: AudioBufferSourceNode | null = null;
 
+// ---- effect トラック: mixedBuffer に Tone.js エフェクトをかけて再生 ----
+// mixedBuffer を WAV blob → blob URL → @Sampler MML → Tone.js で再生する (検証用仮実装)
+// ノート長はサンプル長をカバーできるようにテンポを動的計算する。
+// エフェクトのテール含め (mixedBuffer.duration + EFFECT_TAIL_SECONDS) 秒待ってから停止する。
+const EFFECT_TAIL_SECONDS = 4;
+
+async function applyEffectAndPlay(mixedBuffer: AudioBuffer, effectText: string): Promise<void> {
+  // effectText は '@EffectName' 形式（英数字・アンダースコアのみ）であることを確認する (検証用)
+  if (!/^@[A-Za-z0-9_]+$/.test(effectText)) {
+    throw new Error(`Invalid effect format: "${effectText}". Expected "@EffectName" (e.g. "@PingPongDelay")`);
+  }
+  const blob = audioBufferToWavBlob(mixedBuffer);
+  const blobUrl = URL.createObjectURL(blob);
+  console.log(LOG_PREFIX, `[Effect] Created blob URL for ${mixedBuffer.duration.toFixed(2)}s buffer`);
+  // SequencerNodes はノード再利用・disposeAllによる掃除のために関数スコープで管理する
+  let nodes: InstanceType<Awaited<ReturnType<typeof loadSequencer>>['SequencerNodes']> | null = null;
+  try {
+    // l1（全音符）が mixedBuffer.duration + テールをカバーするようにテンポを動的計算する。
+    // 全音符 = 240/T 秒、T = floor(240 / totalDuration)、最小1
+    const totalDuration = mixedBuffer.duration + EFFECT_TAIL_SECONDS;
+    const tempo = Math.max(1, Math.floor(240 / totalDuration));
+    const mml = `@Sampler{ "urls": { "C4": "${blobUrl}" } } ${effectText} t${tempo} l1 c`;
+    console.log(LOG_PREFIX, '[Effect] MML:', mml.substring(0, 100));
+    const sequencer = await loadSequencer();
+    const sequence = await parseMmlViaLibrary(mml);
+    await ToneModule.start();
+    nodes = new sequencer.SequencerNodes();
+    await sequencer.playSequence(ToneModule as unknown as ToneLib, nodes, sequence);
+    ToneModule.Transport.start();
+    // エフェクトのテール含め (mixedBuffer.duration + EFFECT_TAIL_SECONDS) 秒待つ (検証用)
+    const waitMs = totalDuration * 1000;
+    await new Promise<void>(resolve => {
+      setTimeout(() => {
+        ToneModule.Transport.stop();
+        resolve();
+      }, waitMs);
+    });
+  } finally {
+    ToneModule.Transport.cancel();
+    if (nodes) {
+      nodes.disposeAll();
+    }
+    URL.revokeObjectURL(blobUrl);
+    console.log(LOG_PREFIX, '[Effect] Revoked blob URL and disposed nodes');
+  }
+}
+
 // ---- メイン: 全trackをレンダリング → mix → 再生 ----
 export async function playMixMode(text: string): Promise<void> {
   const audioCtx = getAudioContext();
@@ -133,6 +181,11 @@ export async function playMixMode(text: string): Promise<void> {
   console.log(LOG_PREFIX, 'Parsing tracks...');
   const tracks = parseTracks(text);
   if (tracks.length === 0) throw new Error('No tracks found in mix mode text');
+
+  const effectTracks = tracks.filter(t => t.type === 'EFFECT');
+  const audioTracks = tracks.filter(t => t.type !== 'EFFECT');
+  if (audioTracks.length === 0) throw new Error('No audio tracks found in mix mode text');
+
   console.log(
     LOG_PREFIX,
     'Parsed tracks:',
@@ -141,7 +194,7 @@ export async function playMixMode(text: string): Promise<void> {
 
   console.log(LOG_PREFIX, 'Rendering tracks in parallel...');
   const rawBuffers = await Promise.all(
-    tracks.map(async (track, i) => {
+    audioTracks.map(async (track, i) => {
       console.log(LOG_PREFIX, `[track ${i}] rendering ${track.type}: ${track.text.substring(0, 30)}`);
       if (track.type === 'VOICEVOX') {
         const buf = await renderVoicevoxAudioBuffer(track.text);
@@ -176,6 +229,18 @@ export async function playMixMode(text: string): Promise<void> {
   if (currentSource) {
     // stop() は既に停止済みの場合 InvalidStateError を投げるため無視する
     try { currentSource.stop(); } catch { /* already stopped */ }
+  }
+
+  // effect トラックがある場合は Tone.js を使ってエフェクトをかけて再生する
+  // 複数の effect トラックがある場合は最初の1つのみ適用する (検証用仮実装の制約)
+  if (effectTracks.length > 0) {
+    if (effectTracks.length > 1) {
+      console.warn(LOG_PREFIX, `Multiple effect tracks found (${effectTracks.length}). Only the first one will be applied.`);
+    }
+    console.log(LOG_PREFIX, `Applying effect: ${effectTracks[0].text}`);
+    await applyEffectAndPlay(mixedBuffer, effectTracks[0].text);
+    console.log(LOG_PREFIX, 'Effect playback finished.');
+    return;
   }
 
   const source = audioCtx.createBufferSource();
