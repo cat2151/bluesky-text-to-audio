@@ -7,6 +7,42 @@ export function createHistoryToggleMenuItem(): HTMLButtonElement {
   return createMenuItem('history-toggle', '📖 historyを開く');
 }
 
+/** history欄の先頭に表示する折りたたみヘッダーdivを生成する。内部のボタンでcontainerを折りたたむ。 */
+export function createHistoryCollapseHeader(): HTMLDivElement {
+  const header = document.createElement('div');
+  header.setAttribute('data-bta-history-header', '');
+  header.style.cssText = `
+    display: none;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px 4px 0 0;
+    margin: 2px 0 0;
+    background: #f0f0f0;
+  `;
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.setAttribute('data-bta-history-collapse-btn', '');
+  btn.textContent = '▼ 📖 history';
+  btn.title = 'historyを折りたたむ/展開する';
+  btn.setAttribute('aria-label', 'historyを折りたたむ/展開する');
+  btn.style.cssText = `
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 4px 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    color: #555;
+  `;
+  btn.addEventListener('mouseenter', () => { btn.style.background = '#e0e0e0'; });
+  btn.addEventListener('mouseleave', () => { btn.style.background = 'none'; });
+
+  header.append(btn);
+  return header;
+}
+
 /** historyアイテムのコンテナdivを生成する（ボタン行の下に表示するエリア） */
 export function createHistoryContainer(): HTMLDivElement {
   const container = document.createElement('div');

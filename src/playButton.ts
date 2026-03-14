@@ -32,12 +32,14 @@ import {
   createHistoryToggleMenuItem,
   createHistoryContainer,
   createHistoryItem,
+  createHistoryCollapseHeader,
 } from './historyDom';
 import {
   createFavoritesToggleMenuItem,
   createFavoritesContainer,
   createFavoritesItem,
   createFavoritesExportImportBar,
+  createFavoritesCollapseHeader,
 } from './favoritesDom';
 import { addToHistory, loadHistory } from './historyStorage';
 import { addToFavorites, loadFavorites, removeFromFavorites, exportFavoritesAsJson, importFavoritesFromJson } from './favoritesStorage';
@@ -93,9 +95,13 @@ export function addPlayButton(postEl: HTMLElement): void {
   const textarea = createTextarea();
   const scoreDiv = createScoreDiv();
   const historyToggleBtn = createHistoryToggleMenuItem();
+  const historyHeader = createHistoryCollapseHeader();
+  const historyCollapseBtn = historyHeader.querySelector<HTMLButtonElement>('[data-bta-history-collapse-btn]')!;
   const historyContainer = createHistoryContainer();
   let historyOpen = false;
   const favoritesToggleBtn = createFavoritesToggleMenuItem();
+  const favoritesHeader = createFavoritesCollapseHeader();
+  const favoritesCollapseBtn = favoritesHeader.querySelector<HTMLButtonElement>('[data-bta-favorites-collapse-btn]')!;
   const favoritesContainer = createFavoritesContainer();
   let favoritesOpen = false;
 
@@ -229,19 +235,33 @@ export function addPlayButton(postEl: HTMLElement): void {
     historyContainer.append(favoritesExportImportBar);
   }
 
+  function showHistorySection(): void {
+    historyOpen = true;
+    historyHeader.style.display = 'block';
+    historyHeader.style.borderRadius = '4px 4px 0 0';
+    historyCollapseBtn.textContent = '▼ 📖 history';
+    historyContainer.style.display = 'block';
+    historyContainer.style.borderTop = 'none';
+    historyContainer.style.borderRadius = '0 0 4px 4px';
+  }
+
   historyToggleBtn.addEventListener('click', e => {
     e.stopPropagation();
-    historyOpen = !historyOpen;
     menu.style.display = 'none';
     dropBtn.setAttribute('aria-expanded', 'false');
+    // 常に「開く」だけ（toggleしない）
+    void renderHistory().then(() => { showHistorySection(); });
+  });
+
+  historyCollapseBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    historyOpen = !historyOpen;
     if (historyOpen) {
-      historyToggleBtn.textContent = '📖 historyを閉じる';
-      void renderHistory().then(() => {
-        historyContainer.style.display = 'block';
-      });
+      showHistorySection();
     } else {
-      historyToggleBtn.textContent = '📖 historyを開く';
+      historyCollapseBtn.textContent = '▶ 📖 history';
       historyContainer.style.display = 'none';
+      historyHeader.style.borderRadius = '4px';
     }
   });
 
@@ -279,21 +299,33 @@ export function addPlayButton(postEl: HTMLElement): void {
     }
   }
 
+  function showFavoritesSection(): void {
+    favoritesOpen = true;
+    favoritesHeader.style.display = 'block';
+    favoritesHeader.style.borderRadius = '4px 4px 0 0';
+    favoritesCollapseBtn.textContent = '▼ ★ お気に入り';
+    favoritesContainer.style.display = 'block';
+    favoritesContainer.style.borderTop = 'none';
+    favoritesContainer.style.borderRadius = '0 0 4px 4px';
+  }
+
   favoritesToggleBtn.addEventListener('click', e => {
     e.stopPropagation();
-    favoritesOpen = !favoritesOpen;
     menu.style.display = 'none';
     dropBtn.setAttribute('aria-expanded', 'false');
+    // 常に「開く」だけ（toggleしない）
+    void renderFavorites().then(() => { showFavoritesSection(); });
+  });
+
+  favoritesCollapseBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    favoritesOpen = !favoritesOpen;
     if (favoritesOpen) {
-      favoritesToggleBtn.textContent = '★ お気に入りを閉じる';
-      void renderFavorites().then(() => {
-        if (favoritesOpen) {
-          favoritesContainer.style.display = 'block';
-        }
-      });
+      showFavoritesSection();
     } else {
-      favoritesToggleBtn.textContent = '★ お気に入りを開く';
+      favoritesCollapseBtn.textContent = '▶ ★ お気に入り';
       favoritesContainer.style.display = 'none';
+      favoritesHeader.style.borderRadius = '4px';
     }
   });
 
@@ -355,10 +387,14 @@ export function addPlayButton(postEl: HTMLElement): void {
   row.addEventListener('mousedown', e => { e.stopPropagation(); });
 
   // historyContainer上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
+  historyHeader.addEventListener('click', e => { e.stopPropagation(); });
+  historyHeader.addEventListener('mousedown', e => { e.stopPropagation(); });
   historyContainer.addEventListener('click', e => { e.stopPropagation(); });
   historyContainer.addEventListener('mousedown', e => { e.stopPropagation(); });
 
   // favoritesContainer上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
+  favoritesHeader.addEventListener('click', e => { e.stopPropagation(); });
+  favoritesHeader.addEventListener('mousedown', e => { e.stopPropagation(); });
   favoritesContainer.addEventListener('click', e => { e.stopPropagation(); });
   favoritesContainer.addEventListener('mousedown', e => { e.stopPropagation(); });
 
@@ -550,7 +586,7 @@ export function addPlayButton(postEl: HTMLElement): void {
   });
 
   const wrapper = createWrapper();
-  wrapper.append(row, historyContainer, favoritesContainer, textarea, scoreDiv);
+  wrapper.append(row, historyHeader, historyContainer, favoritesHeader, favoritesContainer, textarea, scoreDiv);
 
   postEl.prepend(wrapper);
 }
