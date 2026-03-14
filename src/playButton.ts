@@ -403,16 +403,17 @@ export function addPlayButton(postEl: HTMLElement): void {
     showErrorToast(message);
   }
 
-  // textarea編集デバウンスで自動play（ym2151はレンダリング中にキーボード入力が止まるため1sec、それ以外は0）
+  // textarea編集デバウンスで自動play（ym2151/mixはレンダリング中にキーボード入力が止まるため1sec、それ以外は0）
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   textarea.addEventListener('input', () => {
     if (debounceTimer !== null) clearTimeout(debounceTimer);
-    const mode = (playBtn.dataset.btaMode as PlayMode) || selectedMode;
-    const delay = mode === 'ym2151' ? 1000 : 0;
+    const modeAtInput = (playBtn.dataset.btaMode as PlayMode) || selectedMode;
+    const delay = (modeAtInput === 'ym2151' || modeAtInput === 'mix') ? 1000 : 0;
     debounceTimer = setTimeout(() => {
       debounceTimer = null;
+      const currentMode = (playBtn.dataset.btaMode as PlayMode) || selectedMode;
       // 再生中（playボタンがdisabled）の間は自動playを抑止し、多重実行を防ぐ
-      if (!playBtn.disabled && mode !== 'textarea') {
+      if (!playBtn.disabled && currentMode !== 'textarea') {
         playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
       }
     }, delay);
