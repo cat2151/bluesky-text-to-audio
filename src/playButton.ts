@@ -613,8 +613,8 @@ export function addPlayButton(postEl: HTMLElement): void {
             showWavExportBtnIfNeeded();
             playText = preprocessed;
           }
-        } catch {
-          // chord preprocessing に失敗した場合はそのまま続行（エラーはplayMixModeHandlerで処理）
+        } catch (preprocessErr) {
+          console.warn(LOG_PREFIX, 'chord preprocessing failed, playing original text:', preprocessErr);
         }
         await playMixModeHandler(playText, handleError, clearStatusToast);
       } finally {
