@@ -239,11 +239,18 @@ export function createHistoryToggleMenuItem(): HTMLButtonElement {
   return createMenuItem('history-toggle', '📖 historyを開く');
 }
 
-/** historyアイテムのコンテナdivを生成する */
+/** historyアイテムのコンテナdivを生成する（ボタン行の下に表示するエリア） */
 export function createHistoryContainer(): HTMLDivElement {
   const container = document.createElement('div');
   container.setAttribute('data-bta-history-container', '');
-  container.style.display = 'none';
+  container.style.cssText = `
+    display: none;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 4px 0;
+    margin: 2px 0;
+    background: #fafafa;
+  `;
   return container;
 }
 
