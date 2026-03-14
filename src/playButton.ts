@@ -98,12 +98,12 @@ export function addPlayButton(postEl: HTMLElement): void {
   const voicevoxDownloadRow = createPortErrorRow(
     'https://cat2151.github.io/voicevox-playground/',
     'VOICEVOXをダウンロード',
-    'このchrome拡張は voicevox-playground と同じ技術で、ずんだもん読み上げができます'
+    'このChrome拡張は voicevox-playground と同じ技術で、ずんだもん読み上げができます'
   );
   const surgextDownloadRow = createPortErrorRow(
     'https://github.com/cat2151/clap-mml-render-tui/blob/main/README.ja.md',
     'Surge XTのサーバーをダウンロード',
-    'このchrome拡張は clap-mml-render-tui のserverモードと接続して、Surge XTを演奏できます'
+    'このChrome拡張は clap-mml-render-tui のserverモードと接続して、Surge XTを演奏できます'
   );
   const historyToggleBtn = createHistoryToggleMenuItem();
   const historyHeader = createHistoryCollapseHeader();
@@ -435,6 +435,12 @@ export function addPlayButton(postEl: HTMLElement): void {
   });
   wavExportBtn.addEventListener('mousedown', e => { e.stopPropagation(); });
 
+  // voicevoxDownloadRow/surgextDownloadRow上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
+  voicevoxDownloadRow.addEventListener('click', e => { e.stopPropagation(); });
+  voicevoxDownloadRow.addEventListener('mousedown', e => { e.stopPropagation(); });
+  surgextDownloadRow.addEventListener('click', e => { e.stopPropagation(); });
+  surgextDownloadRow.addEventListener('mousedown', e => { e.stopPropagation(); });
+
   // ---- エラートーストを表示する ----
   const { show: showErrorToast, clear: clearErrorToast } = createErrorToast(row);
 
@@ -521,6 +527,7 @@ export function addPlayButton(postEl: HTMLElement): void {
   playBtn.addEventListener('click', async e => {
     e.stopPropagation();
     const mode = (playBtn.dataset.btaMode as PlayMode) || selectedMode;
+    clearPortErrorRows();
 
     if (mode === 'textarea') {
       if (textarea.style.display === 'none') {
@@ -604,7 +611,6 @@ export function addPlayButton(postEl: HTMLElement): void {
       const text = textarea.value;
       if (!text) return;
       clearErrorToast();
-      clearPortErrorRows();
       playBtn.disabled = true;
       showStatusToast('fetching...');
       try {
@@ -619,7 +625,6 @@ export function addPlayButton(postEl: HTMLElement): void {
       const text = textarea.value;
       if (!text) return;
       clearErrorToast();
-      clearPortErrorRows();
       playBtn.disabled = true;
       showStatusToast('prerendering...');
       try {
