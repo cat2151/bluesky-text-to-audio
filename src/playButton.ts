@@ -109,7 +109,7 @@ export function addPlayButton(postEl: HTMLElement): void {
         a.href = url;
         a.download = 'bta-favorites.json';
         a.click();
-        URL.revokeObjectURL(url);
+        setTimeout(() => { URL.revokeObjectURL(url); }, 0);
       } catch (err) {
         console.error(LOG_PREFIX, 'お気に入りexport失敗', err);
       }

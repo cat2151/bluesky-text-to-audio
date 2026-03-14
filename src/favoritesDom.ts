@@ -2,6 +2,11 @@
 
 import { createMenuItem } from './playButtonDom';
 
+function addHoverHighlight(btn: HTMLButtonElement, color: string): void {
+  btn.addEventListener('mouseenter', () => { btn.style.background = color; });
+  btn.addEventListener('mouseleave', () => { btn.style.background = 'none'; });
+}
+
 /** お気に入りトグルメニュー項目ボタンを生成する（クリックハンドラは呼び出し元が設定する） */
 export function createFavoritesToggleMenuItem(): HTMLButtonElement {
   return createMenuItem('favorites-toggle', '★ お気に入りを開く');
@@ -76,8 +81,7 @@ export function createFavoritesItem(text: string, onPlay: () => void, onRemove: 
     flex-shrink: 0;
     color: #f5a623;
   `;
-  removeBtn.addEventListener('mouseenter', () => { removeBtn.style.background = '#ffe0a0'; });
-  removeBtn.addEventListener('mouseleave', () => { removeBtn.style.background = 'none'; });
+  addHoverHighlight(removeBtn, '#ffe0a0');
   removeBtn.addEventListener('click', e => {
     e.stopPropagation();
     onRemove();
@@ -129,8 +133,7 @@ export function createFavoritesExportImportBar(onExport: () => void, onImport: (
   exportBtn.title = 'お気に入りをJSONファイルとしてダウンロード';
   exportBtn.setAttribute('aria-label', 'お気に入りをJSONファイルとしてダウンロード');
   exportBtn.style.cssText = btnStyle;
-  exportBtn.addEventListener('mouseenter', () => { exportBtn.style.background = '#f0f0f0'; });
-  exportBtn.addEventListener('mouseleave', () => { exportBtn.style.background = 'none'; });
+  addHoverHighlight(exportBtn, '#f0f0f0');
   exportBtn.addEventListener('click', e => {
     e.stopPropagation();
     onExport();
@@ -142,8 +145,7 @@ export function createFavoritesExportImportBar(onExport: () => void, onImport: (
   importBtn.title = 'JSONファイルからお気に入りを上書きインポート';
   importBtn.setAttribute('aria-label', 'JSONファイルからお気に入りを上書きインポート');
   importBtn.style.cssText = btnStyle;
-  importBtn.addEventListener('mouseenter', () => { importBtn.style.background = '#f0f0f0'; });
-  importBtn.addEventListener('mouseleave', () => { importBtn.style.background = 'none'; });
+  addHoverHighlight(importBtn, '#f0f0f0');
   importBtn.addEventListener('click', e => {
     e.stopPropagation();
     onImport();

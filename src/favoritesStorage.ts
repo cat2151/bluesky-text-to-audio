@@ -50,8 +50,15 @@ export async function exportFavoritesAsJson(): Promise<string> {
 export async function importFavoritesFromJson(json: string): Promise<void> {
   const parsed: unknown = JSON.parse(json);
   if (!Array.isArray(parsed)) throw new Error('Invalid favorites format');
+  const seen = new Set<string>();
   const items = (parsed as unknown[])
-    .filter((item): item is string => typeof item === 'string')
+    .map(item => String(item).trim())
+    .filter(item => {
+      if (!item) return false;
+      if (seen.has(item)) return false;
+      seen.add(item);
+      return true;
+    })
     .slice(0, FAVORITES_MAX);
   await saveFavorites(items);
 }
