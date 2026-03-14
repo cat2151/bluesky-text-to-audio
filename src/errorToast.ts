@@ -1,13 +1,16 @@
 // ---- エラートーストを表示するファクトリ ----
-// container にトーストを追加し、5秒後に自動削除するハンドラを返す
-export function createErrorToast(container: HTMLElement): (message: string) => void {
+// container にトーストを追加するハンドラを返す。show()は5秒後に自動削除、clear()は即座に削除する
+export function createErrorToast(container: HTMLElement): { show: (message: string) => void; clear: () => void } {
   let timer: ReturnType<typeof setTimeout> | null = null;
-  return function showErrorToast(message: string): void {
+  function clear(): void {
     container.querySelector('[data-bta-toast]')?.remove();
     if (timer !== null) {
       clearTimeout(timer);
       timer = null;
     }
+  }
+  function show(message: string): void {
+    clear();
     const toast = document.createElement('div');
     toast.setAttribute('data-bta-toast', '');
     toast.setAttribute('role', 'alert');
@@ -29,5 +32,6 @@ export function createErrorToast(container: HTMLElement): (message: string) => v
       toast.remove();
       timer = null;
     }, 5000);
-  };
+  }
+  return { show, clear };
 }
