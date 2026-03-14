@@ -99,10 +99,11 @@ export async function playYm2151Mode(
 
 export async function playMixMode(
   text: string,
-  handleError: ErrorHandler
+  handleError: ErrorHandler,
+  onPlayStart?: () => void
 ): Promise<void> {
   try {
-    await playMixModeImpl(text);
+    await playMixModeImpl(text, onPlayStart);
   } catch (e2: unknown) {
     handleError('Mix play error:', 'Mix play error', e2);
   }

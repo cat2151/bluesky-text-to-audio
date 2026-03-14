@@ -170,7 +170,7 @@ async function applyEffectAndPlay(mixedBuffer: AudioBuffer, effectText: string):
 }
 
 // ---- メイン: 全trackをレンダリング → mix → 再生 ----
-export async function playMixMode(text: string): Promise<void> {
+export async function playMixMode(text: string, onPlayStart?: () => void): Promise<void> {
   const audioCtx = getAudioContext();
   if (audioCtx.state === 'suspended') {
     // resume() はユーザージェスチャーがない場合は失敗することがある。
@@ -238,6 +238,7 @@ export async function playMixMode(text: string): Promise<void> {
       console.warn(LOG_PREFIX, `Multiple effect tracks found (${effectTracks.length}). Only the first one will be applied.`);
     }
     console.log(LOG_PREFIX, `Applying effect: ${effectTracks[0].text}`);
+    onPlayStart?.();
     await applyEffectAndPlay(mixedBuffer, effectTracks[0].text);
     console.log(LOG_PREFIX, 'Effect playback finished.');
     return;
@@ -254,6 +255,7 @@ export async function playMixMode(text: string): Promise<void> {
       if (currentSource === source) currentSource = null;
       resolve();
     };
+    onPlayStart?.();
     source.start();
   });
 
