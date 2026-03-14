@@ -1,5 +1,5 @@
 // ---- エラートーストを表示するファクトリ ----
-// container にトーストを追加し、5秒後に自動削除するハンドラを返す
+// container にトーストを追加するハンドラを返す。show()は5秒後に自動削除、clear()は即座に削除する
 export function createErrorToast(container: HTMLElement): { show: (message: string) => void; clear: () => void } {
   let timer: ReturnType<typeof setTimeout> | null = null;
   function clear(): void {

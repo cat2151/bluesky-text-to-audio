@@ -438,25 +438,26 @@ export function addPlayButton(postEl: HTMLElement): void {
     }
     textareaInitialized = true;
 
-    // 演奏開始時にエラーバルーンを即座に消す
-    clearErrorToast();
-
     if (mode === 'mmlabc') {
+      clearErrorToast();
       await playMmlabcMode(textarea.value, abcjsPlayer, scoreDiv, handleError);
       return;
     }
 
     if (mode === 'chord2mml') {
+      clearErrorToast();
       await playChord2mmlMode(textarea.value, abcjsPlayer, scoreDiv, handleError);
       return;
     }
 
     if (mode === 'tonejs') {
+      clearErrorToast();
       await playToneJsMode(textarea.value, tonejsRef, handleError);
       return;
     }
 
     if (mode === 'ym2151') {
+      clearErrorToast();
       playBtn.disabled = true;
       try {
         await playYm2151Mode(textarea.value, handleError);
@@ -467,6 +468,7 @@ export function addPlayButton(postEl: HTMLElement): void {
     }
 
     if (mode === 'mix') {
+      clearErrorToast();
       playBtn.disabled = true;
       try {
         await playMixModeHandler(textarea.value, handleError);
@@ -479,6 +481,7 @@ export function addPlayButton(postEl: HTMLElement): void {
     if (mode === 'voicevox') {
       const text = textarea.value;
       if (!text) return;
+      clearErrorToast();
       playBtn.disabled = true;
       try {
         await playVoicevoxMode(text, handleError);
@@ -490,6 +493,7 @@ export function addPlayButton(postEl: HTMLElement): void {
     if (mode === 'surgext') {
       const text = textarea.value;
       if (!text) return;
+      clearErrorToast();
       playBtn.disabled = true;
       try {
         await playSurgeXtMode(text, handleError);
