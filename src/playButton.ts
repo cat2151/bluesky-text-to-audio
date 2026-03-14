@@ -393,6 +393,13 @@ export function addPlayButton(postEl: HTMLElement): void {
   // ---- ステータストーストを表示する（再生開始まで表示、再生開始時に消える） ----
   const { show: showStatusToast, clear: clearStatusToast } = createStatusToast(row);
 
+  // ---- disabledなplayボタンをクリックしたときのエラートースト ----
+  // disabled状態のボタンはclickイベントを発火しないが、pointerdownは発火する
+  playBtn.addEventListener('pointerdown', () => {
+    if (!playBtn.disabled) return;
+    showErrorToast('再生処理中です。しばらくお待ちください');
+  });
+
   // ---- エラー時にtextareaを表示してトーストを出す ----
   function handleError(logLabel: string, message: string, error: unknown): void {
     console.error(LOG_PREFIX, logLabel, error);
