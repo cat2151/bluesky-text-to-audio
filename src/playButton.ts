@@ -24,6 +24,9 @@ import {
   createHistoryToggleMenuItem,
   createHistoryContainer,
   createHistoryItem,
+  createFavoritesToggleMenuItem,
+  createFavoritesContainer,
+  createFavoritesItem,
   createRow,
   createTemplateSelect,
   createWavExportBtn,
@@ -67,6 +70,47 @@ async function addToHistory(text: string): Promise<void> {
   await saveHistory(items.slice(0, HISTORY_MAX));
 }
 
+// ---- お気に入り管理 ----
+const FAVORITES_KEY = 'bta-favorites';
+const FAVORITES_MAX = 20;
+
+async function loadFavorites(): Promise<string[]> {
+  try {
+    const result = await chrome.storage.local.get(FAVORITES_KEY);
+    const parsed: unknown = result[FAVORITES_KEY];
+    if (!Array.isArray(parsed)) return [];
+    return (parsed as unknown[])
+      .filter((item): item is string => typeof item === 'string')
+      .slice(0, FAVORITES_MAX);
+  } catch {
+    return [];
+  }
+}
+
+async function saveFavorites(items: string[]): Promise<void> {
+  try {
+    await chrome.storage.local.set({ [FAVORITES_KEY]: items });
+  } catch {
+    // chrome.storage.local が使えない環境では無視
+  }
+}
+
+async function addToFavorites(text: string): Promise<void> {
+  const trimmed = text.trim();
+  if (!trimmed) return;
+  const items = (await loadFavorites()).filter(item => item !== trimmed);
+  items.unshift(trimmed);
+  await saveFavorites(items.slice(0, FAVORITES_MAX));
+}
+
+async function removeFromFavorites(text: string): Promise<void> {
+  const trimmed = text.trim();
+  const items = (await loadFavorites()).filter(item => item !== trimmed);
+  await saveFavorites(items);
+  // 削除したアイテムをhistoryに追加（うっかりミスをリカバーする用）
+  await addToHistory(trimmed);
+}
+
 // ---- 処理済み投稿を管理 ----
 const processedPosts = new WeakSet<HTMLElement>();
 
@@ -102,7 +146,7 @@ export function addPlayButton(postEl: HTMLElement): void {
   // trueになると、textareaが空でもdetectedCleanedTextで上書きしない
   let textareaInitialized = false;
 
-  // historyからのplay中はhistoryを更新しない
+  // historyからのplay中はhistoryを更新しない（お気に入りからのplayも同様）
   let isPlayingFromHistory = false;
 
   // ---- DOM要素を生成 ----
@@ -118,6 +162,9 @@ export function addPlayButton(postEl: HTMLElement): void {
   const historyToggleBtn = createHistoryToggleMenuItem();
   const historyContainer = createHistoryContainer();
   let historyOpen = false;
+  const favoritesToggleBtn = createFavoritesToggleMenuItem();
+  const favoritesContainer = createFavoritesContainer();
+  let favoritesOpen = false;
 
   // ---- メニュー項目を追加（クリックハンドラを設定） ----
   for (const item of menuItems) {
@@ -200,6 +247,12 @@ export function addPlayButton(postEl: HTMLElement): void {
         menu.style.display = 'none';
         dropBtn.setAttribute('aria-expanded', 'false');
         playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      }, async () => {
+        await addToFavorites(text);
+        void renderHistory();
+        if (favoritesOpen) {
+          void renderFavorites();
+        }
       });
       historyContainer.append(historyItem);
     }
@@ -222,6 +275,61 @@ export function addPlayButton(postEl: HTMLElement): void {
   });
 
   menu.append(historyToggleBtn);
+
+  // ---- お気に入りトグル＆お気に入りアイテムリスト ----
+  async function renderFavorites(): Promise<void> {
+    favoritesContainer.innerHTML = '';
+    const items = await loadFavorites();
+    if (items.length === 0) {
+      const empty = document.createElement('div');
+      empty.textContent = 'お気に入りなし';
+      empty.style.cssText = 'padding: 8px 14px; font-size: 12px; color: #999;';
+      favoritesContainer.append(empty);
+      return;
+    }
+    for (const text of items) {
+      const favoriteItem = createFavoritesItem(text, () => {
+        if (playBtn.disabled) return;
+        isPlayingFromHistory = true;
+        textarea.value = text;
+        textareaInitialized = true;
+        textarea.style.display = 'block';
+        showTemplateSelectIfNeeded();
+        showWavExportBtnIfNeeded();
+        favoritesContainer.style.display = 'none';
+        favoritesOpen = false;
+        favoritesToggleBtn.textContent = '★ お気に入りを開く';
+        playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      }, async () => {
+        await removeFromFavorites(text);
+        void renderFavorites();
+        if (historyOpen) {
+          void renderHistory();
+        }
+      });
+      favoritesContainer.append(favoriteItem);
+    }
+  }
+
+  favoritesToggleBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    favoritesOpen = !favoritesOpen;
+    menu.style.display = 'none';
+    dropBtn.setAttribute('aria-expanded', 'false');
+    if (favoritesOpen) {
+      favoritesToggleBtn.textContent = '★ お気に入りを閉じる';
+      void renderFavorites().then(() => {
+        if (favoritesOpen) {
+          favoritesContainer.style.display = 'block';
+        }
+      });
+    } else {
+      favoritesToggleBtn.textContent = '★ お気に入りを開く';
+      favoritesContainer.style.display = 'none';
+    }
+  });
+
+  menu.append(favoritesToggleBtn);
 
   row.append(playBtn, dropBtn, menu, templateSelect, wavExportBtn);
 
@@ -277,6 +385,10 @@ export function addPlayButton(postEl: HTMLElement): void {
   // historyContainer上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
   historyContainer.addEventListener('click', e => { e.stopPropagation(); });
   historyContainer.addEventListener('mousedown', e => { e.stopPropagation(); });
+
+  // favoritesContainer上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
+  favoritesContainer.addEventListener('click', e => { e.stopPropagation(); });
+  favoritesContainer.addEventListener('mousedown', e => { e.stopPropagation(); });
 
   // textarea上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
   textarea.addEventListener('click', e => { e.stopPropagation(); });
@@ -455,7 +567,7 @@ export function addPlayButton(postEl: HTMLElement): void {
   });
 
   const wrapper = createWrapper();
-  wrapper.append(row, historyContainer, textarea, scoreDiv);
+  wrapper.append(row, historyContainer, favoritesContainer, textarea, scoreDiv);
 
   postEl.prepend(wrapper);
 }
