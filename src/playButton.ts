@@ -369,7 +369,7 @@ export function addPlayButton(postEl: HTMLElement): void {
   wavExportBtn.addEventListener('mousedown', e => { e.stopPropagation(); });
 
   // ---- エラートーストを表示する ----
-  const showErrorToast = createErrorToast(row);
+  const { show: showErrorToast, clear: clearErrorToast } = createErrorToast(row);
 
   // ---- エラー時にtextareaを表示してトーストを出す ----
   function handleError(logLabel: string, message: string, error: unknown): void {
@@ -437,6 +437,9 @@ export function addPlayButton(postEl: HTMLElement): void {
       textarea.value = detectedCleanedText;
     }
     textareaInitialized = true;
+
+    // 演奏開始時にエラーバルーンを即座に消す
+    clearErrorToast();
 
     if (mode === 'mmlabc') {
       await playMmlabcMode(textarea.value, abcjsPlayer, scoreDiv, handleError);
