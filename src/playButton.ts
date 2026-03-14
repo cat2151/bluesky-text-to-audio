@@ -395,8 +395,9 @@ export function addPlayButton(postEl: HTMLElement): void {
 
   // ---- disabledなplayボタンをクリックしたときのエラートースト ----
   // disabled状態のボタンはclickイベントを発火しないが、pointerdownは発火する
-  playBtn.addEventListener('pointerdown', () => {
+  playBtn.addEventListener('pointerdown', e => {
     if (!playBtn.disabled) return;
+    e.stopPropagation();
     showErrorToast('再生処理中です。しばらくお待ちください');
   });
 
