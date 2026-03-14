@@ -267,9 +267,6 @@ export function addPlayButton(postEl: HTMLElement): void {
         textarea.style.display = 'block';
         showTemplateSelectIfNeeded();
         showWavExportBtnIfNeeded();
-        favoritesContainer.style.display = 'none';
-        favoritesOpen = false;
-        favoritesToggleBtn.textContent = '★ お気に入りを開く';
         playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
       }, async () => {
         await removeFromFavorites(text);
