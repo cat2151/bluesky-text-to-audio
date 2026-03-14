@@ -2,6 +2,11 @@
 
 import { createMenuItem } from './playButtonDom';
 
+function addHoverHighlight(btn: HTMLButtonElement, color: string): void {
+  btn.addEventListener('mouseenter', () => { btn.style.background = color; });
+  btn.addEventListener('mouseleave', () => { btn.style.background = 'none'; });
+}
+
 /** お気に入りトグルメニュー項目ボタンを生成する（クリックハンドラは呼び出し元が設定する） */
 export function createFavoritesToggleMenuItem(): HTMLButtonElement {
   return createMenuItem('favorites-toggle', '★ お気に入りを開く');
@@ -76,8 +81,7 @@ export function createFavoritesItem(text: string, onPlay: () => void, onRemove: 
     flex-shrink: 0;
     color: #f5a623;
   `;
-  removeBtn.addEventListener('mouseenter', () => { removeBtn.style.background = '#ffe0a0'; });
-  removeBtn.addEventListener('mouseleave', () => { removeBtn.style.background = 'none'; });
+  addHoverHighlight(removeBtn, '#ffe0a0');
   removeBtn.addEventListener('click', e => {
     e.stopPropagation();
     onRemove();
@@ -98,4 +102,55 @@ export function createFavoritesItem(text: string, onPlay: () => void, onRemove: 
 
   item.append(playBtn, removeBtn, label);
   return item;
+}
+
+/** お気に入りのexport/importボタンバーを生成する（historyが開いているときに表示する） */
+export function createFavoritesExportImportBar(onExport: () => void, onImport: () => void): HTMLDivElement {
+  const bar = document.createElement('div');
+  bar.style.cssText = `
+    display: flex;
+    gap: 6px;
+    padding: 4px 8px 4px 14px;
+    border-top: 1px solid #e8e8e8;
+  `;
+
+  const btnStyle = `
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    padding: 2px 6px;
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    cursor: pointer;
+    color: #555;
+    white-space: nowrap;
+  `;
+
+  const exportBtn = document.createElement('button');
+  exportBtn.type = 'button';
+  exportBtn.textContent = '📤 export';
+  exportBtn.title = 'お気に入りをJSONファイルとしてダウンロード';
+  exportBtn.setAttribute('aria-label', 'お気に入りをJSONファイルとしてダウンロード');
+  exportBtn.style.cssText = btnStyle;
+  addHoverHighlight(exportBtn, '#f0f0f0');
+  exportBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    onExport();
+  });
+
+  const importBtn = document.createElement('button');
+  importBtn.type = 'button';
+  importBtn.textContent = '📥 import';
+  importBtn.title = 'JSONファイルからお気に入りを上書きインポート';
+  importBtn.setAttribute('aria-label', 'JSONファイルからお気に入りを上書きインポート');
+  importBtn.style.cssText = btnStyle;
+  addHoverHighlight(importBtn, '#f0f0f0');
+  importBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    onImport();
+  });
+
+  bar.append(exportBtn, importBtn);
+  return bar;
 }
