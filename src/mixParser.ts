@@ -2,7 +2,7 @@
 // セミコロンでtrack分割し、各trackのtype(VOICEVOX/YM2151/TONE_JS/SURGE_XT/EFFECT)とtextを返す。
 // ブラウザAPIに依存しない純粋な関数のため、単体テスト可能。
 
-export type TrackType = 'VOICEVOX' | 'YM2151' | 'TONE_JS' | 'SURGE_XT' | 'EFFECT';
+export type TrackType = 'VOICEVOX' | 'YM2151' | 'TONE_JS' | 'SURGE_XT' | 'MMLABC' | 'CHORD' | 'EFFECT';
 
 export interface Track {
   type: TrackType;
@@ -29,6 +29,12 @@ export function parseTracks(text: string): Track[] {
     } else if (/^Surge\s*XT\s+/i.test(raw)) {
       type = 'SURGE_XT';
       trackText = raw.replace(/^Surge\s*XT\s+/i, '');
+    } else if (/^mmlabc\s+/i.test(raw)) {
+      type = 'MMLABC';
+      trackText = raw.replace(/^mmlabc\s+/i, '');
+    } else if (/^chord\s+/i.test(raw)) {
+      type = 'CHORD';
+      trackText = raw.replace(/^chord\s+/i, '');
     } else if (/^Tone\.?js\s+/i.test(raw)) {
       type = 'TONE_JS';
       trackText = raw.replace(/^Tone\.?js\s+/i, '');

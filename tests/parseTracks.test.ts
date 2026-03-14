@@ -111,4 +111,54 @@ describe('parseTracks', () => {
     expect(tracks[0].type).toBe('EFFECT');
     expect(tracks[0].text).toBe('@PingPongDelay');
   });
+
+  it('mmlabcトラックを解析する', () => {
+    const tracks = parseTracks('mmlabc cde');
+    expect(tracks).toHaveLength(1);
+    expect(tracks[0].type).toBe('MMLABC');
+    expect(tracks[0].text).toBe('cde');
+  });
+
+  it('mmlabcキーワードは大文字小文字を区別しない', () => {
+    const tracks = parseTracks('MMLABC cde');
+    expect(tracks).toHaveLength(1);
+    expect(tracks[0].type).toBe('MMLABC');
+    expect(tracks[0].text).toBe('cde');
+  });
+
+  it('chordトラックを解析する', () => {
+    const tracks = parseTracks('chord C-Am-F-G');
+    expect(tracks).toHaveLength(1);
+    expect(tracks[0].type).toBe('CHORD');
+    expect(tracks[0].text).toBe('C-Am-F-G');
+  });
+
+  it('chordキーワードは大文字小文字を区別しない', () => {
+    const tracks = parseTracks('Chord C-Am-F-G');
+    expect(tracks).toHaveLength(1);
+    expect(tracks[0].type).toBe('CHORD');
+    expect(tracks[0].text).toBe('C-Am-F-G');
+  });
+
+  it('mmlabcとYM2151の複数トラックを解析する', () => {
+    const tracks = parseTracks('mmlabc cde;\nYM2151 rc');
+    expect(tracks).toHaveLength(2);
+    expect(tracks[0]).toEqual({ type: 'MMLABC', text: 'cde' });
+    expect(tracks[1]).toEqual({ type: 'YM2151', text: 'rc' });
+  });
+
+  it('chordとVOICEVOXの複数トラックを解析する', () => {
+    const tracks = parseTracks('chord C-Am-F-G;\nVOICEVOX ずんだもんなのだ');
+    expect(tracks).toHaveLength(2);
+    expect(tracks[0]).toEqual({ type: 'CHORD', text: 'C-Am-F-G' });
+    expect(tracks[1]).toEqual({ type: 'VOICEVOX', text: 'ずんだもんなのだ' });
+  });
+
+  it('mmlabcトラックの後続キーワードなしトラックはmmlabcを引き継ぐ', () => {
+    const tracks = parseTracks('mmlabc cde;fga');
+    expect(tracks).toHaveLength(2);
+    expect(tracks[0].type).toBe('MMLABC');
+    expect(tracks[1].type).toBe('MMLABC');
+    expect(tracks[1].text).toBe('fga');
+  });
 });
