@@ -288,6 +288,9 @@ export function addPlayButton(postEl: HTMLElement): void {
       return;
     }
 
+    // mmlabc/chord2mml以外のモードでは五線譜を非表示にする
+    scoreDiv.style.display = 'none';
+
     if (mode === 'tonejs') {
       clearErrorToast();
       await playToneJsMode(textarea.value, tonejsRef, handleError);
