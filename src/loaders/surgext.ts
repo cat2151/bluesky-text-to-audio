@@ -35,7 +35,7 @@ export async function renderSurgeXtAudioBuffer(text: string): Promise<AudioBuffe
 }
 
 // ---- Surge XT で音声合成・再生 ----
-export async function playWithSurgeXt(text: string): Promise<void> {
+export async function playWithSurgeXt(text: string, onPlayStart?: () => void): Promise<void> {
   if (currentSource) {
     try { currentSource.stop(); } catch { /* already stopped */ }
   }
@@ -59,5 +59,6 @@ export async function playWithSurgeXt(text: string): Promise<void> {
       resolve();
     };
     source.start();
+    try { onPlayStart?.(); } catch { /* UI callback must not break playback */ }
   });
 }

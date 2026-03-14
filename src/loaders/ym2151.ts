@@ -300,7 +300,7 @@ export async function renderYm2151AudioBuffer(mml: string): Promise<AudioBuffer>
   return generateYm2151AudioBuffer(mml);
 }
 
-export async function playWithYm2151(mml: string): Promise<void> {
+export async function playWithYm2151(mml: string, onPlayStart?: () => void): Promise<void> {
   // Play audio via Web Audio API (available in content script isolated world).
   const audioCtx = getAudioContext();
   if (audioCtx.state === 'suspended') {
@@ -330,5 +330,6 @@ export async function playWithYm2151(mml: string): Promise<void> {
       resolve();
     };
     source.start();
+    try { onPlayStart?.(); } catch { /* UI callback must not break playback */ }
   });
 }

@@ -58,7 +58,7 @@ export async function renderVoicevoxAudioBuffer(text: string): Promise<AudioBuff
 }
 
 // ---- VOICEVOX で音声合成・再生 ----
-export async function playWithVoicevox(text: string): Promise<void> {
+export async function playWithVoicevox(text: string, onPlayStart?: () => void): Promise<void> {
   // 再生中の音声を停止してから新しい再生を開始する
   // onendedはそのまま残す（stop()でonendedが発火し、待機中のpromiseが解決される）
   // currentSourceのnull化はonendedハンドラーに委ねる
@@ -85,5 +85,6 @@ export async function playWithVoicevox(text: string): Promise<void> {
       resolve();
     };
     source.start();
+    try { onPlayStart?.(); } catch { /* UI callback must not break playback */ }
   });
 }

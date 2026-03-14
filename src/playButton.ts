@@ -2,7 +2,7 @@ import { AbcjsPlayer } from './loaders/abcjsPlayer';
 import { getPostText } from './postText';
 import { detectModeFromText } from './detectModeFromText';
 import { type PlayMode, menuItems, modeTemplates } from './playModes';
-import { createErrorToast } from './errorToast';
+import { createErrorToast, createStatusToast } from './toast';
 import {
   type TonejsRef,
   playMmlabcMode,
@@ -209,6 +209,9 @@ export function addPlayButton(postEl: HTMLElement): void {
   // ---- エラートーストを表示する ----
   const { show: showErrorToast, clear: clearErrorToast } = createErrorToast(row);
 
+  // ---- ステータストーストを表示する（再生開始まで表示、再生開始時に消える） ----
+  const { show: showStatusToast, clear: clearStatusToast } = createStatusToast(row);
+
   // ---- エラー時にtextareaを表示してトーストを出す ----
   function handleError(logLabel: string, message: string, error: unknown): void {
     console.error(LOG_PREFIX, logLabel, error);
@@ -300,9 +303,11 @@ export function addPlayButton(postEl: HTMLElement): void {
     if (mode === 'ym2151') {
       clearErrorToast();
       playBtn.disabled = true;
+      showStatusToast('prerendering...');
       try {
-        await playYm2151Mode(textarea.value, handleError);
+        await playYm2151Mode(textarea.value, handleError, clearStatusToast);
       } finally {
+        clearStatusToast();
         playBtn.disabled = false;
       }
       return;
@@ -324,9 +329,11 @@ export function addPlayButton(postEl: HTMLElement): void {
       if (!text) return;
       clearErrorToast();
       playBtn.disabled = true;
+      showStatusToast('fetching...');
       try {
-        await playVoicevoxMode(text, handleError);
+        await playVoicevoxMode(text, handleError, clearStatusToast);
       } finally {
+        clearStatusToast();
         playBtn.disabled = false;
       }
     }
@@ -336,9 +343,11 @@ export function addPlayButton(postEl: HTMLElement): void {
       if (!text) return;
       clearErrorToast();
       playBtn.disabled = true;
+      showStatusToast('prerendering...');
       try {
-        await playSurgeXtMode(text, handleError);
+        await playSurgeXtMode(text, handleError, clearStatusToast);
       } finally {
+        clearStatusToast();
         playBtn.disabled = false;
       }
     }
