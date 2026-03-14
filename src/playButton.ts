@@ -319,7 +319,9 @@ export function addPlayButton(postEl: HTMLElement): void {
     if (favoritesOpen) {
       favoritesToggleBtn.textContent = '★ お気に入りを閉じる';
       void renderFavorites().then(() => {
-        favoritesContainer.style.display = 'block';
+        if (favoritesOpen) {
+          favoritesContainer.style.display = 'block';
+        }
       });
     } else {
       favoritesToggleBtn.textContent = '★ お気に入りを開く';

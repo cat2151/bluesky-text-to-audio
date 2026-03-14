@@ -254,7 +254,7 @@ export function createHistoryContainer(): HTMLDivElement {
   return container;
 }
 
-/** historyアイテムの行（playボタン＋お気に入り追加ボタン＋テキストプレビュー）を生成する */
+/** historyアイテムの行（playボタン＋テキストプレビュー）を生成する。onAddToFavorites が指定された場合はお気に入り追加ボタン（☆）も表示する */
 export function createHistoryItem(text: string, onPlay: () => void, onAddToFavorites?: () => void): HTMLDivElement {
   const item = document.createElement('div');
   item.style.cssText = `
