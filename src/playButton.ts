@@ -21,12 +21,6 @@ import {
   createMenuItem,
   createMenuSeparator,
   createResetMenuItem,
-  createHistoryToggleMenuItem,
-  createHistoryContainer,
-  createHistoryItem,
-  createFavoritesToggleMenuItem,
-  createFavoritesContainer,
-  createFavoritesItem,
   createRow,
   createTemplateSelect,
   createWavExportBtn,
@@ -34,82 +28,20 @@ import {
   createScoreDiv,
   createWrapper,
 } from './playButtonDom';
+import {
+  createHistoryToggleMenuItem,
+  createHistoryContainer,
+  createHistoryItem,
+} from './historyDom';
+import {
+  createFavoritesToggleMenuItem,
+  createFavoritesContainer,
+  createFavoritesItem,
+} from './favoritesDom';
+import { addToHistory, loadHistory } from './historyStorage';
+import { addToFavorites, loadFavorites, removeFromFavorites } from './favoritesStorage';
 
 const LOG_PREFIX = '[BTA:playButton]';
-
-// ---- history管理 ----
-const HISTORY_KEY = 'bta-history';
-const HISTORY_MAX = 20;
-
-async function loadHistory(): Promise<string[]> {
-  try {
-    const result = await chrome.storage.local.get(HISTORY_KEY);
-    const parsed: unknown = result[HISTORY_KEY];
-    if (!Array.isArray(parsed)) return [];
-    return (parsed as unknown[])
-      .filter((item): item is string => typeof item === 'string')
-      .slice(0, HISTORY_MAX);
-  } catch {
-    return [];
-  }
-}
-
-async function saveHistory(items: string[]): Promise<void> {
-  try {
-    await chrome.storage.local.set({ [HISTORY_KEY]: items });
-  } catch {
-    // chrome.storage.local が使えない環境では無視
-  }
-}
-
-async function addToHistory(text: string): Promise<void> {
-  const trimmed = text.trim();
-  if (!trimmed) return;
-  const items = (await loadHistory()).filter(item => item !== trimmed);
-  items.unshift(trimmed);
-  await saveHistory(items.slice(0, HISTORY_MAX));
-}
-
-// ---- お気に入り管理 ----
-const FAVORITES_KEY = 'bta-favorites';
-const FAVORITES_MAX = 20;
-
-async function loadFavorites(): Promise<string[]> {
-  try {
-    const result = await chrome.storage.local.get(FAVORITES_KEY);
-    const parsed: unknown = result[FAVORITES_KEY];
-    if (!Array.isArray(parsed)) return [];
-    return (parsed as unknown[])
-      .filter((item): item is string => typeof item === 'string')
-      .slice(0, FAVORITES_MAX);
-  } catch {
-    return [];
-  }
-}
-
-async function saveFavorites(items: string[]): Promise<void> {
-  try {
-    await chrome.storage.local.set({ [FAVORITES_KEY]: items });
-  } catch {
-    // chrome.storage.local が使えない環境では無視
-  }
-}
-
-async function addToFavorites(text: string): Promise<void> {
-  const trimmed = text.trim();
-  if (!trimmed) return;
-  const items = (await loadFavorites()).filter(item => item !== trimmed);
-  items.unshift(trimmed);
-  await saveFavorites(items.slice(0, FAVORITES_MAX));
-}
-
-async function removeFromFavorites(text: string): Promise<void> {
-  const trimmed = text.trim();
-  const items = (await loadFavorites()).filter(item => item !== trimmed);
-  await saveFavorites(items);
-  // 削除したアイテムをhistoryに追加（うっかりミスをリカバーする用）
-  await addToHistory(trimmed);
-}
 
 // ---- 処理済み投稿を管理 ----
 const processedPosts = new WeakSet<HTMLElement>();
