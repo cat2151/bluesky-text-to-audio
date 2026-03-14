@@ -2,7 +2,7 @@ import { AbcjsPlayer } from './loaders/abcjsPlayer';
 import { getPostText } from './postText';
 import { detectModeFromText } from './detectModeFromText';
 import { type PlayMode, menuItems, modeTemplates } from './playModes';
-import { createErrorToast, createStatusToast } from './errorToast';
+import { createErrorToast, createStatusToast } from './toast';
 import {
   type TonejsRef,
   playMmlabcMode,

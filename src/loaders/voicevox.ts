@@ -84,7 +84,7 @@ export async function playWithVoicevox(text: string, onPlayStart?: () => void): 
       if (currentSource === source) currentSource = null;
       resolve();
     };
-    onPlayStart?.();
     source.start();
+    try { onPlayStart?.(); } catch { /* UI callback must not break playback */ }
   });
 }

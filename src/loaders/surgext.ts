@@ -58,7 +58,7 @@ export async function playWithSurgeXt(text: string, onPlayStart?: () => void): P
       if (currentSource === source) currentSource = null;
       resolve();
     };
-    onPlayStart?.();
     source.start();
+    try { onPlayStart?.(); } catch { /* UI callback must not break playback */ }
   });
 }

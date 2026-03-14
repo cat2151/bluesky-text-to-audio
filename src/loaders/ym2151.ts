@@ -329,7 +329,7 @@ export async function playWithYm2151(mml: string, onPlayStart?: () => void): Pro
       if (currentSource === source) currentSource = null;
       resolve();
     };
-    onPlayStart?.();
     source.start();
+    try { onPlayStart?.(); } catch { /* UI callback must not break playback */ }
   });
 }
