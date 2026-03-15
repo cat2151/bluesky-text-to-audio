@@ -138,7 +138,7 @@ describe('ym2151RandomTone', () => {
       const firstLine = result.slice(0, newlineIdx);
       const rest = result.slice(newlineIdx + 1);
       expect(firstLine.startsWith('[')).toBe(true);
-      expect(rest).toBe('o4 l8 cde');
+      expect(rest).toBe('@0 o4 l8 cde');
     });
 
     it('先頭行はパース可能なJSONである', () => {
@@ -168,13 +168,37 @@ describe('ym2151RandomTone', () => {
       expect(afterNewline).toBe('');
     });
 
+    it('@NのないMMLには@0が自動付与される', () => {
+      const result = applyRandomToneAttachmentToMml('c');
+      const mmlBody = result.slice(result.indexOf('\n') + 1);
+      expect(mmlBody).toBe('@0 c');
+    });
+
+    it('既に@0があるMMLには@0が重複付与されない', () => {
+      const result = applyRandomToneAttachmentToMml('@0 c');
+      const mmlBody = result.slice(result.indexOf('\n') + 1);
+      expect(mmlBody).toBe('@0 c');
+    });
+
+    it('既に@2などProgramChangeがあるMMLには@0が付与されない', () => {
+      const result = applyRandomToneAttachmentToMml('@2 c');
+      const mmlBody = result.slice(result.indexOf('\n') + 1);
+      expect(mmlBody).toBe('@2 c');
+    });
+
+    it('途中に@Nが含まれるMMLには@0が付与されない', () => {
+      const result = applyRandomToneAttachmentToMml('t150 v11 @2 c');
+      const mmlBody = result.slice(result.indexOf('\n') + 1);
+      expect(mmlBody).toBe('t150 v11 @2 c');
+    });
+
     it('既にアタッチメントJSONがある場合は二重付与されない', () => {
       const first = applyRandomToneAttachmentToMml('o4 cde');
       const second = applyRandomToneAttachmentToMml(first);
       const lines = second.split('\n');
-      // 先頭行はJSON、2行目はMML
+      // 先頭行はJSON、2行目はMML（@0付き）
       expect(lines[0].startsWith('[')).toBe(true);
-      expect(lines[1]).toBe('o4 cde');
+      expect(lines[1]).toBe('@0 o4 cde');
       // 先頭行JSONが有効なアタッチメントであることを確認（置換されている）
       const parsed = JSON.parse(lines[0]) as Array<{ ProgramChange: number; Tone: { events: unknown[] } }>;
       expect(Array.isArray(parsed)).toBe(true);

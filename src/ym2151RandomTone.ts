@@ -373,7 +373,13 @@ export function applyRandomToneAttachmentToMml(mml: string): string {
   const { attachment } = generateRandomToneAttachment();
   const attachmentJson = JSON.stringify(attachment);
   // 既存の先頭行アタッチメントJSONを剥がしてから付与（二重付与防止）
-  const mmlBody = stripAttachmentPrefix(mml);
+  let mmlBody = stripAttachmentPrefix(mml);
+  // MML本体に@N(ProgramChange)がない場合、添付JSONのProgramChangeに対応する@Nを先頭に自動付与
+  // こうしないと添付JSONの音色が反映されない（添付JSONはProgramChangeを指定しており、MMLで@Nを指定しないと効果がない）
+  const trimmedBody = mmlBody.trim();
+  if (trimmedBody.length > 0 && attachment[0]?.ProgramChange === 0 && !/@\d+/.test(trimmedBody)) {
+    mmlBody = `@0 ${trimmedBody}`;
+  }
   return `${attachmentJson}\n${mmlBody}`;
 }
 
