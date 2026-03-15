@@ -2,19 +2,26 @@
 //
 // このファイルは ObsidianやQuartz 4の拡張からcoreを利用するためのライブラリエントリポイントです。
 //
-// 使用例 (Obsidian plugin):
-//   import { playMixMode } from 'bluesky-text-to-audio/src/core';
+// 使用例 (Obsidian plugin / Quartz 4 transformer):
+//   import { playMixMode, detectModeFromText, parseTracks } from 'bluesky-text-to-audio/src/core';
+//
+//   // playMixMode のシグネチャ: (text: string, onPlayStart?: () => void) => Promise<void>
 //   // mmlmix コードブロックにplayボタンを追加し、クリックで playMixMode(source) を呼ぶ。
+//   btn.addEventListener('click', () => playMixMode(source));
 //
-// 使用例 (Quartz 4 transformer):
-//   import { playMixMode } from 'bluesky-text-to-audio/src/core';
-//   // mmlmix コードブロックをHTMLのplayボタンに変換し、クリックで playMixMode(source) を呼ぶ。
+//   // detectModeFromText のシグネチャ: (text: string) => { mode: PlayMode; cleanedText: string }
+//   // mode はトラックタイプ、cleanedText はモードキーワードを除去したテキストです。
+//   const { mode, cleanedText } = detectModeFromText(source);
 //
-// 注意: VOICEVOX トラックは chrome.runtime.sendMessage を使用するため、
+// 注意: VOICEVOX および Surge XT トラックは chrome.runtime.sendMessage を使用するため、
 //       Chrome拡張のコンテキスト外では利用できません。
-//       YM2151 / Tone.js / mmlabc / chord / Surge XT トラックは利用可能です。
+//       これらのモジュールはビルド時に chrome グローバルへの参照を含むため、
+//       TypeScript で利用する際は @types/chrome が必要です（未使用時もバンドルに含まれます）。
+//       YM2151 / Tone.js / mmlabc / chord トラックは Chrome拡張外でも利用可能です。
 
-export { playMixMode } from './playModeHandlers';
+// playMixMode は loaders/mix から直接エクスポートします。
+// シグネチャ: (text: string, onPlayStart?: () => void) => Promise<void>
+export { playMixMode } from './loaders/mix';
 export { detectModeFromText } from './detectModeFromText';
 export { parseTracks } from './mixParser';
 export type { PlayMode } from './playModes';
