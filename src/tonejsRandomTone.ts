@@ -22,11 +22,11 @@ export function generateRandomTonejsMmlPrefix(): string {
 }
 
 /**
- * MMLにJSON形式の音色指定（@Instrument{...}）がない場合、ランダムな音色プレフィックスを先頭に付加する（仮実装）。
- * 音色指定がある場合（MMLが '/@\w+\s*\{/' にマッチする場合）はそのまま返す。
+ * MMLに `@～` によるinstrumentまたはeffectの指定がない場合、ランダムな音色プレフィックスを先頭に付加する（仮実装）。
+ * `@～` 指定がある場合（MMLが '/@\w+/' にマッチする場合）はそのまま返す。
  */
 export function applyRandomToneToMmlIfNeeded(mml: string): string {
-  if (/@\w+\s*\{/.test(mml)) return mml;
+  if (/@\w+/.test(mml)) return mml;
   const prefix = generateRandomTonejsMmlPrefix();
   return mml ? `${prefix} ${mml}` : prefix;
 }

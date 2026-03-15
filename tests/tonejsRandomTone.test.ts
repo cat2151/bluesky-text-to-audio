@@ -40,16 +40,10 @@ describe('tonejsRandomTone', () => {
       vi.restoreAllMocks();
     });
 
-    it('MMLに@Instrument{がない場合、ランダムシンセプレフィックスを先頭に付加する', () => {
+    it('@指定がない場合、ランダムシンセプレフィックスを先頭に付加する', () => {
       vi.spyOn(Math, 'random').mockReturnValue(0);
       const result = applyRandomToneToMmlIfNeeded('o4 l8 cde');
       expect(result).toBe('@Synth o4 l8 cde');
-    });
-
-    it('MMLに@Instrument{がある場合（JSON指定あり）、そのまま返す', () => {
-      const mml = '@FMSynth{"harmonicity": 3} o4 l8 cde';
-      const result = applyRandomToneToMmlIfNeeded(mml);
-      expect(result).toBe(mml);
     });
 
     it('空MMLにはプレフィックスのみを返す（末尾スペースなし）', () => {
@@ -58,11 +52,22 @@ describe('tonejsRandomTone', () => {
       expect(result).toBe('@Synth');
     });
 
-    it('@Instrument（JSON指定なし）にもプレフィックスを付加する', () => {
-      vi.spyOn(Math, 'random').mockReturnValue(0);
-      // @FMSynth without JSON args is not a JSON spec → random tone is prepended
-      const result = applyRandomToneToMmlIfNeeded('@FMSynth o4 cde');
-      expect(result).toBe('@Synth @FMSynth o4 cde');
+    it('@InstrumentJSON指定あり→そのまま返す', () => {
+      const mml = '@FMSynth{"harmonicity": 3} o4 l8 cde';
+      const result = applyRandomToneToMmlIfNeeded(mml);
+      expect(result).toBe(mml);
+    });
+
+    it('@Instrument（JSON指定なし）があるときはそのまま返す', () => {
+      const mml = '@FMSynth o4 cde';
+      const result = applyRandomToneToMmlIfNeeded(mml);
+      expect(result).toBe(mml);
+    });
+
+    it('@Effect（JSON指定なし）があるときはそのまま返す', () => {
+      const mml = '@PingPongDelay o4 l8 cde';
+      const result = applyRandomToneToMmlIfNeeded(mml);
+      expect(result).toBe(mml);
     });
 
     it('エフェクトJSON指定がある場合はそのまま返す', () => {
@@ -71,7 +76,7 @@ describe('tonejsRandomTone', () => {
       expect(result).toBe(mml);
     });
 
-    it('スペースを挟まない@Instrument{もJSON指定として認識する', () => {
+    it('スペースを挟まない@Instrument{もそのまま返す', () => {
       const mml = '@FMSynth{"harmonicity":3} o4 l8 cde';
       const result = applyRandomToneToMmlIfNeeded(mml);
       expect(result).toBe(mml);
