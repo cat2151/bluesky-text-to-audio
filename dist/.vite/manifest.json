@@ -11,9 +11,9 @@
     "src": "__vite-browser-external",
     "isDynamicEntry": true
   },
-  "_content.ts-loader-ChiUJea_.js": {
-    "file": "assets/content.ts-loader-ChiUJea_.js",
-    "src": "_content.ts-loader-ChiUJea_.js"
+  "_content.ts-loader-ZxhNG2HQ.js": {
+    "file": "assets/content.ts-loader-ZxhNG2HQ.js",
+    "src": "_content.ts-loader-ZxhNG2HQ.js"
   },
   "src/background.ts": {
     "file": "assets/background.ts-BCDKgwlJ.js",
@@ -22,7 +22,7 @@
     "isEntry": true
   },
   "src/content.ts": {
-    "file": "assets/content.ts-Bc5h7T6V.js",
+    "file": "assets/content.ts-BTPKDtYs.js",
     "name": "content.ts",
     "src": "src/content.ts",
     "isEntry": true,
