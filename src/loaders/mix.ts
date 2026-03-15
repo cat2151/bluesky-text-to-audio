@@ -14,8 +14,6 @@ import * as ABCJS from 'abcjs';
 import { parse as mml2abcParse } from '../mml2abc.mjs';
 import type { ToneLib } from '../types';
 import { renderYm2151AudioBuffer } from './ym2151';
-import { renderVoicevoxAudioBuffer } from './voicevox';
-import { renderSurgeXtAudioBuffer } from './surgext';
 import { loadSequencer } from './sequencer';
 import { parseMmlViaLibrary } from './mmlToJson';
 import { getAudioContext } from '../audioContext';
@@ -24,6 +22,30 @@ import { audioBufferToWavBlob } from '../wavEncoder';
 import { chordToMml } from '../chordToMml';
 
 export { parseTracks };
+
+// ---- 環境依存レンダラーの依存性注入インターフェース ----
+// Chrome拡張コンテキストでのみ動作するレンダラーを外部から注入することで、
+// Obsidian / Quartz 4 など Chrome拡張外の環境でも chrome 依存なしに利用できる。
+//
+// Chrome拡張から使う場合:
+//   import { renderVoicevoxAudioBuffer } from './loaders/voicevox';
+//   import { renderSurgeXtAudioBuffer } from './loaders/surgext';
+//   playMixMode(text, { renderers: { voicevox: renderVoicevoxAudioBuffer, surgext: renderSurgeXtAudioBuffer } });
+//
+// Obsidian / Quartz 4 から使う場合 (VOICEVOX/Surge XT トラックは含めないこと):
+//   playMixMode(text);
+export interface TrackRenderers {
+  /** VOICEVOX テキスト音声合成レンダラー (Chrome拡張専用) */
+  voicevox?: (text: string) => Promise<AudioBuffer>;
+  /** Surge XT MML音源レンダラー (Chrome拡張専用) */
+  surgext?: (text: string) => Promise<AudioBuffer>;
+}
+
+export interface PlayMixModeOptions {
+  onPlayStart?: () => void;
+  /** 環境依存レンダラー。省略時は VOICEVOX/Surge XT トラックが含まれるとエラーになります。 */
+  renderers?: TrackRenderers;
+}
 
 const LOG_PREFIX = '[BTA:loaders/mix]';
 
@@ -81,7 +103,7 @@ async function renderMmlabcAudioBuffer(mml: string): Promise<AudioBuffer> {
 }
 
 // ---- chord: コード進行 → MML → (ターゲットエンジン) → AudioBuffer ----
-async function renderChordAudioBuffer(chord: string, targetEngine?: import('../mixParser').ChordTargetEngine): Promise<AudioBuffer> {
+async function renderChordAudioBuffer(chord: string, targetEngine?: import('../mixParser').ChordTargetEngine, renderers?: TrackRenderers): Promise<AudioBuffer> {
   console.log(LOG_PREFIX, '[chord] offline rendering:', chord.substring(0, 50), targetEngine ? `→ ${targetEngine}` : '→ MMLABC');
   const mml = await chordToMml(chord);
   if (targetEngine === 'YM2151') {
@@ -89,7 +111,10 @@ async function renderChordAudioBuffer(chord: string, targetEngine?: import('../m
   } else if (targetEngine === 'TONE_JS') {
     return renderToneJsAudioBuffer(mml);
   } else if (targetEngine === 'SURGE_XT') {
-    return renderSurgeXtAudioBuffer(mml);
+    if (!renderers?.surgext) {
+      throw new Error('Surge XT renderer is not available in this context. Provide a surgext renderer via PlayMixModeOptions.renderers.');
+    }
+    return renderers.surgext(mml);
   } else {
     // MMLABC (default, targetEngine未指定またはMMLABC)
     const abcText = mml2abcParse(mml);
@@ -214,7 +239,8 @@ async function applyEffectAndPlay(mixedBuffer: AudioBuffer, effectText: string, 
 }
 
 // ---- メイン: 全trackをレンダリング → mix → 再生 ----
-export async function playMixMode(text: string, onPlayStart?: () => void): Promise<void> {
+export async function playMixMode(text: string, options?: PlayMixModeOptions): Promise<void> {
+  const { onPlayStart, renderers } = options ?? {};
   const audioCtx = getAudioContext();
   if (audioCtx.state === 'suspended') {
     // resume() はユーザージェスチャーがない場合は失敗することがある。
@@ -241,7 +267,10 @@ export async function playMixMode(text: string, onPlayStart?: () => void): Promi
     audioTracks.map(async (track, i) => {
       console.log(LOG_PREFIX, `[track ${i}] rendering ${track.type}: ${track.text.substring(0, 30)}`);
       if (track.type === 'VOICEVOX') {
-        const buf = await renderVoicevoxAudioBuffer(track.text);
+        if (!renderers?.voicevox) {
+          throw new Error('VOICEVOX renderer is not available in this context. Provide a voicevox renderer via PlayMixModeOptions.renderers.');
+        }
+        const buf = await renderers.voicevox(track.text);
         console.log(LOG_PREFIX, `[track ${i}] VOICEVOX rendered: ${buf.duration.toFixed(2)}s`);
         return buf;
       } else if (track.type === 'YM2151') {
@@ -249,7 +278,10 @@ export async function playMixMode(text: string, onPlayStart?: () => void): Promi
         console.log(LOG_PREFIX, `[track ${i}] YM2151 rendered: ${buf.duration.toFixed(2)}s`);
         return buf;
       } else if (track.type === 'SURGE_XT') {
-        const buf = await renderSurgeXtAudioBuffer(track.text);
+        if (!renderers?.surgext) {
+          throw new Error('Surge XT renderer is not available in this context. Provide a surgext renderer via PlayMixModeOptions.renderers.');
+        }
+        const buf = await renderers.surgext(track.text);
         console.log(LOG_PREFIX, `[track ${i}] Surge XT rendered: ${buf.duration.toFixed(2)}s`);
         return buf;
       } else if (track.type === 'MMLABC') {
@@ -257,7 +289,7 @@ export async function playMixMode(text: string, onPlayStart?: () => void): Promi
         console.log(LOG_PREFIX, `[track ${i}] mmlabc rendered: ${buf.duration.toFixed(2)}s`);
         return buf;
       } else if (track.type === 'CHORD') {
-        const buf = await renderChordAudioBuffer(track.text, track.targetEngine);
+        const buf = await renderChordAudioBuffer(track.text, track.targetEngine, renderers);
         console.log(LOG_PREFIX, `[track ${i}] chord rendered: ${buf.duration.toFixed(2)}s`);
         return buf;
       } else {
