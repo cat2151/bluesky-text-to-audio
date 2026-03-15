@@ -300,7 +300,7 @@ async function generateYm2151AudioBuffer(mmlWithAttachment: string): Promise<Aud
 // 注意: 呼び出しのたびに新しいランダム音色を生成する（仮仕様）。
 // WAV exportを複数回実行すると毎回異なる音色のWAVが生成される。
 export async function renderYm2151AudioBuffer(mml: string): Promise<AudioBuffer> {
-  const mmlWithAttachment = applyRandomToneAttachmentToMml(mml);
+  const mmlWithAttachment = await applyRandomToneAttachmentToMml(mml);
   console.log(LOG_PREFIX, '[renderYm2151AudioBuffer] mmlWithAttachment:\n', mmlWithAttachment);
   return generateYm2151AudioBuffer(mmlWithAttachment);
 }
@@ -316,7 +316,7 @@ export async function playWithYm2151(mml: string, onPlayStart?: () => void): Pro
 
   // 再生のたびに新しいランダム音色を生成する（仮仕様: issue #142）。
   // 同じMMLでも毎回異なる音色が使われるため、キャッシュはMML+アタッチメントJSONをkeyとする。
-  const mmlWithAttachment = applyRandomToneAttachmentToMml(mml);
+  const mmlWithAttachment = await applyRandomToneAttachmentToMml(mml);
   console.log(LOG_PREFIX, '[playWithYm2151] mmlWithAttachment:\n', mmlWithAttachment);
   const audioBuffer = await generateYm2151AudioBuffer(mmlWithAttachment);
 

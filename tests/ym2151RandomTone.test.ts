@@ -1,102 +1,33 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import {
-  getDefaultConfig,
-  generateRandomToneString,
   generateRandomToneAttachment,
   applyRandomToneAttachmentToMml,
 } from '../src/ym2151RandomTone';
 
 describe('ym2151RandomTone', () => {
-  describe('generateRandomToneString', () => {
-    afterEach(() => {
-      vi.restoreAllMocks();
-    });
-
-    it('デフォルト設定でトーン文字列を生成する', () => {
-      const config = getDefaultConfig();
-      const toneString = generateRandomToneString(config);
-      expect(typeof toneString).toBe('string');
-      expect(toneString.length).toBeGreaterThan(0);
-    });
-
-    it('5行のトーン文字列を生成する（4オペレーター + グローバルパラメーター）', () => {
-      const config = getDefaultConfig();
-      const toneString = generateRandomToneString(config);
-      const lines = toneString.trim().split('\n');
-      expect(lines.length).toBe(5);
-    });
-
-    it('グローバル行にCON=とFL=が含まれる', () => {
-      const config = getDefaultConfig();
-      const toneString = generateRandomToneString(config);
-      const lines = toneString.trim().split('\n');
-      const globalLine = lines[4];
-      expect(globalLine).toMatch(/CON=[0-9A-F]/i);
-      expect(globalLine).toMatch(/FL=[0-9A-F]/i);
-    });
-
-    it('オペレーター行にTL=が含まれる', () => {
-      const config = getDefaultConfig();
-      const toneString = generateRandomToneString(config);
-      const lines = toneString.trim().split('\n');
-      // 最初の4行はオペレーターパラメーター
-      for (let i = 0; i < 4; i++) {
-        expect(lines[i]).toMatch(/TL=[0-9A-F]+/i);
-      }
-    });
-
-    it('同一の乱数列であれば同一のトーン文字列を生成する（決定的）', () => {
-      const config = getDefaultConfig();
-
-      // 同じ固定シーケンスで2回生成 → 同一結果になるはず
-      const fixedValues = [0.1, 0.5, 0.9, 0.2, 0.7, 0.3, 0.8, 0.4, 0.6, 0.0,
-                           0.1, 0.5, 0.9, 0.2, 0.7, 0.3, 0.8, 0.4, 0.6, 0.0];
-      let callCount = 0;
-      const spy = vi.spyOn(Math, 'random').mockImplementation(() => fixedValues[callCount++ % fixedValues.length]);
-      const first = generateRandomToneString(config);
-      callCount = 0; // シーケンスをリセット
-      const second = generateRandomToneString(config);
-      spy.mockRestore();
-
-      expect(first).toBe(second);
-    });
-
-    it('異なる乱数列であれば異なるトーン文字列を生成する（決定的）', () => {
-      const config = getDefaultConfig();
-
-      const spy = vi.spyOn(Math, 'random').mockReturnValue(0.0);
-      const allLow = generateRandomToneString(config);
-      spy.mockReturnValue(1.0);
-      const allHigh = generateRandomToneString(config);
-      spy.mockRestore();
-
-      expect(allLow).not.toBe(allHigh);
-    });
-  });
-
   describe('generateRandomToneAttachment', () => {
-    it('attachmentとtoneStringを返す', () => {
-      const result = generateRandomToneAttachment();
+    it('attachmentとtoneStringを返す', async () => {
+      const result = await generateRandomToneAttachment();
       expect(result).toHaveProperty('attachment');
       expect(result).toHaveProperty('toneString');
     });
 
-    it('attachmentは1エントリの配列', () => {
-      const { attachment } = generateRandomToneAttachment();
+    it('attachmentは1エントリの配列', async () => {
+      const { attachment } = await generateRandomToneAttachment();
       expect(Array.isArray(attachment)).toBe(true);
       expect(attachment.length).toBe(1);
     });
 
-    it('attachmentエントリにProgramChange=0とToneがある', () => {
-      const { attachment } = generateRandomToneAttachment();
+    it('attachmentエントリにProgramChange=0とToneがある', async () => {
+      const { attachment } = await generateRandomToneAttachment();
       const entry = attachment[0];
       expect(entry.ProgramChange).toBe(0);
       expect(entry.Tone).toBeDefined();
       expect(Array.isArray(entry.Tone.events)).toBe(true);
     });
 
-    it('Tone.eventsにYM2151レジスタイベントが含まれる', () => {
-      const { attachment } = generateRandomToneAttachment();
+    it('Tone.eventsにYM2151レジスタイベントが含まれる', async () => {
+      const { attachment } = await generateRandomToneAttachment();
       const events = attachment[0].Tone.events;
       expect(events.length).toBeGreaterThan(0);
       // 全イベントがtime/addr/dataフィールドを持つ
@@ -109,8 +40,8 @@ describe('ym2151RandomTone', () => {
       }
     });
 
-    it('RL/FL/CONレジスタ(0x20)が含まれる', () => {
-      const { attachment } = generateRandomToneAttachment();
+    it('RL/FL/CONレジスタ(0x20)が含まれる', async () => {
+      const { attachment } = await generateRandomToneAttachment();
       const events = attachment[0].Tone.events;
       const rlFlConEvent = events.find(e => e.addr === '0x20');
       expect(rlFlConEvent).toBeDefined();
@@ -119,20 +50,23 @@ describe('ym2151RandomTone', () => {
       expect(dataVal & 0xC0).toBe(0xC0);
     });
 
-    it('toneStringがgenerateRandomToneStringと同じ形式', () => {
-      const { toneString } = generateRandomToneAttachment();
-      const lines = toneString.trim().split('\n');
-      expect(lines.length).toBe(5);
+    it('toneStringはWASMが返すレジスタペア16進文字列である', async () => {
+      const { toneString } = await generateRandomToneAttachment();
+      expect(typeof toneString).toBe('string');
+      expect(toneString.length).toBeGreaterThan(0);
+      // 4文字単位の16進ペア（アドレス2桁+データ2桁）
+      expect(toneString.length % 4).toBe(0);
+      expect(toneString).toMatch(/^[0-9A-Fa-f]+$/);
     });
   });
 
   describe('applyRandomToneAttachmentToMml', () => {
     afterEach(() => {
-      vi.restoreAllMocks();
+      // no Math.random mocks needed (WASM uses its own seeded RNG)
     });
 
-    it('MMLの先頭にアタッチメントJSONが付加される', () => {
-      const result = applyRandomToneAttachmentToMml('o4 l8 cde');
+    it('MMLの先頭にアタッチメントJSONが付加される', async () => {
+      const result = await applyRandomToneAttachmentToMml('o4 l8 cde');
       const newlineIdx = result.indexOf('\n');
       expect(newlineIdx).toBeGreaterThan(0);
       const firstLine = result.slice(0, newlineIdx);
@@ -141,16 +75,16 @@ describe('ym2151RandomTone', () => {
       expect(rest).toBe('@0 o4 l8 cde');
     });
 
-    it('先頭行はパース可能なJSONである', () => {
-      const result = applyRandomToneAttachmentToMml('o4 cde');
+    it('先頭行はパース可能なJSONである', async () => {
+      const result = await applyRandomToneAttachmentToMml('o4 cde');
       const firstLine = result.slice(0, result.indexOf('\n'));
       const parsed = JSON.parse(firstLine) as unknown[];
       expect(Array.isArray(parsed)).toBe(true);
       expect(parsed.length).toBe(1);
     });
 
-    it('アタッチメントJSONはToneAttachmentEntry形式を持つ', () => {
-      const result = applyRandomToneAttachmentToMml('o4 cde');
+    it('アタッチメントJSONはToneAttachmentEntry形式を持つ', async () => {
+      const result = await applyRandomToneAttachmentToMml('o4 cde');
       const firstLine = result.slice(0, result.indexOf('\n'));
       const parsed = JSON.parse(firstLine) as Array<{ ProgramChange: number; Tone: { events: unknown[] } }>;
       expect(parsed[0].ProgramChange).toBe(0);
@@ -158,8 +92,8 @@ describe('ym2151RandomTone', () => {
       expect(parsed[0].Tone.events.length).toBeGreaterThan(0);
     });
 
-    it('空MMLのとき先頭にJSON行＋改行が付く', () => {
-      const result = applyRandomToneAttachmentToMml('');
+    it('空MMLのとき先頭にJSON行＋改行が付く', async () => {
+      const result = await applyRandomToneAttachmentToMml('');
       expect(result.startsWith('[')).toBe(true);
       // 常に JSON+'\n' を返すことで extractAttachmentFromMml と整合する
       const newlineIdx = result.indexOf('\n');
@@ -168,33 +102,33 @@ describe('ym2151RandomTone', () => {
       expect(afterNewline).toBe('');
     });
 
-    it('@NのないMMLには@0が自動付与される', () => {
-      const result = applyRandomToneAttachmentToMml('c');
+    it('@NのないMMLには@0が自動付与される', async () => {
+      const result = await applyRandomToneAttachmentToMml('c');
       const mmlBody = result.slice(result.indexOf('\n') + 1);
       expect(mmlBody).toBe('@0 c');
     });
 
-    it('既に@0があるMMLには@0が重複付与されない', () => {
-      const result = applyRandomToneAttachmentToMml('@0 c');
+    it('既に@0があるMMLには@0が重複付与されない', async () => {
+      const result = await applyRandomToneAttachmentToMml('@0 c');
       const mmlBody = result.slice(result.indexOf('\n') + 1);
       expect(mmlBody).toBe('@0 c');
     });
 
-    it('既に@2などProgramChangeがあるMMLには@0が付与されない', () => {
-      const result = applyRandomToneAttachmentToMml('@2 c');
+    it('既に@2などProgramChangeがあるMMLには@0が付与されない', async () => {
+      const result = await applyRandomToneAttachmentToMml('@2 c');
       const mmlBody = result.slice(result.indexOf('\n') + 1);
       expect(mmlBody).toBe('@2 c');
     });
 
-    it('途中に@Nが含まれるMMLには@0が付与されない', () => {
-      const result = applyRandomToneAttachmentToMml('t150 v11 @2 c');
+    it('途中に@Nが含まれるMMLには@0が付与されない', async () => {
+      const result = await applyRandomToneAttachmentToMml('t150 v11 @2 c');
       const mmlBody = result.slice(result.indexOf('\n') + 1);
       expect(mmlBody).toBe('t150 v11 @2 c');
     });
 
-    it('既にアタッチメントJSONがある場合は二重付与されない', () => {
-      const first = applyRandomToneAttachmentToMml('o4 cde');
-      const second = applyRandomToneAttachmentToMml(first);
+    it('既にアタッチメントJSONがある場合は二重付与されない', async () => {
+      const first = await applyRandomToneAttachmentToMml('o4 cde');
+      const second = await applyRandomToneAttachmentToMml(first);
       const lines = second.split('\n');
       // 先頭行はJSON、2行目はMML（@0付き）
       expect(lines[0].startsWith('[')).toBe(true);
