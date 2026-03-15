@@ -4,8 +4,8 @@ import { loadTone } from './loaders/tone';
 import { loadSequencer } from './loaders/sequencer';
 import { parseMmlViaLibrary } from './loaders/mmlToJson';
 import { playWithYm2151, renderYm2151AudioBuffer } from './loaders/ym2151';
-import { playWithVoicevox } from './loaders/voicevox';
-import { playWithSurgeXt } from './loaders/surgext';
+import { playWithVoicevox, renderVoicevoxAudioBuffer } from './loaders/voicevox';
+import { playWithSurgeXt, renderSurgeXtAudioBuffer } from './loaders/surgext';
 import { playMixMode as playMixModeImpl } from './loaders/mix';
 import type { AbcjsPlayer } from './loaders/abcjsPlayer';
 import { chordToMml, chordPreprocessMixText } from './chordToMml';
@@ -103,7 +103,13 @@ export async function playMixMode(
   onPlayStart?: () => void
 ): Promise<void> {
   try {
-    await playMixModeImpl(text, onPlayStart);
+    await playMixModeImpl(text, {
+      onPlayStart,
+      renderers: {
+        voicevox: renderVoicevoxAudioBuffer,
+        surgext: renderSurgeXtAudioBuffer,
+      },
+    });
   } catch (e2: unknown) {
     handleError('Mix play error:', 'Mix play error', e2);
   }
