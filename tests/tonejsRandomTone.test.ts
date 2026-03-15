@@ -15,16 +15,16 @@ describe('tonejsRandomTone', () => {
       expect(prefix).toMatch(/^@[A-Za-z]/);
     });
 
-    it('乱数が0のとき最初のシンセから始まるMMLを返す（決定的）', () => {
+    it('乱数が0のとき最初のシンセ（Synth）から始まるMMLを返す（決定的）', () => {
       vi.spyOn(Math, 'random').mockReturnValue(0);
       const prefix = generateRandomTonejsMmlPrefix();
-      expect(prefix).toMatch(/^@[A-Za-z]/);
+      expect(prefix).toMatch(/^@Synth/);
     });
 
-    it('乱数が0.99のとき最後のシンセから始まるMMLを返す（決定的）', () => {
+    it('乱数が0.99のとき最後のシンセ（PolySynth）から始まるMMLを返す（決定的）', () => {
       vi.spyOn(Math, 'random').mockReturnValue(0.99);
       const prefix = generateRandomTonejsMmlPrefix();
-      expect(prefix).toMatch(/^@[A-Za-z]/);
+      expect(prefix).toMatch(/^@PolySynth/);
     });
 
     it('同じ乱数値であれば同じプレフィックスを返す（決定的）', () => {
@@ -34,10 +34,10 @@ describe('tonejsRandomTone', () => {
       expect(first).toBe(second);
     });
 
-    it('instrumentとeffectを合体したMMLを返す（@が複数含まれる）', () => {
+    it('instrumentとeffectを合体したMMLを返す（@が2つ以上含まれる）', () => {
       const prefix = generateRandomTonejsMmlPrefix();
       const atCount = (prefix.match(/@[A-Za-z]/g) ?? []).length;
-      expect(atCount).toBeGreaterThanOrEqual(1);
+      expect(atCount).toBeGreaterThanOrEqual(2);
     });
   });
 
