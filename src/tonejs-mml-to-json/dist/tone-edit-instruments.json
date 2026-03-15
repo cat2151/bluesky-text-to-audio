@@ -1,0 +1,1022 @@
+[
+    {
+        "id": "Synth",
+        "name": "Synth",
+        "parameters": [
+            {
+                "path": "oscillator.type",
+                "label": "Oscillator Type",
+                "choices": ["sine", "square", "sawtooth", "triangle"],
+                "min": 0,
+                "max": 0,
+                "sweetMin": 0,
+                "sweetMax": 0,
+                "defaultValue": 0
+            },
+            {
+                "path": "oscillator.partialCount",
+                "label": "Oscillator Partial Count",
+                "min": 0,
+                "max": 8,
+                "sweetMin": 0,
+                "sweetMax": 4,
+                "defaultValue": 0,
+                "step": 1
+            },
+            {
+                "path": "envelope.attack",
+                "label": "Envelope Attack",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.03,
+                "sweetMax": 0.2,
+                "defaultValue": 0.1,
+                "step": 0.01
+            },
+            {
+                "path": "envelope.decay",
+                "label": "Envelope Decay",
+                "min": 0,
+                "max": 1.5,
+                "sweetMin": 0.1,
+                "sweetMax": 0.6,
+                "defaultValue": 0.3,
+                "step": 0.01
+            },
+            {
+                "path": "envelope.sustain",
+                "label": "Envelope Sustain",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.35,
+                "sweetMax": 0.85,
+                "defaultValue": 0.6,
+                "step": 0.01
+            },
+            {
+                "path": "envelope.release",
+                "label": "Envelope Release",
+                "min": 0,
+                "max": 3,
+                "sweetMin": 0.4,
+                "sweetMax": 1.5,
+                "defaultValue": 0.8,
+                "step": 0.05
+            }
+        ]
+    },
+    {
+        "id": "AMSynth",
+        "name": "AMSynth",
+        "parameters": [
+            {
+                "path": "oscillator.type",
+                "label": "Oscillator Type",
+                "choices": ["sine", "square", "sawtooth", "triangle"],
+                "min": 0,
+                "max": 0,
+                "sweetMin": 0,
+                "sweetMax": 0,
+                "defaultValue": 0
+            },
+            {
+                "path": "modulation.type",
+                "label": "Modulation Type",
+                "choices": ["sine", "square", "sawtooth", "triangle"],
+                "min": 0,
+                "max": 0,
+                "sweetMin": 0,
+                "sweetMax": 0,
+                "defaultValue": 0
+            },
+            {
+                "path": "harmonicity",
+                "label": "Harmonicity",
+                "min": 1,
+                "max": 8,
+                "sweetMin": 1,
+                "sweetMax": 4,
+                "defaultValue": 3,
+                "step": 1
+            },
+            {
+                "path": "envelope.attack",
+                "label": "Envelope Attack",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.01,
+                "sweetMax": 0.2,
+                "defaultValue": 0.05,
+                "step": 0.01
+            },
+            {
+                "path": "envelope.decay",
+                "label": "Envelope Decay",
+                "min": 0,
+                "max": 1.5,
+                "sweetMin": 0.1,
+                "sweetMax": 0.6,
+                "defaultValue": 0.3,
+                "step": 0.01
+            },
+            {
+                "path": "envelope.sustain",
+                "label": "Envelope Sustain",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.3,
+                "sweetMax": 0.9,
+                "defaultValue": 0.7,
+                "step": 0.01
+            },
+            {
+                "path": "envelope.release",
+                "label": "Envelope Release",
+                "min": 0,
+                "max": 3,
+                "sweetMin": 0.3,
+                "sweetMax": 1.5,
+                "defaultValue": 0.8,
+                "step": 0.05
+            },
+            {
+                "path": "modulationEnvelope.attack",
+                "label": "Mod Envelope Attack",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.05,
+                "sweetMax": 0.8,
+                "defaultValue": 0.5,
+                "step": 0.01
+            },
+            {
+                "path": "modulationEnvelope.decay",
+                "label": "Mod Envelope Decay",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0,
+                "sweetMax": 0.5,
+                "defaultValue": 0.01,
+                "step": 0.01
+            },
+            {
+                "path": "modulationEnvelope.sustain",
+                "label": "Mod Envelope Sustain",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.3,
+                "sweetMax": 1,
+                "defaultValue": 1,
+                "step": 0.01
+            },
+            {
+                "path": "modulationEnvelope.release",
+                "label": "Mod Envelope Release",
+                "min": 0,
+                "max": 3,
+                "sweetMin": 0.2,
+                "sweetMax": 1.5,
+                "defaultValue": 0.5,
+                "step": 0.05
+            }
+        ]
+    },
+    {
+        "id": "DuoSynth",
+        "name": "DuoSynth",
+        "parameters": [
+            {
+                "path": "harmonicity",
+                "label": "Harmonicity",
+                "numericChoices": [1.5, 2, 3, 4, 5],
+                "min": 1,
+                "max": 5,
+                "sweetMin": 1,
+                "sweetMax": 3,
+                "defaultValue": 1.5
+            },
+            {
+                "path": "vibratoRate",
+                "label": "Vibrato Rate",
+                "min": 0.1,
+                "max": 10,
+                "sweetMin": 1,
+                "sweetMax": 8,
+                "defaultValue": 5,
+                "step": 0.1
+            },
+            {
+                "path": "vibratoAmount",
+                "label": "Vibrato Amount",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.1,
+                "sweetMax": 0.7,
+                "defaultValue": 0.5,
+                "step": 0.01
+            },
+            {
+                "path": "voice0.oscillator.type",
+                "label": "Voice 0 Oscillator Type",
+                "choices": ["sine", "square", "sawtooth", "triangle"],
+                "min": 0,
+                "max": 0,
+                "sweetMin": 0,
+                "sweetMax": 0,
+                "defaultValue": 0
+            },
+            {
+                "path": "voice0.envelope.attack",
+                "label": "Voice 0 Envelope Attack",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.01,
+                "sweetMax": 0.3,
+                "defaultValue": 0.01,
+                "step": 0.01
+            },
+            {
+                "path": "voice0.envelope.release",
+                "label": "Voice 0 Envelope Release",
+                "min": 0,
+                "max": 3,
+                "sweetMin": 0.3,
+                "sweetMax": 1.5,
+                "defaultValue": 0.5,
+                "step": 0.05
+            },
+            {
+                "path": "voice1.oscillator.type",
+                "label": "Voice 1 Oscillator Type",
+                "choices": ["sine", "square", "sawtooth", "triangle"],
+                "min": 0,
+                "max": 0,
+                "sweetMin": 0,
+                "sweetMax": 0,
+                "defaultValue": 0
+            },
+            {
+                "path": "voice1.envelope.attack",
+                "label": "Voice 1 Envelope Attack",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.01,
+                "sweetMax": 0.3,
+                "defaultValue": 0.01,
+                "step": 0.01
+            },
+            {
+                "path": "voice1.envelope.release",
+                "label": "Voice 1 Envelope Release",
+                "min": 0,
+                "max": 3,
+                "sweetMin": 0.3,
+                "sweetMax": 1.5,
+                "defaultValue": 0.5,
+                "step": 0.05
+            }
+        ]
+    },
+    {
+        "id": "FMSynth",
+        "name": "FMSynth",
+        "parameters": [
+            {
+                "path": "oscillator.type",
+                "label": "Oscillator Type",
+                "choices": ["sine", "square", "sawtooth", "triangle"],
+                "min": 0,
+                "max": 0,
+                "sweetMin": 0,
+                "sweetMax": 0,
+                "defaultValue": 0
+            },
+            {
+                "path": "oscillator.partialCount",
+                "label": "Oscillator Partial Count",
+                "min": 0,
+                "max": 8,
+                "sweetMin": 0,
+                "sweetMax": 4,
+                "defaultValue": 0,
+                "step": 1
+            },
+            {
+                "path": "modulation.type",
+                "label": "Modulation Type",
+                "choices": ["sine", "square", "sawtooth", "triangle"],
+                "min": 0,
+                "max": 0,
+                "sweetMin": 0,
+                "sweetMax": 0,
+                "defaultValue": 0
+            },
+            {
+                "path": "modulation.partialCount",
+                "label": "Modulation Partial Count",
+                "min": 0,
+                "max": 8,
+                "sweetMin": 0,
+                "sweetMax": 4,
+                "defaultValue": 0,
+                "step": 1
+            },
+            {
+                "path": "harmonicity",
+                "label": "Harmonicity",
+                "min": 1,
+                "max": 8,
+                "sweetMin": 1,
+                "sweetMax": 4,
+                "defaultValue": 2,
+                "step": 1
+            },
+            {
+                "path": "modulationIndex",
+                "label": "Modulation Index",
+                "min": 0,
+                "max": 20,
+                "sweetMin": 2,
+                "sweetMax": 12,
+                "defaultValue": 8,
+                "step": 0.1
+            },
+            {
+                "path": "envelope.attack",
+                "label": "Envelope Attack",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.02,
+                "sweetMax": 0.25,
+                "defaultValue": 0.05,
+                "step": 0.01
+            },
+            {
+                "path": "envelope.decay",
+                "label": "Envelope Decay",
+                "min": 0,
+                "max": 1.5,
+                "sweetMin": 0.05,
+                "sweetMax": 0.8,
+                "defaultValue": 0.3,
+                "step": 0.01
+            },
+            {
+                "path": "envelope.sustain",
+                "label": "Envelope Sustain",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.2,
+                "sweetMax": 0.95,
+                "defaultValue": 0.6,
+                "step": 0.01
+            },
+            {
+                "path": "envelope.release",
+                "label": "Envelope Release",
+                "min": 0,
+                "max": 3,
+                "sweetMin": 0.3,
+                "sweetMax": 1.2,
+                "defaultValue": 0.6,
+                "step": 0.05
+            },
+            {
+                "path": "modulationEnvelope.attack",
+                "label": "Mod Envelope Attack",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.05,
+                "sweetMax": 0.8,
+                "defaultValue": 0.5,
+                "step": 0.01
+            },
+            {
+                "path": "modulationEnvelope.decay",
+                "label": "Mod Envelope Decay",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0,
+                "sweetMax": 0.6,
+                "defaultValue": 0,
+                "step": 0.01
+            },
+            {
+                "path": "modulationEnvelope.sustain",
+                "label": "Mod Envelope Sustain",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.4,
+                "sweetMax": 1,
+                "defaultValue": 1,
+                "step": 0.01
+            },
+            {
+                "path": "modulationEnvelope.release",
+                "label": "Mod Envelope Release",
+                "min": 0,
+                "max": 3,
+                "sweetMin": 0.2,
+                "sweetMax": 1.5,
+                "defaultValue": 0.5,
+                "step": 0.05
+            }
+        ]
+    },
+    {
+        "id": "MembraneSynth",
+        "name": "MembraneSynth",
+        "parameters": [
+            {
+                "path": "pitchDecay",
+                "label": "Pitch Decay",
+                "min": 0.01,
+                "max": 0.5,
+                "sweetMin": 0.01,
+                "sweetMax": 0.15,
+                "defaultValue": 0.05,
+                "step": 0.005
+            },
+            {
+                "path": "octaves",
+                "label": "Octaves",
+                "min": 2,
+                "max": 12,
+                "sweetMin": 3,
+                "sweetMax": 8,
+                "defaultValue": 10,
+                "step": 0.5
+            },
+            {
+                "path": "envelope.attack",
+                "label": "Envelope Attack",
+                "min": 0.001,
+                "max": 0.1,
+                "sweetMin": 0.001,
+                "sweetMax": 0.02,
+                "defaultValue": 0.001,
+                "step": 0.001
+            },
+            {
+                "path": "envelope.decay",
+                "label": "Envelope Decay",
+                "min": 0.05,
+                "max": 2,
+                "sweetMin": 0.1,
+                "sweetMax": 0.6,
+                "defaultValue": 0.4,
+                "step": 0.01
+            },
+            {
+                "path": "envelope.sustain",
+                "label": "Envelope Sustain",
+                "min": 0,
+                "max": 0.5,
+                "sweetMin": 0,
+                "sweetMax": 0.1,
+                "defaultValue": 0.01,
+                "step": 0.01
+            },
+            {
+                "path": "envelope.release",
+                "label": "Envelope Release",
+                "min": 0.05,
+                "max": 2,
+                "sweetMin": 0.1,
+                "sweetMax": 0.6,
+                "defaultValue": 0.4,
+                "step": 0.01
+            }
+        ]
+    },
+    {
+        "id": "MetalSynth",
+        "name": "MetalSynth",
+        "parameters": [
+            {
+                "path": "frequency",
+                "label": "Frequency",
+                "min": 100,
+                "max": 1000,
+                "sweetMin": 200,
+                "sweetMax": 600,
+                "defaultValue": 440,
+                "step": 1
+            },
+            {
+                "path": "harmonicity",
+                "label": "Harmonicity",
+                "min": 3,
+                "max": 20,
+                "sweetMin": 4,
+                "sweetMax": 12,
+                "defaultValue": 5.1,
+                "step": 0.1
+            },
+            {
+                "path": "modulationIndex",
+                "label": "Modulation Index",
+                "min": 2,
+                "max": 20,
+                "sweetMin": 4,
+                "sweetMax": 14,
+                "defaultValue": 16,
+                "step": 0.1
+            },
+            {
+                "path": "resonance",
+                "label": "Resonance",
+                "min": 3000,
+                "max": 20000,
+                "sweetMin": 4000,
+                "sweetMax": 12000,
+                "defaultValue": 4000,
+                "step": 100
+            },
+            {
+                "path": "octaves",
+                "label": "Octaves",
+                "min": 0,
+                "max": 8,
+                "sweetMin": 0.5,
+                "sweetMax": 5,
+                "defaultValue": 1.5,
+                "step": 0.5
+            },
+            {
+                "path": "envelope.attack",
+                "label": "Envelope Attack",
+                "min": 0.001,
+                "max": 0.1,
+                "sweetMin": 0.001,
+                "sweetMax": 0.02,
+                "defaultValue": 0.001,
+                "step": 0.001
+            },
+            {
+                "path": "envelope.decay",
+                "label": "Envelope Decay",
+                "min": 0.05,
+                "max": 2,
+                "sweetMin": 0.1,
+                "sweetMax": 0.8,
+                "defaultValue": 0.4,
+                "step": 0.01
+            },
+            {
+                "path": "envelope.release",
+                "label": "Envelope Release",
+                "min": 0.05,
+                "max": 2,
+                "sweetMin": 0.1,
+                "sweetMax": 0.8,
+                "defaultValue": 0.4,
+                "step": 0.01
+            }
+        ]
+    },
+    {
+        "id": "MonoSynth",
+        "name": "MonoSynth",
+        "parameters": [
+            {
+                "path": "oscillator.type",
+                "label": "Oscillator Type",
+                "choices": ["sine", "square", "sawtooth", "triangle"],
+                "min": 0,
+                "max": 0,
+                "sweetMin": 0,
+                "sweetMax": 0,
+                "defaultValue": 0
+            },
+            {
+                "path": "oscillator.partialCount",
+                "label": "Oscillator Partial Count",
+                "min": 0,
+                "max": 8,
+                "sweetMin": 0,
+                "sweetMax": 4,
+                "defaultValue": 0,
+                "step": 1
+            },
+            {
+                "path": "filter.Q",
+                "label": "Filter Q",
+                "min": 0.1,
+                "max": 24,
+                "sweetMin": 2,
+                "sweetMax": 12,
+                "defaultValue": 6,
+                "step": 0.1
+            },
+            {
+                "path": "filter.rolloff",
+                "label": "Filter Rolloff",
+                "numericChoices": [-12, -24, -48, -96],
+                "min": -96,
+                "max": -12,
+                "sweetMin": -96,
+                "sweetMax": -12,
+                "defaultValue": -12
+            },
+            {
+                "path": "envelope.attack",
+                "label": "Envelope Attack",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.01,
+                "sweetMax": 0.4,
+                "defaultValue": 0.005,
+                "step": 0.01
+            },
+            {
+                "path": "envelope.decay",
+                "label": "Envelope Decay",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.1,
+                "sweetMax": 0.6,
+                "defaultValue": 0.1,
+                "step": 0.01
+            },
+            {
+                "path": "envelope.sustain",
+                "label": "Envelope Sustain",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.2,
+                "sweetMax": 0.8,
+                "defaultValue": 0.5,
+                "step": 0.01
+            },
+            {
+                "path": "envelope.release",
+                "label": "Envelope Release",
+                "min": 0,
+                "max": 3,
+                "sweetMin": 0.4,
+                "sweetMax": 1.8,
+                "defaultValue": 1,
+                "step": 0.05
+            },
+            {
+                "path": "filterEnvelope.attack",
+                "label": "Filter Env Attack",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.005,
+                "sweetMax": 0.2,
+                "defaultValue": 0.02,
+                "step": 0.005
+            },
+            {
+                "path": "filterEnvelope.decay",
+                "label": "Filter Env Decay",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.05,
+                "sweetMax": 0.7,
+                "defaultValue": 0.5,
+                "step": 0.01
+            },
+            {
+                "path": "filterEnvelope.sustain",
+                "label": "Filter Env Sustain",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.2,
+                "sweetMax": 0.9,
+                "defaultValue": 0.5,
+                "step": 0.01
+            },
+            {
+                "path": "filterEnvelope.release",
+                "label": "Filter Env Release",
+                "min": 0,
+                "max": 2,
+                "sweetMin": 0.2,
+                "sweetMax": 1,
+                "defaultValue": 0.5,
+                "step": 0.05
+            },
+            {
+                "path": "filterEnvelope.baseFrequency",
+                "label": "Filter Env Base Freq",
+                "min": 100,
+                "max": 2000,
+                "sweetMin": 100,
+                "sweetMax": 2000,
+                "defaultValue": 200,
+                "step": 10
+            },
+            {
+                "path": "filterEnvelope.exponent",
+                "label": "Filter Env Exponent",
+                "min": 1,
+                "max": 4,
+                "sweetMin": 1,
+                "sweetMax": 4,
+                "defaultValue": 2,
+                "step": 0.1
+            },
+            {
+                "path": "filterEnvelope.octaves",
+                "label": "Filter Env Octaves",
+                "min": 1,
+                "max": 5,
+                "sweetMin": 1,
+                "sweetMax": 5,
+                "defaultValue": 3,
+                "step": 0.5
+            }
+        ]
+    },
+    {
+        "id": "NoiseSynth",
+        "name": "NoiseSynth",
+        "parameters": [
+            {
+                "path": "noise.type",
+                "label": "Noise Type",
+                "choices": ["white", "pink", "brown"],
+                "min": 0,
+                "max": 0,
+                "sweetMin": 0,
+                "sweetMax": 0,
+                "defaultValue": 0
+            },
+            {
+                "path": "envelope.attack",
+                "label": "Envelope Attack",
+                "min": 0,
+                "max": 0.5,
+                "sweetMin": 0,
+                "sweetMax": 0.1,
+                "defaultValue": 0.005,
+                "step": 0.005
+            },
+            {
+                "path": "envelope.decay",
+                "label": "Envelope Decay",
+                "min": 0.05,
+                "max": 2,
+                "sweetMin": 0.1,
+                "sweetMax": 0.6,
+                "defaultValue": 0.1,
+                "step": 0.01
+            },
+            {
+                "path": "envelope.sustain",
+                "label": "Envelope Sustain",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0,
+                "sweetMax": 0.3,
+                "defaultValue": 0,
+                "step": 0.01
+            },
+            {
+                "path": "envelope.release",
+                "label": "Envelope Release",
+                "min": 0.05,
+                "max": 3,
+                "sweetMin": 0.1,
+                "sweetMax": 0.8,
+                "defaultValue": 0.1,
+                "step": 0.05
+            }
+        ]
+    },
+    {
+        "id": "PluckSynth",
+        "name": "PluckSynth",
+        "parameters": [
+            {
+                "path": "attackNoise",
+                "label": "Attack Noise",
+                "min": 0.1,
+                "max": 20,
+                "sweetMin": 1,
+                "sweetMax": 8,
+                "defaultValue": 1,
+                "step": 0.1
+            },
+            {
+                "path": "dampening",
+                "label": "Dampening",
+                "min": 1000,
+                "max": 14000,
+                "sweetMin": 2000,
+                "sweetMax": 8000,
+                "defaultValue": 4000,
+                "step": 100
+            },
+            {
+                "path": "resonance",
+                "label": "Resonance",
+                "min": 0.01,
+                "max": 0.99,
+                "sweetMin": 0.5,
+                "sweetMax": 0.95,
+                "defaultValue": 0.7,
+                "step": 0.01
+            }
+        ]
+    },
+    {
+        "id": "PolySynth",
+        "name": "PolySynth",
+        "parameters": [
+            {
+                "path": "voice",
+                "label": "Voice Type",
+                "choices": ["Synth", "FMSynth", "AMSynth", "MonoSynth"],
+                "min": 0,
+                "max": 0,
+                "sweetMin": 0,
+                "sweetMax": 0,
+                "defaultValue": 0
+            },
+            {
+                "path": "options.oscillator.type",
+                "label": "Oscillator Type",
+                "choices": ["sine", "square", "sawtooth", "triangle"],
+                "min": 0,
+                "max": 0,
+                "sweetMin": 0,
+                "sweetMax": 0,
+                "defaultValue": 0
+            },
+            {
+                "path": "options.modulation.type",
+                "label": "Modulation Type",
+                "choices": ["sine", "square", "sawtooth", "triangle"],
+                "min": 0,
+                "max": 0,
+                "sweetMin": 0,
+                "sweetMax": 0,
+                "defaultValue": 0
+            },
+            {
+                "path": "options.harmonicity",
+                "label": "Harmonicity",
+                "min": 1,
+                "max": 8,
+                "sweetMin": 1,
+                "sweetMax": 4,
+                "defaultValue": 2,
+                "step": 1
+            },
+            {
+                "path": "options.modulationIndex",
+                "label": "Modulation Index",
+                "min": 0,
+                "max": 20,
+                "sweetMin": 2,
+                "sweetMax": 12,
+                "defaultValue": 8,
+                "step": 0.1
+            },
+            {
+                "path": "options.envelope.attack",
+                "label": "Envelope Attack",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.02,
+                "sweetMax": 0.25,
+                "defaultValue": 0.1,
+                "step": 0.01
+            },
+            {
+                "path": "options.envelope.decay",
+                "label": "Envelope Decay",
+                "min": 0,
+                "max": 1.5,
+                "sweetMin": 0.1,
+                "sweetMax": 0.6,
+                "defaultValue": 0.3,
+                "step": 0.01
+            },
+            {
+                "path": "options.envelope.sustain",
+                "label": "Envelope Sustain",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.3,
+                "sweetMax": 0.9,
+                "defaultValue": 0.6,
+                "step": 0.01
+            },
+            {
+                "path": "options.envelope.release",
+                "label": "Envelope Release",
+                "min": 0,
+                "max": 3,
+                "sweetMin": 0.3,
+                "sweetMax": 1.5,
+                "defaultValue": 0.8,
+                "step": 0.05
+            },
+            {
+                "path": "options.modulationEnvelope.attack",
+                "label": "Mod Envelope Attack",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.05,
+                "sweetMax": 0.8,
+                "defaultValue": 0.5,
+                "step": 0.01
+            },
+            {
+                "path": "options.modulationEnvelope.decay",
+                "label": "Mod Envelope Decay",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0,
+                "sweetMax": 0.6,
+                "defaultValue": 0,
+                "step": 0.01
+            },
+            {
+                "path": "options.modulationEnvelope.sustain",
+                "label": "Mod Envelope Sustain",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.4,
+                "sweetMax": 1,
+                "defaultValue": 1,
+                "step": 0.01
+            },
+            {
+                "path": "options.modulationEnvelope.release",
+                "label": "Mod Envelope Release",
+                "min": 0,
+                "max": 3,
+                "sweetMin": 0.2,
+                "sweetMax": 1.5,
+                "defaultValue": 0.5,
+                "step": 0.05
+            },
+            {
+                "path": "options.filter.Q",
+                "label": "Filter Q",
+                "min": 0.1,
+                "max": 24,
+                "sweetMin": 2,
+                "sweetMax": 12,
+                "defaultValue": 6,
+                "step": 0.1
+            },
+            {
+                "path": "options.filter.rolloff",
+                "label": "Filter Rolloff",
+                "numericChoices": [-12, -24, -48, -96],
+                "min": -96,
+                "max": -12,
+                "sweetMin": -96,
+                "sweetMax": -12,
+                "defaultValue": -12
+            },
+            {
+                "path": "options.filterEnvelope.attack",
+                "label": "Filter Env Attack",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.005,
+                "sweetMax": 0.2,
+                "defaultValue": 0.02,
+                "step": 0.005
+            },
+            {
+                "path": "options.filterEnvelope.decay",
+                "label": "Filter Env Decay",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.05,
+                "sweetMax": 0.7,
+                "defaultValue": 0.5,
+                "step": 0.01
+            },
+            {
+                "path": "options.filterEnvelope.sustain",
+                "label": "Filter Env Sustain",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.2,
+                "sweetMax": 0.9,
+                "defaultValue": 0.5,
+                "step": 0.01
+            },
+            {
+                "path": "options.filterEnvelope.release",
+                "label": "Filter Env Release",
+                "min": 0,
+                "max": 2,
+                "sweetMin": 0.2,
+                "sweetMax": 1,
+                "defaultValue": 0.5,
+                "step": 0.05
+            }
+        ]
+    }
+]

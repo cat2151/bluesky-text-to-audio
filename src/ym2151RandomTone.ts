@@ -1,6 +1,9 @@
 // ym2151RandomTone.ts
 // Vendored from cat2151/web-ym2151 src/random-tone/types.ts and src/random-tone/index.ts
-// Track upstream SHA: see src/random-tone/index.ts in web-ym2151 main branch
+// Note: The upstream src/random-tone/index.ts has been refactored to use a WASM-based approach
+// (loading from https://cat2151.github.io/ym2151-tone-editor/demo-library/pkg/ym2151_wasm.js).
+// Chrome extension CSP prevents dynamic URL imports, so we maintain this local JS implementation.
+// The types in src/random-tone/types.ts (upstream SHA: ef38f505ea3121c9f08d65aa1565daf4881a0df6) remain compatible.
 // Do NOT modify vendored functions — report issues to upstream instead.
 
 // ---- Vendored types (from src/random-tone/types.ts) ----
