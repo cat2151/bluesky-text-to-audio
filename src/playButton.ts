@@ -20,7 +20,6 @@ import {
   createWrapper,
   createPortErrorRow,
 } from './playButtonDom';
-import { addToHistory } from './historyStorage';
 import { createHistoryAndFavoritesSection } from './historyAndFavoritesSection';
 import { createPortErrorHandlers } from './portErrorHandlers';
 import { createModeUiManager } from './modeUiManager';
