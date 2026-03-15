@@ -1,6 +1,6 @@
 // tonejsRandomTone.ts
 // Tone.js ランダム音色生成（仮実装）
-// textareaにJSON指定がない場合にランダムな音色を適用する（issue #165）
+// textareaに@～によるinstrument/effect指定がない場合にランダムな音色を適用する（issue #165）
 
 const RANDOM_TONEJS_SYNTHS = [
   '@Synth',

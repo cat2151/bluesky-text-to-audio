@@ -125,7 +125,7 @@ async function renderChordAudioBuffer(chord: string, targetEngine?: import('../m
 
 // ---- Tone.js: MML → AudioBuffer (オフラインレンダリング + 末尾無音トリム) ----
 async function renderToneJsAudioBuffer(mml: string): Promise<AudioBuffer> {
-  // JSON指定がない場合はランダム音色を適用する（仮実装: issue #165）
+  // @～によるinstrument/effect指定がない場合はランダム音色を適用する（仮実装: issue #165）
   const mmlWithTone = applyRandomToneToMmlIfNeeded(mml);
   console.log(LOG_PREFIX, '[Tone.js] offline rendering:', mmlWithTone.substring(0, 50));
   const sequencer = await loadSequencer();
