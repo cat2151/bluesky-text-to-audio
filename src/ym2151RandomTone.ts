@@ -361,3 +361,14 @@ export function generateRandomToneAttachment(): { attachment: ToneAttachmentEntr
   ];
   return { attachment, toneString };
 }
+
+/**
+ * ランダムYM2151音色アタッチメントJSONをMMLの先頭行に付加して新しいMMLを生成する。
+ * 後続処理でアタッチメントJSONを先頭行から抽出してsmf_to_ym2151_json_with_attachmentに渡す。
+ * Tone.jsモードの applyRandomToneToMmlIfNeeded に相当するYM2151向け処理。
+ */
+export function applyRandomToneAttachmentToMml(mml: string): string {
+  const { attachment } = generateRandomToneAttachment();
+  const attachmentJson = JSON.stringify(attachment);
+  return mml ? `${attachmentJson}\n${mml}` : attachmentJson;
+}

@@ -16,7 +16,7 @@ import mmlabcInit, { parse_tree_json_to_smf } from '../mmlabc-to-smf-wasm/pkg/mm
 import smfYm2151Init, { smf_to_ym2151_json_with_attachment } from '../smf-to-ym2151log-rust/pkg/smf_to_ym2151log.js';
 import treeSitterMmlUrl from '../mmlabc-tree-sitter-mml/tree-sitter-mml.wasm?url';
 import ym2151WasmUrl from '../web-ym2151/ym2151.wasm?url';
-import { generateRandomToneAttachment, type ToneAttachmentEntry } from '../ym2151RandomTone';
+import { applyRandomToneAttachmentToMml, type ToneAttachmentEntry } from '../ym2151RandomTone';
 
 const LOG_PREFIX = '[BTA:loaders/ym2151]';
 
@@ -174,10 +174,29 @@ export function clearYm2151AudioCache(): void {
 }
 
 // ---- MML → AudioBuffer（キャッシュ付き、再生なし） ----
-async function generateYm2151AudioBuffer(mml: string, attachment: ToneAttachmentEntry[], toneString: string): Promise<AudioBuffer> {
-  const cacheKey = mml + '\x00' + toneString;
+// MMLの先頭行にアタッチメントJSONが含まれている場合はそれを抽出して利用する。
+function extractAttachmentFromMml(mmlWithAttachment: string): { attachment: ToneAttachmentEntry[]; mmlBody: string } {
+  const newlineIdx = mmlWithAttachment.indexOf('\n');
+  if (newlineIdx !== -1) {
+    const firstLine = mmlWithAttachment.slice(0, newlineIdx).trim();
+    if (firstLine.startsWith('[')) {
+      try {
+        const attachment = JSON.parse(firstLine) as ToneAttachmentEntry[];
+        return { attachment, mmlBody: mmlWithAttachment.slice(newlineIdx + 1) };
+      } catch (e) {
+        // 先頭行がJSONでない場合はそのままMMLとして扱う
+        console.debug(LOG_PREFIX, 'extractAttachmentFromMml: 先頭行のJSONパースに失敗。MMLとして処理します:', e);
+      }
+    }
+  }
+  return { attachment: [], mmlBody: mmlWithAttachment };
+}
+
+async function generateYm2151AudioBuffer(mmlWithAttachment: string): Promise<AudioBuffer> {
+  const cacheKey = mmlWithAttachment;
   let audioBuffer = audioCache.get(cacheKey);
   if (!audioBuffer) {
+    const { attachment, mmlBody: mml } = extractAttachmentFromMml(mmlWithAttachment);
     const { parser, ym2151Memory, malloc, free, generate_sound, get_buffer_ptr, free_buffer } =
       await ensureLibs();
 
@@ -262,9 +281,9 @@ async function generateYm2151AudioBuffer(mml: string, attachment: ToneAttachment
 // 注意: 呼び出しのたびに新しいランダム音色を生成する（仮仕様）。
 // WAV exportを複数回実行すると毎回異なる音色のWAVが生成される。
 export async function renderYm2151AudioBuffer(mml: string): Promise<AudioBuffer> {
-  const { attachment, toneString } = generateRandomToneAttachment();
-  console.log(LOG_PREFIX, '[renderYm2151AudioBuffer] mml:\n', mml, '\ntoneString:\n', toneString, '\nattachment:\n', attachment);
-  return generateYm2151AudioBuffer(mml, attachment, toneString);
+  const mmlWithAttachment = applyRandomToneAttachmentToMml(mml);
+  console.log(LOG_PREFIX, '[renderYm2151AudioBuffer] mmlWithAttachment:\n', mmlWithAttachment);
+  return generateYm2151AudioBuffer(mmlWithAttachment);
 }
 
 export async function playWithYm2151(mml: string, onPlayStart?: () => void): Promise<void> {
@@ -277,10 +296,10 @@ export async function playWithYm2151(mml: string, onPlayStart?: () => void): Pro
   }
 
   // 再生のたびに新しいランダム音色を生成する（仮仕様: issue #142）。
-  // 同じMMLでも毎回異なる音色が使われるため、キャッシュはMML+音色文字列をkeyとする。
-  const { attachment, toneString } = generateRandomToneAttachment();
-  console.log(LOG_PREFIX, '[playWithYm2151] mml:\n', mml, '\ntoneString:\n', toneString, '\nattachment:\n', attachment);
-  const audioBuffer = await generateYm2151AudioBuffer(mml, attachment, toneString);
+  // 同じMMLでも毎回異なる音色が使われるため、キャッシュはMML+アタッチメントJSONをkeyとする。
+  const mmlWithAttachment = applyRandomToneAttachmentToMml(mml);
+  console.log(LOG_PREFIX, '[playWithYm2151] mmlWithAttachment:\n', mmlWithAttachment);
+  const audioBuffer = await generateYm2151AudioBuffer(mmlWithAttachment);
 
   // 再生中の音声を停止してから新しい再生を開始する
   // onendedはそのまま残す（stop()でonendedが発火し、待機中のpromiseが解決される）
