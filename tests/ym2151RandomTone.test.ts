@@ -186,6 +186,12 @@ describe('ym2151RandomTone', () => {
       expect(mmlBody).toBe('@2 c');
     });
 
+    it('途中に@Nが含まれるMMLには@0が付与されない', () => {
+      const result = applyRandomToneAttachmentToMml('t150 v11 @2 c');
+      const mmlBody = result.slice(result.indexOf('\n') + 1);
+      expect(mmlBody).toBe('t150 v11 @2 c');
+    });
+
     it('既にアタッチメントJSONがある場合は二重付与されない', () => {
       const first = applyRandomToneAttachmentToMml('o4 cde');
       const second = applyRandomToneAttachmentToMml(first);
