@@ -1,20 +1,9 @@
 import { AbcjsPlayer } from './loaders/abcjsPlayer';
 import { getPostText } from './postText';
 import { detectModeFromText } from './detectModeFromText';
-import { type PlayMode, menuItems, modeTemplates } from './playModes';
+import { type PlayMode, menuItems } from './playModes';
 import { createErrorToast, createStatusToast } from './toast';
-import {
-  type TonejsRef,
-  playMmlabcMode,
-  playChord2mmlMode,
-  playToneJsMode,
-  playYm2151Mode,
-  playMixMode as playMixModeHandler,
-  playVoicevoxMode,
-  playSurgeXtMode,
-  exportWavHandler,
-  chordPreprocessMixText,
-} from './playModeHandlers';
+import { type TonejsRef } from './playModeHandlers';
 import {
   createPlayBtn,
   createDropBtn,
@@ -34,8 +23,9 @@ import {
 import { addToHistory } from './historyStorage';
 import { createHistoryAndFavoritesSection } from './historyAndFavoritesSection';
 import { createPortErrorHandlers } from './portErrorHandlers';
-
-const LOG_PREFIX = '[BTA:playButton]';
+import { createModeUiManager } from './modeUiManager';
+import { wireTextareaInputHandlers } from './textareaInputHandlers';
+import { wirePlayButtonClickHandler } from './playButtonClickHandler';
 
 // ---- 処理済み投稿を管理 ----
 const processedPosts = new WeakSet<HTMLElement>();
@@ -55,9 +45,13 @@ document.addEventListener('click', (e: MouseEvent) => {
   });
 }, true);
 
-// ---- DOM から削除されたplayボタンのaria-labelを同期するためのMutationObserver ----
-// 削除されたpost内のplayボタンはDOMから消えるので、querySelectorAllで常にliveに参照する
-// （メモリリーク対策：Setは使わずDOMから都度クエリする）
+// ---- click/mousedownの伝播をまとめてブロックするヘルパー ----
+function blockPropagation(...elements: HTMLElement[]): void {
+  for (const el of elements) {
+    el.addEventListener('click', e => { e.stopPropagation(); });
+    el.addEventListener('mousedown', e => { e.stopPropagation(); });
+  }
+}
 
 // ---- playボタン行とtextareaを追加 ----
 export function addPlayButton(postEl: HTMLElement): void {
@@ -97,9 +91,32 @@ export function addPlayButton(postEl: HTMLElement): void {
     'このChrome拡張は clap-mml-render-tui のserverモードと接続して、Surge XTを演奏できます'
   );
 
-  // ---- 外側クロージャの可変状態へのセッター（抽出モジュールから変更するために使用） ----
+  // ---- 外側クロージャの可変状態へのアクセサ（抽出モジュールから変更するために使用） ----
+  const getTextareaInitialized = () => textareaInitialized;
   const setTextareaInitialized = (v: boolean) => { textareaInitialized = v; };
+  const getIsPlayingFromHistory = () => isPlayingFromHistory;
   const setIsPlayingFromHistory = (v: boolean) => { isPlayingFromHistory = v; };
+  const getSelectedMode = () => selectedMode;
+
+  // ---- エラートーストを表示する ----
+  const { show: showErrorToast, clear: clearErrorToast } = createErrorToast(row);
+
+  // ---- ステータストーストを表示する（再生開始まで表示、再生開始時に消える） ----
+  const { show: showStatusToast, clear: clearStatusToast } = createStatusToast(row);
+
+  // ---- テンプレートプルダウン・WAVエクスポートボタンの表示管理 ----
+  const { showTemplateSelectIfNeeded, showWavExportBtnIfNeeded } = createModeUiManager({
+    playBtn, templateSelect, wavExportBtn, textarea,
+    showErrorToast, getSelectedMode,
+  });
+
+  // ---- エラーハンドラ（ポートエラー検出・表示含む） ----
+  const { handleError, handleVoicevoxError, handleSurgextError, handleMixError, clearPortErrorRows } =
+    createPortErrorHandlers({
+      textarea, voicevoxDownloadRow, surgextDownloadRow,
+      showTemplateSelectIfNeeded, showWavExportBtnIfNeeded,
+      showErrorToast, setTextareaInitialized,
+    });
 
   // ---- メニュー項目を追加（クリックハンドラを設定） ----
   for (const item of menuItems) {
@@ -173,108 +190,14 @@ export function addPlayButton(postEl: HTMLElement): void {
 
   row.append(playBtn, dropBtn, menu, templateSelect, wavExportBtn);
 
-  function updateTemplateSelect(): void {
-    const mode = (playBtn.dataset.btaMode as PlayMode) || selectedMode;
-    const templates = modeTemplates[mode] ?? [];
-    templateSelect.innerHTML = '';
-    const placeholder = document.createElement('option');
-    placeholder.value = '';
-    placeholder.textContent = 'テンプレート';
-    placeholder.disabled = true;
-    placeholder.selected = true;
-    templateSelect.append(placeholder);
-    for (const tmpl of templates) {
-      const option = document.createElement('option');
-      option.value = tmpl.text;
-      option.textContent = tmpl.name;
-      templateSelect.append(option);
-    }
-  }
-
-  function showTemplateSelectIfNeeded(): void {
-    const mode = (playBtn.dataset.btaMode as PlayMode) || selectedMode;
-    const templates = modeTemplates[mode] ?? [];
-    if (templates.length > 0) {
-      updateTemplateSelect();
-      templateSelect.style.display = 'inline-block';
-    } else {
-      templateSelect.style.display = 'none';
-    }
-  }
-
-  templateSelect.addEventListener('change', () => {
-    const selected = templateSelect.value;
-    if (!selected) return;
-    textarea.value = selected;
-    textarea.style.display = 'block';
-    if (playBtn.dataset.btaMode !== 'textarea') {
-      playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-    }
-  });
-
-  // ---- WAV exportボタン（ym2151モードでtextareaが開いている時のみ表示） ----
-  function showWavExportBtnIfNeeded(): void {
-    const mode = (playBtn.dataset.btaMode as PlayMode) || selectedMode;
-    if (mode === 'ym2151' && textarea.style.display !== 'none') {
-      wavExportBtn.style.display = 'inline-block';
-    } else {
-      wavExportBtn.style.display = 'none';
-    }
-  }
-
-  // row上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
-  row.addEventListener('click', e => { e.stopPropagation(); });
-  row.addEventListener('mousedown', e => { e.stopPropagation(); });
-
-  // historyContainer上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
-  historyHeader.addEventListener('click', e => { e.stopPropagation(); });
-  historyHeader.addEventListener('mousedown', e => { e.stopPropagation(); });
-  historyContainer.addEventListener('click', e => { e.stopPropagation(); });
-  historyContainer.addEventListener('mousedown', e => { e.stopPropagation(); });
-
-  // favoritesContainer上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
-  favoritesHeader.addEventListener('click', e => { e.stopPropagation(); });
-  favoritesHeader.addEventListener('mousedown', e => { e.stopPropagation(); });
-  favoritesContainer.addEventListener('click', e => { e.stopPropagation(); });
-  favoritesContainer.addEventListener('mousedown', e => { e.stopPropagation(); });
-
-  // textarea上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
-  textarea.addEventListener('click', e => { e.stopPropagation(); });
-  textarea.addEventListener('mousedown', e => { e.stopPropagation(); });
-
-  // textarea2上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
-  textarea2.addEventListener('click', e => { e.stopPropagation(); });
-  textarea2.addEventListener('mousedown', e => { e.stopPropagation(); });
-
-  // templateSelect上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
-  templateSelect.addEventListener('click', e => { e.stopPropagation(); });
-  templateSelect.addEventListener('mousedown', e => { e.stopPropagation(); });
-
-  // wavExportBtn上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
-  wavExportBtn.addEventListener('click', async e => {
-    e.stopPropagation();
-    const mml = textarea.value;
-    if (!mml) return;
-    wavExportBtn.disabled = true;
-    try {
-      await exportWavHandler(mml, showErrorToast);
-    } finally {
-      wavExportBtn.disabled = false;
-    }
-  });
-  wavExportBtn.addEventListener('mousedown', e => { e.stopPropagation(); });
-
-  // voicevoxDownloadRow/surgextDownloadRow上でのマウスイベント（click/mousedown）が親要素に伝播してページ遷移しないようにする
-  voicevoxDownloadRow.addEventListener('click', e => { e.stopPropagation(); });
-  voicevoxDownloadRow.addEventListener('mousedown', e => { e.stopPropagation(); });
-  surgextDownloadRow.addEventListener('click', e => { e.stopPropagation(); });
-  surgextDownloadRow.addEventListener('mousedown', e => { e.stopPropagation(); });
-
-  // ---- エラートーストを表示する ----
-  const { show: showErrorToast, clear: clearErrorToast } = createErrorToast(row);
-
-  // ---- ステータストーストを表示する（再生開始まで表示、再生開始時に消える） ----
-  const { show: showStatusToast, clear: clearStatusToast } = createStatusToast(row);
+  // ---- マウスイベントの伝播をまとめてブロック（bsky.appのページ遷移防止） ----
+  // wavExportBtnのclick/mousedownはmodeUiManager.ts内で設定済みのため除外
+  blockPropagation(
+    row, historyHeader, historyContainer,
+    favoritesHeader, favoritesContainer,
+    textarea, textarea2, templateSelect,
+    voicevoxDownloadRow, surgextDownloadRow
+  );
 
   // ---- disabledなplayボタンをクリックしたときのエラートースト ----
   // disabled状態のボタンはclickイベントを発火しないが、pointerdownは発火する
@@ -284,56 +207,6 @@ export function addPlayButton(postEl: HTMLElement): void {
     showErrorToast('再生処理中です。しばらくお待ちください');
   });
 
-  // ---- エラーハンドラ（ポートエラー検出・表示含む） ----
-  const { handleError, handleVoicevoxError, handleSurgextError, handleMixError, clearPortErrorRows } =
-    createPortErrorHandlers({
-      textarea, voicevoxDownloadRow, surgextDownloadRow,
-      showTemplateSelectIfNeeded, showWavExportBtnIfNeeded,
-      showErrorToast, setTextareaInitialized,
-    });
-
-  // textarea編集デバウンスで自動play（ym2151/mixはレンダリング中にキーボード入力が止まるため1sec、それ以外は0）
-  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-  textarea.addEventListener('input', () => {
-    if (debounceTimer !== null) clearTimeout(debounceTimer);
-    const modeAtInput = (playBtn.dataset.btaMode as PlayMode) || selectedMode;
-    const delay = (modeAtInput === 'ym2151' || modeAtInput === 'mix') ? 1000 : 0;
-    debounceTimer = setTimeout(() => {
-      debounceTimer = null;
-      const currentMode = (playBtn.dataset.btaMode as PlayMode) || selectedMode;
-      // 再生中（playボタンがdisabled）の間は自動playを抑止し、多重実行を防ぐ
-      if (!playBtn.disabled && currentMode !== 'textarea') {
-        playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-      }
-    }, delay);
-  });
-
-  // textarea2編集デバウンスで自動play（mixモードのMMLを直接演奏、1sec）
-  let debounceTimer2: ReturnType<typeof setTimeout> | null = null;
-  textarea2.addEventListener('input', () => {
-    if (debounceTimer2 !== null) clearTimeout(debounceTimer2);
-    debounceTimer2 = setTimeout(async () => {
-      debounceTimer2 = null;
-      if (playBtn.disabled) return;
-      // mixモードかつtextarea2が表示中の場合のみ再生する
-      const currentMode = (playBtn.dataset.btaMode as PlayMode) || selectedMode;
-      if (currentMode !== 'mix' || textarea2.style.display === 'none') return;
-      clearPortErrorRows();
-      clearErrorToast();
-      playBtn.disabled = true;
-      showStatusToast('prerendering...');
-      try {
-        await playMixModeHandler(textarea2.value, handleMixError, clearStatusToast);
-      } finally {
-        clearStatusToast();
-        playBtn.disabled = false;
-      }
-    }, 1000);
-  });
-
-  // 投稿ごとのシンセインスタンス
-  const abcjsPlayer = new AbcjsPlayer();
-
   // ---- ドロップダウン開閉 ----
   dropBtn.addEventListener('click', e => {
     e.stopPropagation();
@@ -342,136 +215,31 @@ export function addPlayButton(postEl: HTMLElement): void {
     dropBtn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
   });
 
+  // 投稿ごとのシンセインスタンス
+  const abcjsPlayer = new AbcjsPlayer();
+
   // 投稿ごとのSequencerNodesインスタンス（Tone.jsシーケンサー用）
   const tonejsRef: TonejsRef = { nodes: null };
 
-  playBtn.addEventListener('click', async e => {
-    e.stopPropagation();
-    const mode = (playBtn.dataset.btaMode as PlayMode) || selectedMode;
-    clearPortErrorRows();
+  // ---- textarea / textarea2 の入力デバウンス・自動再生ハンドラ ----
+  wireTextareaInputHandlers({
+    playBtn, textarea, textarea2,
+    clearPortErrorRows, clearErrorToast,
+    showStatusToast, clearStatusToast,
+    handleMixError, getSelectedMode,
+  });
 
-    if (mode === 'textarea') {
-      if (textarea.style.display === 'none') {
-        // 初回のみ投稿テキストをセット（ユーザー編集を保持）
-        if (!textareaInitialized && !textarea.value) {
-          textarea.value = detectedCleanedText;
-        }
-        textareaInitialized = true;
-        textarea.style.display = 'block';
-        showTemplateSelectIfNeeded();
-        showWavExportBtnIfNeeded();
-      } else {
-        textarea.style.display = 'none';
-        templateSelect.style.display = 'none';
-        wavExportBtn.style.display = 'none';
-      }
-      return;
-    }
-
-    // 未初期化の場合は投稿テキスト（検出行削除済み）をセット
-    if (!textareaInitialized && !textarea.value) {
-      textarea.value = detectedCleanedText;
-    }
-    textareaInitialized = true;
-
-    // historyからのplayでなければhistoryに追記する
-    const fromHistory = isPlayingFromHistory;
-    isPlayingFromHistory = false;
-    if (!fromHistory && textarea.value.trim()) {
-      await addToHistory(textarea.value);
-    }
-
-    if (mode === 'mmlabc') {
-      clearErrorToast();
-      await playMmlabcMode(textarea.value, abcjsPlayer, scoreDiv, handleError);
-      return;
-    }
-
-    if (mode === 'chord2mml') {
-      clearErrorToast();
-      await playChord2mmlMode(textarea.value, abcjsPlayer, scoreDiv, handleError);
-      return;
-    }
-
-    // mmlabc/chord2mml以外のモードでは五線譜を非表示にする
-    scoreDiv.style.display = 'none';
-
-    if (mode === 'tonejs') {
-      clearErrorToast();
-      await playToneJsMode(textarea.value, tonejsRef, handleError);
-      return;
-    }
-
-    if (mode === 'ym2151') {
-      clearErrorToast();
-      playBtn.disabled = true;
-      showStatusToast('prerendering...');
-      try {
-        await playYm2151Mode(textarea.value, handleError, clearStatusToast);
-      } finally {
-        clearStatusToast();
-        playBtn.disabled = false;
-      }
-      return;
-    }
-
-    if (mode === 'mix') {
-      clearErrorToast();
-      playBtn.disabled = true;
-      showStatusToast('prerendering...');
-      try {
-        // chord+engineトラックがあれば、chord2mmlで展開したMMLをtextarea2に表示する（textareaの内容は維持する）
-        const originalText = textarea.value;
-        let playText = originalText;
-        try {
-          const { preprocessed, changed } = await chordPreprocessMixText(originalText);
-          if (changed) {
-            textarea2.value = preprocessed;
-            textarea2.style.display = 'block';
-            playText = preprocessed;
-          } else {
-            // chord+engineトラックがなくなった場合はtextarea2を非表示・クリアする
-            textarea2.style.display = 'none';
-            textarea2.value = '';
-          }
-        } catch (preprocessErr) {
-          console.warn(LOG_PREFIX, 'chord preprocessing failed, playing original text:', preprocessErr);
-        }
-        await playMixModeHandler(playText, handleMixError, clearStatusToast);
-      } finally {
-        clearStatusToast();
-        playBtn.disabled = false;
-      }
-      return;
-    }
-
-    if (mode === 'voicevox') {
-      const text = textarea.value;
-      if (!text) return;
-      clearErrorToast();
-      playBtn.disabled = true;
-      showStatusToast('fetching...');
-      try {
-        await playVoicevoxMode(text, handleVoicevoxError, clearStatusToast);
-      } finally {
-        clearStatusToast();
-        playBtn.disabled = false;
-      }
-    }
-
-    if (mode === 'surgext') {
-      const text = textarea.value;
-      if (!text) return;
-      clearErrorToast();
-      playBtn.disabled = true;
-      showStatusToast('prerendering...');
-      try {
-        await playSurgeXtMode(text, handleSurgextError, clearStatusToast);
-      } finally {
-        clearStatusToast();
-        playBtn.disabled = false;
-      }
-    }
+  // ---- playボタンのクリックハンドラ ----
+  wirePlayButtonClickHandler({
+    playBtn, textarea, textarea2, scoreDiv, templateSelect, wavExportBtn,
+    abcjsPlayer, tonejsRef, detectedCleanedText,
+    getTextareaInitialized, setTextareaInitialized,
+    getIsPlayingFromHistory, setIsPlayingFromHistory,
+    getSelectedMode,
+    handleError, handleVoicevoxError, handleSurgextError, handleMixError,
+    clearPortErrorRows, clearErrorToast,
+    showStatusToast, clearStatusToast,
+    showTemplateSelectIfNeeded, showWavExportBtnIfNeeded,
   });
 
   const wrapper = createWrapper();
