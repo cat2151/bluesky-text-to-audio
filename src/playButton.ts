@@ -31,21 +31,9 @@ import {
   createWrapper,
   createPortErrorRow,
 } from './playButtonDom';
-import {
-  createHistoryToggleMenuItem,
-  createHistoryContainer,
-  createHistoryItem,
-  createHistoryCollapseHeader,
-} from './historyDom';
-import {
-  createFavoritesToggleMenuItem,
-  createFavoritesContainer,
-  createFavoritesItem,
-  createFavoritesExportImportBar,
-  createFavoritesCollapseHeader,
-} from './favoritesDom';
-import { addToHistory, loadHistory } from './historyStorage';
-import { addToFavorites, loadFavorites, removeFromFavorites, exportFavoritesAsJson, importFavoritesFromJson } from './favoritesStorage';
+import { addToHistory } from './historyStorage';
+import { createHistoryAndFavoritesSection } from './historyAndFavoritesSection';
+import { createPortErrorHandlers } from './portErrorHandlers';
 
 const LOG_PREFIX = '[BTA:playButton]';
 
@@ -108,52 +96,10 @@ export function addPlayButton(postEl: HTMLElement): void {
     'Surge XTのサーバーをダウンロード',
     'このChrome拡張は clap-mml-render-tui のserverモードと接続して、Surge XTを演奏できます'
   );
-  const historyToggleBtn = createHistoryToggleMenuItem();
-  const historyHeader = createHistoryCollapseHeader();
-  const historyCollapseBtn = historyHeader.querySelector<HTMLButtonElement>('[data-bta-history-collapse-btn]')!;
-  const historyContainer = createHistoryContainer();
-  let historyOpen = false;
-  const favoritesToggleBtn = createFavoritesToggleMenuItem();
-  const favoritesHeader = createFavoritesCollapseHeader();
-  const favoritesCollapseBtn = favoritesHeader.querySelector<HTMLButtonElement>('[data-bta-favorites-collapse-btn]')!;
-  const favoritesContainer = createFavoritesContainer();
-  let favoritesOpen = false;
 
-  const favoritesExportImportBar = createFavoritesExportImportBar(
-    async () => {
-      try {
-        const json = await exportFavoritesAsJson();
-        const blob = new Blob([json], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'bta-favorites.json';
-        a.click();
-        setTimeout(() => { URL.revokeObjectURL(url); }, 0);
-      } catch (err) {
-        console.error(LOG_PREFIX, 'お気に入りexport失敗', err);
-      }
-    },
-    () => {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = '.json,application/json';
-      input.addEventListener('change', async () => {
-        const file = input.files?.[0];
-        if (!file) return;
-        try {
-          const text = await file.text();
-          await importFavoritesFromJson(text);
-          if (favoritesOpen) {
-            void renderFavorites();
-          }
-        } catch (err) {
-          console.error(LOG_PREFIX, 'お気に入りimport失敗', err);
-        }
-      });
-      input.click();
-    }
-  );
+  // ---- 外側クロージャの可変状態へのセッター（抽出モジュールから変更するために使用） ----
+  const setTextareaInitialized = (v: boolean) => { textareaInitialized = v; };
+  const setIsPlayingFromHistory = (v: boolean) => { isPlayingFromHistory = v; };
 
   // ---- メニュー項目を追加（クリックハンドラを設定） ----
   for (const item of menuItems) {
@@ -211,143 +157,19 @@ export function addPlayButton(postEl: HTMLElement): void {
   });
   menu.append(resetBtn);
 
-  // ---- historyトグル＆historyアイテムリスト ----
+  // ---- historyセクション・お気に入りセクションのUI状態・イベント管理 ----
   menu.append(createMenuSeparator());
-
-  async function renderHistory(): Promise<void> {
-    historyContainer.innerHTML = '';
-    const items = await loadHistory();
-    if (items.length === 0) {
-      const empty = document.createElement('div');
-      empty.textContent = '履歴なし';
-      empty.style.cssText = 'padding: 8px 14px; font-size: 12px; color: #999;';
-      historyContainer.append(empty);
-      historyContainer.append(favoritesExportImportBar);
-      return;
-    }
-    for (const text of items) {
-      const historyItem = createHistoryItem(text, () => {
-        if (playBtn.disabled) return;
-        isPlayingFromHistory = true;
-        textarea.value = text;
-        textareaInitialized = true;
-        textarea.style.display = 'block';
-        showTemplateSelectIfNeeded();
-        showWavExportBtnIfNeeded();
-        menu.style.display = 'none';
-        dropBtn.setAttribute('aria-expanded', 'false');
-        playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-      }, async () => {
-        await addToFavorites(text);
-        void renderHistory();
-        if (favoritesOpen) {
-          void renderFavorites();
-        }
-      });
-      historyContainer.append(historyItem);
-    }
-    historyContainer.append(favoritesExportImportBar);
-  }
-
-  function showHistorySection(): void {
-    historyOpen = true;
-    historyHeader.style.display = 'block';
-    historyHeader.style.borderRadius = '4px 4px 0 0';
-    historyCollapseBtn.textContent = '▼ 📖 history';
-    historyCollapseBtn.setAttribute('aria-expanded', 'true');
-    historyContainer.style.display = 'block';
-    historyContainer.style.borderTop = 'none';
-    historyContainer.style.borderRadius = '0 0 4px 4px';
-  }
-
-  historyToggleBtn.addEventListener('click', e => {
-    e.stopPropagation();
-    menu.style.display = 'none';
-    dropBtn.setAttribute('aria-expanded', 'false');
-    // 常に「開く」だけ（toggleしない）
-    void renderHistory().then(() => { showHistorySection(); });
+  const {
+    historyToggleBtn, historyHeader, historyContainer,
+    favoritesToggleBtn, favoritesHeader, favoritesContainer,
+  } = createHistoryAndFavoritesSection({
+    menu, dropBtn, playBtn, textarea,
+    showTemplateSelectIfNeeded,
+    showWavExportBtnIfNeeded,
+    setTextareaInitialized,
+    setIsPlayingFromHistory,
   });
-
-  historyCollapseBtn.addEventListener('click', e => {
-    e.stopPropagation();
-    historyOpen = !historyOpen;
-    if (historyOpen) {
-      void renderHistory().then(() => { showHistorySection(); });
-    } else {
-      historyCollapseBtn.textContent = '▶ 📖 history';
-      historyCollapseBtn.setAttribute('aria-expanded', 'false');
-      historyContainer.style.display = 'none';
-      historyHeader.style.borderRadius = '4px';
-    }
-  });
-
-  menu.append(historyToggleBtn);
-
-  // ---- お気に入りトグル＆お気に入りアイテムリスト ----
-  async function renderFavorites(): Promise<void> {
-    favoritesContainer.innerHTML = '';
-    const items = await loadFavorites();
-    if (items.length === 0) {
-      const empty = document.createElement('div');
-      empty.textContent = 'お気に入りなし';
-      empty.style.cssText = 'padding: 8px 14px; font-size: 12px; color: #999;';
-      favoritesContainer.append(empty);
-      return;
-    }
-    for (const text of items) {
-      const favoriteItem = createFavoritesItem(text, () => {
-        if (playBtn.disabled) return;
-        isPlayingFromHistory = true;
-        textarea.value = text;
-        textareaInitialized = true;
-        textarea.style.display = 'block';
-        showTemplateSelectIfNeeded();
-        showWavExportBtnIfNeeded();
-        playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-      }, async () => {
-        await removeFromFavorites(text);
-        void renderFavorites();
-        if (historyOpen) {
-          void renderHistory();
-        }
-      });
-      favoritesContainer.append(favoriteItem);
-    }
-  }
-
-  function showFavoritesSection(): void {
-    favoritesOpen = true;
-    favoritesHeader.style.display = 'block';
-    favoritesHeader.style.borderRadius = '4px 4px 0 0';
-    favoritesCollapseBtn.textContent = '▼ ★ お気に入り';
-    favoritesCollapseBtn.setAttribute('aria-expanded', 'true');
-    favoritesContainer.style.display = 'block';
-    favoritesContainer.style.borderTop = 'none';
-    favoritesContainer.style.borderRadius = '0 0 4px 4px';
-  }
-
-  favoritesToggleBtn.addEventListener('click', e => {
-    e.stopPropagation();
-    menu.style.display = 'none';
-    dropBtn.setAttribute('aria-expanded', 'false');
-    // 常に「開く」だけ（toggleしない）
-    void renderFavorites().then(() => { showFavoritesSection(); });
-  });
-
-  favoritesCollapseBtn.addEventListener('click', e => {
-    e.stopPropagation();
-    favoritesOpen = !favoritesOpen;
-    if (favoritesOpen) {
-      void renderFavorites().then(() => { showFavoritesSection(); });
-    } else {
-      favoritesCollapseBtn.textContent = '▶ ★ お気に入り';
-      favoritesCollapseBtn.setAttribute('aria-expanded', 'false');
-      favoritesContainer.style.display = 'none';
-      favoritesHeader.style.borderRadius = '4px';
-    }
-  });
-
-  menu.append(favoritesToggleBtn);
+  menu.append(historyToggleBtn, favoritesToggleBtn);
 
   row.append(playBtn, dropBtn, menu, templateSelect, wavExportBtn);
 
@@ -462,59 +284,13 @@ export function addPlayButton(postEl: HTMLElement): void {
     showErrorToast('再生処理中です。しばらくお待ちください');
   });
 
-  // ---- エラー時にtextareaを表示してトーストを出す ----
-  function handleError(logLabel: string, message: string, error: unknown): void {
-    console.error(LOG_PREFIX, logLabel, error);
-    textareaInitialized = true;
-    textarea.style.display = 'block';
-    showTemplateSelectIfNeeded();
-    showWavExportBtnIfNeeded();
-    showErrorToast(message);
-  }
-
-  // ---- ポートエラー検出（サーバーが起動していない場合） ----
-  function isPortError(err: unknown): boolean {
-    if (!(err instanceof Error)) return false;
-    const msg = err.message;
-    return msg.includes('Failed to fetch') || msg.includes('ERR_CONNECTION_REFUSED') || msg.includes('ECONNREFUSED');
-  }
-
-  // ---- ポートエラー行のクリア ----
-  function clearPortErrorRows(): void {
-    voicevoxDownloadRow.style.display = 'none';
-    surgextDownloadRow.style.display = 'none';
-  }
-
-  // ---- VOICEVOXポートエラー時にtextareaとリンク行を表示 ----
-  function handleVoicevoxError(logLabel: string, message: string, error: unknown): void {
-    handleError(logLabel, message, error);
-    if (isPortError(error)) {
-      voicevoxDownloadRow.style.display = 'block';
-    }
-  }
-
-  // ---- Surge XTポートエラー時にtextareaとリンク行を表示 ----
-  function handleSurgextError(logLabel: string, message: string, error: unknown): void {
-    handleError(logLabel, message, error);
-    if (isPortError(error)) {
-      surgextDownloadRow.style.display = 'block';
-    }
-  }
-
-  // ---- mixモードエラー時: Surge XT / VOICEVOXポートエラーならserver起動の導線を表示 ----
-  function isSurgeXtPortError(err: unknown): boolean {
-    if (!(err instanceof Error)) return false;
-    return err.message.startsWith('Surge XT:') && isPortError(err);
-  }
-
-  function handleMixError(logLabel: string, message: string, error: unknown): void {
-    handleError(logLabel, message, error);
-    if (isSurgeXtPortError(error)) {
-      surgextDownloadRow.style.display = 'block';
-    } else if (isPortError(error)) {
-      voicevoxDownloadRow.style.display = 'block';
-    }
-  }
+  // ---- エラーハンドラ（ポートエラー検出・表示含む） ----
+  const { handleError, handleVoicevoxError, handleSurgextError, handleMixError, clearPortErrorRows } =
+    createPortErrorHandlers({
+      textarea, voicevoxDownloadRow, surgextDownloadRow,
+      showTemplateSelectIfNeeded, showWavExportBtnIfNeeded,
+      showErrorToast, setTextareaInitialized,
+    });
 
   // textarea編集デバウンスで自動play（ym2151/mixはレンダリング中にキーボード入力が止まるため1sec、それ以外は0）
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
