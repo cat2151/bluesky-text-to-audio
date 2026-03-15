@@ -11,9 +11,9 @@
     "src": "__vite-browser-external",
     "isDynamicEntry": true
   },
-  "_content.ts-loader-D4pdR_WW.js": {
-    "file": "assets/content.ts-loader-D4pdR_WW.js",
-    "src": "_content.ts-loader-D4pdR_WW.js"
+  "_content.ts-loader-Dr6z1PWe.js": {
+    "file": "assets/content.ts-loader-Dr6z1PWe.js",
+    "src": "_content.ts-loader-Dr6z1PWe.js"
   },
   "src/background.ts": {
     "file": "assets/background.ts-BCDKgwlJ.js",
@@ -22,7 +22,7 @@
     "isEntry": true
   },
   "src/content.ts": {
-    "file": "assets/content.ts-BFizJGhU.js",
+    "file": "assets/content.ts-Cf-yMYUC.js",
     "name": "content.ts",
     "src": "src/content.ts",
     "isEntry": true,
