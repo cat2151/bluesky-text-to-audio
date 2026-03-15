@@ -366,9 +366,31 @@ export function generateRandomToneAttachment(): { attachment: ToneAttachmentEntr
  * ランダムYM2151音色アタッチメントJSONをMMLの先頭行に付加して新しいMMLを生成する。
  * 後続処理でアタッチメントJSONを先頭行から抽出してsmf_to_ym2151_json_with_attachmentに渡す。
  * Tone.jsモードの applyRandomToneToMmlIfNeeded に相当するYM2151向け処理。
+ * 既にアタッチメントJSONが先頭行にある場合は置換（二重付与を防止）する。
+ * 空MMLのときは常に「JSON+改行」を返すことで extractAttachmentFromMml と整合させる。
  */
 export function applyRandomToneAttachmentToMml(mml: string): string {
   const { attachment } = generateRandomToneAttachment();
   const attachmentJson = JSON.stringify(attachment);
-  return mml ? `${attachmentJson}\n${mml}` : attachmentJson;
+  // 既存の先頭行アタッチメントJSONを剥がしてから付与（二重付与防止）
+  const mmlBody = stripAttachmentPrefix(mml);
+  return `${attachmentJson}\n${mmlBody}`;
+}
+
+/**
+ * MMLの先頭行にアタッチメントJSONが含まれている場合はそれを除去してMML本体のみを返す。
+ * applyRandomToneAttachmentToMml が二重付与しないために使用。
+ */
+function stripAttachmentPrefix(mml: string): string {
+  const newlineIdx = mml.indexOf('\n');
+  if (newlineIdx !== -1) {
+    const firstLine = mml.slice(0, newlineIdx).trim();
+    if (firstLine.startsWith('[')) {
+      try {
+        JSON.parse(firstLine);
+        return mml.slice(newlineIdx + 1);
+      } catch { /* not JSON, treat as MML */ }
+    }
+  }
+  return mml;
 }

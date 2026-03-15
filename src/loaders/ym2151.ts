@@ -175,18 +175,37 @@ export function clearYm2151AudioCache(): void {
 
 // ---- MML → AudioBuffer（キャッシュ付き、再生なし） ----
 // MMLの先頭行にアタッチメントJSONが含まれている場合はそれを抽出して利用する。
+
+// アタッチメントJSONとして許容する先頭行の最大バイト数（メモリ/CPU負荷対策）
+const MAX_ATTACHMENT_LINE_LENGTH = 65536;
+
+function isValidAttachment(parsed: unknown): parsed is ToneAttachmentEntry[] {
+  if (!Array.isArray(parsed) || parsed.length === 0) return false;
+  return parsed.every(
+    (entry: unknown) =>
+      typeof (entry as ToneAttachmentEntry).ProgramChange === 'number' &&
+      Array.isArray((entry as ToneAttachmentEntry).Tone?.events),
+  );
+}
+
 function extractAttachmentFromMml(mmlWithAttachment: string): { attachment: ToneAttachmentEntry[]; mmlBody: string } {
+  // 改行あり / 改行なし（空MML + JSON のみ）の両方をサポート
   const newlineIdx = mmlWithAttachment.indexOf('\n');
-  if (newlineIdx !== -1) {
-    const firstLine = mmlWithAttachment.slice(0, newlineIdx).trim();
-    if (firstLine.startsWith('[')) {
-      try {
-        const attachment = JSON.parse(firstLine) as ToneAttachmentEntry[];
-        return { attachment, mmlBody: mmlWithAttachment.slice(newlineIdx + 1) };
-      } catch (e) {
-        // 先頭行がJSONでない場合はそのままMMLとして扱う
-        console.debug(LOG_PREFIX, 'extractAttachmentFromMml: 先頭行のJSONパースに失敗。MMLとして処理します:', e);
+  const firstLine = newlineIdx !== -1
+    ? mmlWithAttachment.slice(0, newlineIdx).trim()
+    : mmlWithAttachment.trim();
+  const rest = newlineIdx !== -1 ? mmlWithAttachment.slice(newlineIdx + 1) : '';
+
+  if (firstLine.startsWith('[') && firstLine.length <= MAX_ATTACHMENT_LINE_LENGTH) {
+    try {
+      const parsed = JSON.parse(firstLine) as unknown;
+      if (isValidAttachment(parsed)) {
+        return { attachment: parsed, mmlBody: rest };
       }
+      console.debug(LOG_PREFIX, 'extractAttachmentFromMml: 先頭行JSONの構造が不正です。MMLとして処理します。');
+    } catch (e) {
+      // 先頭行がJSONでない場合はそのままMMLとして扱う
+      console.debug(LOG_PREFIX, 'extractAttachmentFromMml: 先頭行のJSONパースに失敗。MMLとして処理します:', e);
     }
   }
   return { attachment: [], mmlBody: mmlWithAttachment };
