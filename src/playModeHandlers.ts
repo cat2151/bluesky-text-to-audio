@@ -10,6 +10,7 @@ import { playMixMode as playMixModeImpl } from './loaders/mix';
 import type { AbcjsPlayer } from './loaders/abcjsPlayer';
 import { chordToMml, chordPreprocessMixText } from './chordToMml';
 import { audioBufferToWavBlob } from './wavEncoder';
+import { applyRandomToneToMmlIfNeeded } from './tonejsRandomTone';
 
 const LOG_PREFIX = '[BTA:playButton]';
 
@@ -66,9 +67,11 @@ export async function playToneJsMode(
     handleError('Tone.js または tonejs-json-sequencer の読み込みに失敗しました:', 'ライブラリ読み込みエラー', e2);
     return;
   }
+  // @～によるinstrument/effect指定がない場合はランダム音色を適用する（仮実装: issue #165）
+  const mmlWithTone = applyRandomToneToMmlIfNeeded(mml);
   let sequence;
   try {
-    sequence = await parseMmlViaLibrary(mml);
+    sequence = await parseMmlViaLibrary(mmlWithTone);
   } catch (e2: unknown) {
     handleError('MML parse error:', 'MML parse error', e2);
     return;

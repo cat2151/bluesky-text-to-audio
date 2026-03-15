@@ -20,6 +20,7 @@ import { getAudioContext } from '../audioContext';
 import { parseTracks } from '../mixParser';
 import { audioBufferToWavBlob } from '../wavEncoder';
 import { chordToMml } from '../chordToMml';
+import { applyRandomToneToMmlIfNeeded } from '../tonejsRandomTone';
 
 export { parseTracks };
 
@@ -124,9 +125,11 @@ async function renderChordAudioBuffer(chord: string, targetEngine?: import('../m
 
 // ---- Tone.js: MML → AudioBuffer (オフラインレンダリング + 末尾無音トリム) ----
 async function renderToneJsAudioBuffer(mml: string): Promise<AudioBuffer> {
-  console.log(LOG_PREFIX, '[Tone.js] offline rendering:', mml.substring(0, 50));
+  // @～によるinstrument/effect指定がない場合はランダム音色を適用する（仮実装: issue #165）
+  const mmlWithTone = applyRandomToneToMmlIfNeeded(mml);
+  console.log(LOG_PREFIX, '[Tone.js] offline rendering:', mmlWithTone.substring(0, 50));
   const sequencer = await loadSequencer();
-  const sequence = await parseMmlViaLibrary(mml);
+  const sequence = await parseMmlViaLibrary(mmlWithTone);
   if (!Array.isArray(sequence) || sequence.length === 0) {
     throw new Error('Tone.js MML produced no playable events');
   }
