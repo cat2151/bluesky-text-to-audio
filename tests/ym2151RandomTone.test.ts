@@ -3,6 +3,7 @@ import {
   getDefaultConfig,
   generateRandomToneString,
   generateRandomToneAttachment,
+  applyRandomToneAttachmentToMml,
 } from '../src/ym2151RandomTone';
 
 describe('ym2151RandomTone', () => {
@@ -122,6 +123,67 @@ describe('ym2151RandomTone', () => {
       const { toneString } = generateRandomToneAttachment();
       const lines = toneString.trim().split('\n');
       expect(lines.length).toBe(5);
+    });
+  });
+
+  describe('applyRandomToneAttachmentToMml', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('MMLの先頭にアタッチメントJSONが付加される', () => {
+      const result = applyRandomToneAttachmentToMml('o4 l8 cde');
+      const newlineIdx = result.indexOf('\n');
+      expect(newlineIdx).toBeGreaterThan(0);
+      const firstLine = result.slice(0, newlineIdx);
+      const rest = result.slice(newlineIdx + 1);
+      expect(firstLine.startsWith('[')).toBe(true);
+      expect(rest).toBe('o4 l8 cde');
+    });
+
+    it('先頭行はパース可能なJSONである', () => {
+      const result = applyRandomToneAttachmentToMml('o4 cde');
+      const firstLine = result.slice(0, result.indexOf('\n'));
+      const parsed = JSON.parse(firstLine) as unknown[];
+      expect(Array.isArray(parsed)).toBe(true);
+      expect(parsed.length).toBe(1);
+    });
+
+    it('アタッチメントJSONはToneAttachmentEntry形式を持つ', () => {
+      const result = applyRandomToneAttachmentToMml('o4 cde');
+      const firstLine = result.slice(0, result.indexOf('\n'));
+      const parsed = JSON.parse(firstLine) as Array<{ ProgramChange: number; Tone: { events: unknown[] } }>;
+      expect(parsed[0].ProgramChange).toBe(0);
+      expect(Array.isArray(parsed[0].Tone.events)).toBe(true);
+      expect(parsed[0].Tone.events.length).toBeGreaterThan(0);
+    });
+
+    it('空MMLのとき先頭にJSON行＋改行が付く', () => {
+      const result = applyRandomToneAttachmentToMml('');
+      expect(result.startsWith('[')).toBe(true);
+      // 常に JSON+'\n' を返すことで extractAttachmentFromMml と整合する
+      const newlineIdx = result.indexOf('\n');
+      expect(newlineIdx).toBeGreaterThan(0);
+      const afterNewline = result.slice(newlineIdx + 1);
+      expect(afterNewline).toBe('');
+    });
+
+    it('既にアタッチメントJSONがある場合は二重付与されない', () => {
+      const first = applyRandomToneAttachmentToMml('o4 cde');
+      const second = applyRandomToneAttachmentToMml(first);
+      const lines = second.split('\n');
+      // 先頭行はJSON、2行目はMML
+      expect(lines[0].startsWith('[')).toBe(true);
+      expect(lines[1]).toBe('o4 cde');
+      // 先頭行JSONが有効なアタッチメントであることを確認（置換されている）
+      const parsed = JSON.parse(lines[0]) as Array<{ ProgramChange: number; Tone: { events: unknown[] } }>;
+      expect(Array.isArray(parsed)).toBe(true);
+      expect(parsed[0].ProgramChange).toBe(0);
+      expect(Array.isArray(parsed[0].Tone.events)).toBe(true);
+      // 3行目以降にJSONが混入しないこと（二重付与なし）
+      for (let i = 1; i < lines.length; i++) {
+        expect(lines[i].startsWith('[')).toBe(false);
+      }
     });
   });
 });
