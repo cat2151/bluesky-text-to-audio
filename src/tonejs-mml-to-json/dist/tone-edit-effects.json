@@ -1,0 +1,445 @@
+[
+    {
+        "id": "none",
+        "name": "No Effect",
+        "parameters": []
+    },
+    {
+        "id": "AutoFilter",
+        "name": "AutoFilter",
+        "parameters": [
+            {
+                "path": "frequency",
+                "label": "Frequency",
+                "min": 0.5,
+                "max": 8,
+                "sweetMin": 1,
+                "sweetMax": 5,
+                "defaultValue": 2,
+                "step": 0.1
+            },
+            {
+                "path": "depth",
+                "label": "Depth",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.2,
+                "sweetMax": 1,
+                "defaultValue": 1,
+                "step": 0.01
+            },
+            {
+                "path": "baseFrequency",
+                "label": "Base Frequency",
+                "min": 80,
+                "max": 800,
+                "sweetMin": 80,
+                "sweetMax": 800,
+                "defaultValue": 200,
+                "step": 10
+            },
+            {
+                "path": "octaves",
+                "label": "Octaves",
+                "min": 1,
+                "max": 6,
+                "sweetMin": 2,
+                "sweetMax": 4,
+                "defaultValue": 2.6,
+                "step": 0.1
+            },
+            {
+                "path": "filter.Q",
+                "label": "Filter Q",
+                "min": 0.5,
+                "max": 12,
+                "sweetMin": 0.5,
+                "sweetMax": 12,
+                "defaultValue": 1,
+                "step": 0.1
+            },
+            {
+                "path": "filter.rolloff",
+                "label": "Filter Rolloff",
+                "numericChoices": [-12, -24, -48, -96],
+                "min": -96,
+                "max": -12,
+                "sweetMin": -96,
+                "sweetMax": -12,
+                "defaultValue": -12
+            }
+        ]
+    },
+    {
+        "id": "AutoPanner",
+        "name": "AutoPanner",
+        "parameters": [
+            {
+                "path": "frequency",
+                "label": "Frequency",
+                "min": 0.1,
+                "max": 8,
+                "sweetMin": 0.5,
+                "sweetMax": 4,
+                "defaultValue": 1,
+                "step": 0.1
+            }
+        ]
+    },
+    {
+        "id": "AutoWah",
+        "name": "AutoWah",
+        "parameters": [
+            {
+                "path": "baseFrequency",
+                "label": "Base Frequency",
+                "min": 50,
+                "max": 800,
+                "sweetMin": 100,
+                "sweetMax": 500,
+                "defaultValue": 100,
+                "step": 10
+            },
+            {
+                "path": "octaves",
+                "label": "Octaves",
+                "min": 2,
+                "max": 8,
+                "sweetMin": 3,
+                "sweetMax": 6,
+                "defaultValue": 6,
+                "step": 0.5
+            }
+        ]
+    },
+    {
+        "id": "BitCrusher",
+        "name": "BitCrusher",
+        "parameters": [
+            {
+                "path": "bits",
+                "label": "Bits",
+                "min": 1,
+                "max": 8,
+                "sweetMin": 2,
+                "sweetMax": 6,
+                "defaultValue": 4,
+                "step": 1
+            }
+        ]
+    },
+    {
+        "id": "Chebyshev",
+        "name": "Chebyshev",
+        "parameters": [
+            {
+                "path": "order",
+                "label": "Order",
+                "min": 1,
+                "max": 100,
+                "sweetMin": 5,
+                "sweetMax": 40,
+                "defaultValue": 50,
+                "step": 1
+            }
+        ]
+    },
+    {
+        "id": "Chorus",
+        "name": "Chorus",
+        "parameters": [
+            {
+                "path": "frequency",
+                "label": "Frequency",
+                "min": 0.1,
+                "max": 8,
+                "sweetMin": 0.3,
+                "sweetMax": 3,
+                "defaultValue": 1.5,
+                "step": 0.1
+            },
+            {
+                "path": "delayTime",
+                "label": "Delay Time",
+                "min": 1,
+                "max": 10,
+                "sweetMin": 1.5,
+                "sweetMax": 5,
+                "defaultValue": 3,
+                "step": 0.1
+            },
+            {
+                "path": "depth",
+                "label": "Depth",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.3,
+                "sweetMax": 0.9,
+                "defaultValue": 0.5,
+                "step": 0.01
+            }
+        ]
+    },
+    {
+        "id": "Distortion",
+        "name": "Distortion",
+        "parameters": [
+            {
+                "path": "distortion",
+                "label": "Distortion",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.2,
+                "sweetMax": 0.8,
+                "defaultValue": 0.4,
+                "step": 0.01
+            }
+        ]
+    },
+    {
+        "id": "FeedbackDelay",
+        "name": "FeedbackDelay",
+        "parameters": [
+            {
+                "path": "delayTime",
+                "label": "Delay Time",
+                "min": 0.01,
+                "max": 1,
+                "sweetMin": 0.1,
+                "sweetMax": 0.5,
+                "defaultValue": 0.25,
+                "step": 0.01
+            },
+            {
+                "path": "feedback",
+                "label": "Feedback",
+                "min": 0,
+                "max": 0.9,
+                "sweetMin": 0.2,
+                "sweetMax": 0.7,
+                "defaultValue": 0.3,
+                "step": 0.01
+            }
+        ]
+    },
+    {
+        "id": "Freeverb",
+        "name": "Freeverb",
+        "parameters": [
+            {
+                "path": "roomSize",
+                "label": "Room Size",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.4,
+                "sweetMax": 0.9,
+                "defaultValue": 0.7,
+                "step": 0.01
+            },
+            {
+                "path": "dampening",
+                "label": "Dampening",
+                "min": 1000,
+                "max": 10000,
+                "sweetMin": 2000,
+                "sweetMax": 6000,
+                "defaultValue": 3000,
+                "step": 100
+            }
+        ]
+    },
+    {
+        "id": "FrequencyShifter",
+        "name": "FrequencyShifter",
+        "parameters": [
+            {
+                "path": "frequency",
+                "label": "Frequency",
+                "min": -1000,
+                "max": 1000,
+                "sweetMin": -300,
+                "sweetMax": 300,
+                "defaultValue": 0,
+                "step": 1
+            }
+        ]
+    },
+    {
+        "id": "JCReverb",
+        "name": "JCReverb",
+        "parameters": [
+            {
+                "path": "roomSize",
+                "label": "Room Size",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.3,
+                "sweetMax": 0.9,
+                "defaultValue": 0.5,
+                "step": 0.01
+            }
+        ]
+    },
+    {
+        "id": "Phaser",
+        "name": "Phaser",
+        "parameters": [
+            {
+                "path": "frequency",
+                "label": "Frequency",
+                "min": 0.5,
+                "max": 10,
+                "sweetMin": 1,
+                "sweetMax": 6,
+                "defaultValue": 3,
+                "step": 0.1
+            },
+            {
+                "path": "octaves",
+                "label": "Octaves",
+                "min": 1,
+                "max": 8,
+                "sweetMin": 2,
+                "sweetMax": 5,
+                "defaultValue": 3,
+                "step": 0.5
+            },
+            {
+                "path": "baseFrequency",
+                "label": "Base Frequency",
+                "min": 100,
+                "max": 1500,
+                "sweetMin": 300,
+                "sweetMax": 900,
+                "defaultValue": 500,
+                "step": 10
+            }
+        ]
+    },
+    {
+        "id": "PingPongDelay",
+        "name": "PingPongDelay",
+        "parameters": [
+            {
+                "path": "delayTime",
+                "label": "Delay Time",
+                "min": 0.05,
+                "max": 0.9,
+                "sweetMin": 0.12,
+                "sweetMax": 0.55,
+                "defaultValue": 0.25,
+                "step": 0.01
+            },
+            {
+                "path": "feedback",
+                "label": "Feedback",
+                "min": 0,
+                "max": 0.9,
+                "sweetMin": 0.25,
+                "sweetMax": 0.7,
+                "defaultValue": 0.35,
+                "step": 0.01
+            }
+        ]
+    },
+    {
+        "id": "PitchShift",
+        "name": "PitchShift",
+        "parameters": [
+            {
+                "path": "pitch",
+                "label": "Pitch",
+                "min": -24,
+                "max": 24,
+                "sweetMin": -12,
+                "sweetMax": 12,
+                "defaultValue": 0,
+                "step": 1
+            }
+        ]
+    },
+    {
+        "id": "Reverb",
+        "name": "Reverb",
+        "parameters": [
+            {
+                "path": "decay",
+                "label": "Decay",
+                "min": 0.5,
+                "max": 12,
+                "sweetMin": 1,
+                "sweetMax": 6,
+                "defaultValue": 2.5,
+                "step": 0.1
+            }
+        ]
+    },
+    {
+        "id": "StereoWidener",
+        "name": "StereoWidener",
+        "parameters": [
+            {
+                "path": "width",
+                "label": "Width",
+                "min": 0,
+                "max": 1,
+                "sweetMin": 0.3,
+                "sweetMax": 1,
+                "defaultValue": 0.5,
+                "step": 0.01
+            }
+        ]
+    },
+    {
+        "id": "Tremolo",
+        "name": "Tremolo",
+        "parameters": [
+            {
+                "path": "frequency",
+                "label": "Frequency",
+                "min": 1,
+                "max": 20,
+                "sweetMin": 2,
+                "sweetMax": 12,
+                "defaultValue": 5,
+                "step": 0.1
+            },
+            {
+                "path": "depth",
+                "label": "Depth",
+                "min": 0.1,
+                "max": 1,
+                "sweetMin": 0.3,
+                "sweetMax": 0.9,
+                "defaultValue": 0.5,
+                "step": 0.01
+            }
+        ]
+    },
+    {
+        "id": "Vibrato",
+        "name": "Vibrato",
+        "parameters": [
+            {
+                "path": "frequency",
+                "label": "Frequency",
+                "min": 1,
+                "max": 15,
+                "sweetMin": 3,
+                "sweetMax": 8,
+                "defaultValue": 7,
+                "step": 0.1
+            },
+            {
+                "path": "depth",
+                "label": "Depth",
+                "min": 0.1,
+                "max": 1,
+                "sweetMin": 0.3,
+                "sweetMax": 0.9,
+                "defaultValue": 0.5,
+                "step": 0.01
+            }
+        ]
+    }
+]
