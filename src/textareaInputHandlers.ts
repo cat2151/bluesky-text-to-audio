@@ -29,18 +29,21 @@ export function wireTextareaInputHandlers(deps: TextareaInputHandlersDeps): void
     return (playBtn.dataset.btaMode as PlayMode) || getSelectedMode();
   }
 
+  // textarea編集デバウンスで自動play（ym2151/mixはレンダリング中にキーボード入力が止まるため1sec、それ以外は0）
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
   // SHIFT+ENTER / CTRL+ENTER でplayボタンと同じ挙動をする
   textarea.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key === 'Enter' && (e.shiftKey || e.ctrlKey)) {
       e.preventDefault();
+      // 保留中のdebounceTimerをキャンセルして二重再生を防ぐ
+      if (debounceTimer !== null) { clearTimeout(debounceTimer); debounceTimer = null; }
       if (!playBtn.disabled) {
         playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
       }
     }
   });
 
-  // textarea編集デバウンスで自動play（ym2151/mixはレンダリング中にキーボード入力が止まるため1sec、それ以外は0）
-  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   textarea.addEventListener('input', () => {
     if (debounceTimer !== null) clearTimeout(debounceTimer);
     const modeAtInput = getMode();
@@ -56,6 +59,8 @@ export function wireTextareaInputHandlers(deps: TextareaInputHandlersDeps): void
   });
 
   // textarea2のmixモードMML直接演奏ロジック（keydownとdebounceで共有）
+  let debounceTimer2: ReturnType<typeof setTimeout> | null = null;
+
   async function playTextarea2MixIfVisible(): Promise<void> {
     if (playBtn.disabled) return;
     const currentMode = getMode();
@@ -76,12 +81,13 @@ export function wireTextareaInputHandlers(deps: TextareaInputHandlersDeps): void
   textarea2.addEventListener('keydown', async (e: KeyboardEvent) => {
     if (e.key === 'Enter' && (e.shiftKey || e.ctrlKey)) {
       e.preventDefault();
+      // 保留中のdebounceTimer2をキャンセルして二重再生を防ぐ
+      if (debounceTimer2 !== null) { clearTimeout(debounceTimer2); debounceTimer2 = null; }
       await playTextarea2MixIfVisible();
     }
   });
 
   // textarea2編集デバウンスで自動play（mixモードのMMLを直接演奏、1sec）
-  let debounceTimer2: ReturnType<typeof setTimeout> | null = null;
   textarea2.addEventListener('input', () => {
     if (debounceTimer2 !== null) clearTimeout(debounceTimer2);
     debounceTimer2 = setTimeout(async () => {
