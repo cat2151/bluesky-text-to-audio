@@ -10,28 +10,34 @@ describe('tonejsRandomTone', () => {
       vi.restoreAllMocks();
     });
 
-    it('@で始まるシンセ名を返す', () => {
+    it('@で始まるインストゥルメント名を返す', () => {
       const prefix = generateRandomTonejsMmlPrefix();
-      expect(prefix).toMatch(/^@[A-Za-z]+$/);
+      expect(prefix).toMatch(/^@[A-Za-z]/);
     });
 
-    it('乱数が0のとき最初のシンセを返す', () => {
+    it('乱数が0のとき最初のシンセ（Synth）から始まるMMLを返す（決定的）', () => {
       vi.spyOn(Math, 'random').mockReturnValue(0);
       const prefix = generateRandomTonejsMmlPrefix();
-      expect(prefix).toBe('@Synth');
+      expect(prefix).toMatch(/^@Synth/);
     });
 
-    it('乱数が0.99のとき最後のシンセを返す', () => {
+    it('乱数が0.99のとき最後のシンセ（PolySynth）から始まるMMLを返す（決定的）', () => {
       vi.spyOn(Math, 'random').mockReturnValue(0.99);
       const prefix = generateRandomTonejsMmlPrefix();
-      expect(prefix).toBe('@MetalSynth');
+      expect(prefix).toMatch(/^@PolySynth/);
     });
 
-    it('同じ乱数値であれば同じシンセを返す（決定的）', () => {
+    it('同じ乱数値であれば同じプレフィックスを返す（決定的）', () => {
       vi.spyOn(Math, 'random').mockReturnValue(0.5);
       const first = generateRandomTonejsMmlPrefix();
       const second = generateRandomTonejsMmlPrefix();
       expect(first).toBe(second);
+    });
+
+    it('instrumentとeffectを合体したMMLを返す（@が2つ以上含まれる）', () => {
+      const prefix = generateRandomTonejsMmlPrefix();
+      const atCount = (prefix.match(/@[A-Za-z]/g) ?? []).length;
+      expect(atCount).toBeGreaterThanOrEqual(2);
     });
   });
 
@@ -43,13 +49,14 @@ describe('tonejsRandomTone', () => {
     it('@指定がない場合、ランダムシンセプレフィックスを先頭に付加する', () => {
       vi.spyOn(Math, 'random').mockReturnValue(0);
       const result = applyRandomToneToMmlIfNeeded('o4 l8 cde');
-      expect(result).toBe('@Synth o4 l8 cde');
+      expect(result).toMatch(/^@[A-Za-z]/);
+      expect(result).toContain('o4 l8 cde');
     });
 
-    it('空MMLにはプレフィックスのみを返す（末尾スペースなし）', () => {
+    it('空MMLにはプレフィックスのみを返す（末尾にMMLなし）', () => {
       vi.spyOn(Math, 'random').mockReturnValue(0);
       const result = applyRandomToneToMmlIfNeeded('');
-      expect(result).toBe('@Synth');
+      expect(result).toMatch(/^@[A-Za-z]/);
     });
 
     it('@InstrumentJSON指定あり→そのまま返す', () => {

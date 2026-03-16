@@ -21,7 +21,7 @@
   "content_scripts": [
     {
       "js": [
-        "assets/content.ts-loader-Dr6z1PWe.js"
+        "assets/content.ts-loader-JMJMkK92.js"
       ],
       "matches": [
         "https://bsky.app/*"
@@ -42,8 +42,9 @@
         "assets/smf_to_ym2151log_bg-BE_GsBy_.wasm",
         "assets/tree-sitter-mml-DQvQg2JC.wasm",
         "assets/ym2151-Ccu-8unz.wasm",
+        "assets/ym2151_wasm_bg-DeTzcM8u.wasm",
         "assets/__vite-browser-external-BIHI7g3E.js",
-        "assets/content.ts-Cf-yMYUC.js"
+        "assets/content.ts-TTZcKniL.js"
       ],
       "use_dynamic_url": false
     }
