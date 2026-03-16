@@ -29,6 +29,16 @@ export function wireTextareaInputHandlers(deps: TextareaInputHandlersDeps): void
     return (playBtn.dataset.btaMode as PlayMode) || getSelectedMode();
   }
 
+  // SHIFT+ENTER / CTRL+ENTER でplayボタンと同じ挙動をする
+  textarea.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Enter' && (e.shiftKey || e.ctrlKey)) {
+      e.preventDefault();
+      if (!playBtn.disabled) {
+        playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      }
+    }
+  });
+
   // textarea編集デバウンスで自動play（ym2151/mixはレンダリング中にキーボード入力が止まるため1sec、それ以外は0）
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   textarea.addEventListener('input', () => {
@@ -45,26 +55,38 @@ export function wireTextareaInputHandlers(deps: TextareaInputHandlersDeps): void
     }, delay);
   });
 
+  // textarea2のmixモードMML直接演奏ロジック（keydownとdebounceで共有）
+  async function playTextarea2MixIfVisible(): Promise<void> {
+    if (playBtn.disabled) return;
+    const currentMode = getMode();
+    if (currentMode !== 'mix' || textarea2.style.display === 'none') return;
+    clearPortErrorRows();
+    clearErrorToast();
+    playBtn.disabled = true;
+    showStatusToast('prerendering...');
+    try {
+      await playMixModeHandler(textarea2.value, handleMixError, clearStatusToast);
+    } finally {
+      clearStatusToast();
+      playBtn.disabled = false;
+    }
+  }
+
+  // textarea2のSHIFT+ENTER / CTRL+ENTER でplayボタンと同じ挙動をする（mixモードのMMLを直接即時演奏）
+  textarea2.addEventListener('keydown', async (e: KeyboardEvent) => {
+    if (e.key === 'Enter' && (e.shiftKey || e.ctrlKey)) {
+      e.preventDefault();
+      await playTextarea2MixIfVisible();
+    }
+  });
+
   // textarea2編集デバウンスで自動play（mixモードのMMLを直接演奏、1sec）
   let debounceTimer2: ReturnType<typeof setTimeout> | null = null;
   textarea2.addEventListener('input', () => {
     if (debounceTimer2 !== null) clearTimeout(debounceTimer2);
     debounceTimer2 = setTimeout(async () => {
       debounceTimer2 = null;
-      if (playBtn.disabled) return;
-      // mixモードかつtextarea2が表示中の場合のみ再生する
-      const currentMode = getMode();
-      if (currentMode !== 'mix' || textarea2.style.display === 'none') return;
-      clearPortErrorRows();
-      clearErrorToast();
-      playBtn.disabled = true;
-      showStatusToast('prerendering...');
-      try {
-        await playMixModeHandler(textarea2.value, handleMixError, clearStatusToast);
-      } finally {
-        clearStatusToast();
-        playBtn.disabled = false;
-      }
+      await playTextarea2MixIfVisible();
     }, 1000);
   });
 }
