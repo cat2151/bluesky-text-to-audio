@@ -88,18 +88,13 @@ jobs:
           git add src/ dist/
 
           COMMIT_MSG="chore: update vendored libraries from upstream"
-          [ "$CHORD2MML_UPDATED" = "true" ] && COMMIT_MSG="$COMMIT_MSG
-- chord2mml: ${CHORD2MML_OLD_SHA} -> ${CHORD2MML_NEW_SHA}"
-          [ "$MML2ABC_UPDATED" = "true" ] && COMMIT_MSG="$COMMIT_MSG
-- mml2abc: ${MML2ABC_OLD_SHA} -> ${MML2ABC_NEW_SHA}"
-          [ "$SEQUENCER_UPDATED" = "true" ] && COMMIT_MSG="$COMMIT_MSG
-- tonejs-json-sequencer: ${SEQUENCER_OLD_SHA} -> ${SEQUENCER_NEW_SHA}"
-          [ "$YM2151_UPDATED" = "true" ] && COMMIT_MSG="$COMMIT_MSG
-- ym2151 libraries: updated from upstream"
-          [ "$TONEJS_TEMPLATES_UPDATED" = "true" ] && COMMIT_MSG="$COMMIT_MSG
-- tonejs-mml-to-json templates: ${TONEJS_TEMPLATES_OLD_SHA} -> ${TONEJS_TEMPLATES_NEW_SHA}"
+          [ "$CHORD2MML_UPDATED" = "true" ] && COMMIT_MSG="${COMMIT_MSG}\n- chord2mml: ${CHORD2MML_OLD_SHA} -> ${CHORD2MML_NEW_SHA}"
+          [ "$MML2ABC_UPDATED" = "true" ] && COMMIT_MSG="${COMMIT_MSG}\n- mml2abc: ${MML2ABC_OLD_SHA} -> ${MML2ABC_NEW_SHA}"
+          [ "$SEQUENCER_UPDATED" = "true" ] && COMMIT_MSG="${COMMIT_MSG}\n- tonejs-json-sequencer: ${SEQUENCER_OLD_SHA} -> ${SEQUENCER_NEW_SHA}"
+          [ "$YM2151_UPDATED" = "true" ] && COMMIT_MSG="${COMMIT_MSG}\n- ym2151 libraries: updated from upstream"
+          [ "$TONEJS_TEMPLATES_UPDATED" = "true" ] && COMMIT_MSG="${COMMIT_MSG}\n- tonejs-mml-to-json templates: ${TONEJS_TEMPLATES_OLD_SHA} -> ${TONEJS_TEMPLATES_NEW_SHA}"
 
-          git diff --cached --quiet || git commit -m "$COMMIT_MSG"
+          git diff --cached --quiet || git commit -m "$(printf '%b' "$COMMIT_MSG")"
           git push
 
       - name: Create issue on failure
