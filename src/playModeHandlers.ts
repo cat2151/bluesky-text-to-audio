@@ -11,6 +11,7 @@ import type { AbcjsPlayer } from './loaders/abcjsPlayer';
 import { chordToMml, chordPreprocessMixText } from './chordToMml';
 import { audioBufferToWavBlob } from './wavEncoder';
 import { applyRandomToneToMmlIfNeeded } from './tonejsRandomTone';
+import { Time as ToneTime } from 'tone';
 
 const LOG_PREFIX = '[BTA:playButton]';
 
@@ -55,18 +56,28 @@ export async function playChord2mmlMode(
 }
 
 // ---- Tone.js シーケンスの演奏終了時刻を秒単位で推定する ----
-// triggerAttackRelease イベントの args[2]（開始時刻）と args[1]（音長）から
-// 最後の音の終了時刻を推定する。値が数値の場合のみ使用し、それ以外は無視する。
+// triggerAttackRelease イベントの args[2]（開始時刻）と args[1]（音長）を
+// Tone.Time().toSeconds() で秒に変換し、最後の音の終了時刻を返す。
+// BPMの設定はplaySequence()内で実行済みであるため、"4n"などの音符単位は正しく変換される。
 const TONEJS_PLAYBACK_TAIL_MS = 1000;
+
+function toSeconds(value: unknown): number {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    try { return ToneTime(value).toSeconds(); } catch (e) {
+      console.debug(LOG_PREFIX, 'toSeconds: ToneTime 変換失敗:', value, e);
+      return 0;
+    }
+  }
+  return 0;
+}
 
 function estimateSequenceDurationSecs(sequence: import('./types').SequenceEvent[]): number {
   let maxEndSecs = 0;
   for (const event of sequence) {
     if (event.eventType === 'triggerAttackRelease' && Array.isArray(event.args)) {
-      const duration = event.args[1];
-      const time = event.args.length >= 3 ? event.args[2] : 0;
-      const timeSecs = typeof time === 'number' ? time : 0;
-      const durationSecs = typeof duration === 'number' ? duration : 0;
+      const timeSecs = toSeconds(event.args.length >= 3 ? event.args[2] : 0);
+      const durationSecs = toSeconds(event.args[1]);
       const endSecs = timeSecs + durationSecs;
       if (endSecs > maxEndSecs) maxEndSecs = endSecs;
     }
