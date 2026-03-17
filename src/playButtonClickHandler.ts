@@ -118,7 +118,19 @@ export function wirePlayButtonClickHandler(deps: PlayButtonClickHandlerDeps): vo
 
     if (mode === 'tonejs') {
       clearErrorToast();
-      await playToneJsMode(textarea.value, tonejsRef, handleError);
+      playBtn.disabled = true;
+      showStatusToast('Tone.js loading...');
+      try {
+        await playToneJsMode(
+          textarea.value, tonejsRef, handleError,
+          () => showStatusToast('Tone.js playing...'),
+          clearStatusToast,
+        );
+      } finally {
+        clearStatusToast();
+        playBtn.disabled = false;
+        triggerPendingPlayIfNeeded();
+      }
       return;
     }
 
@@ -127,7 +139,7 @@ export function wirePlayButtonClickHandler(deps: PlayButtonClickHandlerDeps): vo
       playBtn.disabled = true;
       showStatusToast('prerendering...');
       try {
-        await playYm2151Mode(textarea.value, handleError, clearStatusToast);
+        await playYm2151Mode(textarea.value, handleError, () => showStatusToast('YM2151 playing...'));
       } finally {
         clearStatusToast();
         playBtn.disabled = false;
@@ -158,7 +170,7 @@ export function wirePlayButtonClickHandler(deps: PlayButtonClickHandlerDeps): vo
         } catch (preprocessErr) {
           console.warn(LOG_PREFIX, 'chord preprocessing failed, playing original text:', preprocessErr);
         }
-        await playMixModeHandler(playText, handleMixError, clearStatusToast);
+        await playMixModeHandler(playText, handleMixError, () => showStatusToast('Mix playing...'));
       } finally {
         clearStatusToast();
         playBtn.disabled = false;
@@ -174,7 +186,7 @@ export function wirePlayButtonClickHandler(deps: PlayButtonClickHandlerDeps): vo
       playBtn.disabled = true;
       showStatusToast('fetching...');
       try {
-        await playVoicevoxMode(text, handleVoicevoxError, clearStatusToast);
+        await playVoicevoxMode(text, handleVoicevoxError, () => showStatusToast('VOICEVOX playing...'));
       } finally {
         clearStatusToast();
         playBtn.disabled = false;
@@ -190,7 +202,7 @@ export function wirePlayButtonClickHandler(deps: PlayButtonClickHandlerDeps): vo
       playBtn.disabled = true;
       showStatusToast('prerendering...');
       try {
-        await playSurgeXtMode(text, handleSurgextError, clearStatusToast);
+        await playSurgeXtMode(text, handleSurgextError, () => showStatusToast('Surge XT playing...'));
       } finally {
         clearStatusToast();
         playBtn.disabled = false;

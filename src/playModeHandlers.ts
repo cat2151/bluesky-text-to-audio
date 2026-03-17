@@ -11,6 +11,7 @@ import type { AbcjsPlayer } from './loaders/abcjsPlayer';
 import { chordToMml, chordPreprocessMixText } from './chordToMml';
 import { audioBufferToWavBlob } from './wavEncoder';
 import { applyRandomToneToMmlIfNeeded } from './tonejsRandomTone';
+import { Time as ToneTime } from 'tone';
 
 const LOG_PREFIX = '[BTA:playButton]';
 
@@ -54,10 +55,42 @@ export async function playChord2mmlMode(
   abcjsPlayer.renderAndPlay(scoreDiv, abcText);
 }
 
+// ---- Tone.js シーケンスの演奏終了時刻を秒単位で推定する ----
+// triggerAttackRelease イベントの args[2]（開始時刻）と args[1]（音長）を
+// Tone.Time().toSeconds() で秒に変換し、最後の音の終了時刻を返す。
+// BPMの設定はplaySequence()内で実行済みであるため、"4n"などの音符単位は正しく変換される。
+const TONEJS_PLAYBACK_TAIL_MS = 1000;
+
+function toSeconds(value: unknown): number {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    try { return ToneTime(value).toSeconds(); } catch (e) {
+      console.debug(LOG_PREFIX, 'toSeconds: ToneTime 変換失敗:', value, e);
+      return 0;
+    }
+  }
+  return 0;
+}
+
+function estimateSequenceDurationSecs(sequence: import('./types').SequenceEvent[]): number {
+  let maxEndSecs = 0;
+  for (const event of sequence) {
+    if (event.eventType === 'triggerAttackRelease' && Array.isArray(event.args)) {
+      const timeSecs = toSeconds(event.args.length >= 3 ? event.args[2] : 0);
+      const durationSecs = toSeconds(event.args[1]);
+      const endSecs = timeSecs + durationSecs;
+      if (endSecs > maxEndSecs) maxEndSecs = endSecs;
+    }
+  }
+  return maxEndSecs;
+}
+
 export async function playToneJsMode(
   mml: string,
   tonejsRef: TonejsRef,
-  handleError: ErrorHandler
+  handleError: ErrorHandler,
+  onPlayStart?: () => void,
+  onPlayEnd?: () => void,
 ): Promise<void> {
   let Tone;
   let sequencer;
@@ -82,7 +115,17 @@ export async function playToneJsMode(
       tonejsRef.nodes = new sequencer.SequencerNodes();
     }
     await sequencer.playSequence(Tone, tonejsRef.nodes, sequence);
+    const durationSecs = estimateSequenceDurationSecs(sequence);
     Tone.Transport.start();
+    try { onPlayStart?.(); } catch { /* UI callback must not break playback */ }
+    // 演奏終了を待つ: 推定終了時刻 + テール（最低テール分は待つ）
+    const waitMs = Math.max(TONEJS_PLAYBACK_TAIL_MS, durationSecs * 1000 + TONEJS_PLAYBACK_TAIL_MS);
+    await new Promise<void>(resolve => {
+      setTimeout(() => {
+        try { onPlayEnd?.(); } catch { /* UI callback must not break playback */ }
+        resolve();
+      }, waitMs);
+    });
   } catch (e2: unknown) {
     handleError('Tone.js play error:', 'Tone.js play error', e2);
   }
