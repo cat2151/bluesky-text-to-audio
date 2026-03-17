@@ -68,6 +68,9 @@ export function addPlayButton(postEl: HTMLElement): void {
   // historyからのplay中はhistoryを更新しない（お気に入りからのplayも同様）
   let isPlayingFromHistory = false;
 
+  // 演奏中にplayボタンが押された場合の予約フラグ
+  let pendingPlay = false;
+
   // ---- DOM要素を生成 ----
   const initialPlayLabel = menuItems.find(m => m.mode === detectedMode)?.label ?? '再生';
   const playBtn = createPlayBtn(detectedMode, initialPlayLabel);
@@ -96,6 +99,8 @@ export function addPlayButton(postEl: HTMLElement): void {
   const getIsPlayingFromHistory = () => isPlayingFromHistory;
   const setIsPlayingFromHistory = (v: boolean) => { isPlayingFromHistory = v; };
   const getSelectedMode = () => selectedMode;
+  const getPendingPlay = () => pendingPlay;
+  const setPendingPlay = (v: boolean) => { pendingPlay = v; };
 
   // ---- エラートーストを表示する ----
   const { show: showErrorToast, clear: clearErrorToast } = createErrorToast(row);
@@ -198,12 +203,13 @@ export function addPlayButton(postEl: HTMLElement): void {
     voicevoxDownloadRow, surgextDownloadRow
   );
 
-  // ---- disabledなplayボタンをクリックしたときのエラートースト ----
+  // ---- disabledなplayボタンをクリックしたら次の再生を予約する ----
   // disabled状態のボタンはclickイベントを発火しないが、pointerdownは発火する
   playBtn.addEventListener('pointerdown', e => {
     if (!playBtn.disabled) return;
     e.stopPropagation();
-    showErrorToast('再生処理中です。しばらくお待ちください');
+    setPendingPlay(true);
+    showStatusToast('予約しました');
   });
 
   // ---- ドロップダウン開閉 ----
@@ -226,6 +232,7 @@ export function addPlayButton(postEl: HTMLElement): void {
     clearPortErrorRows, clearErrorToast,
     showStatusToast, clearStatusToast,
     handleMixError, getSelectedMode,
+    getPendingPlay, setPendingPlay,
   });
 
   // ---- playボタンのクリックハンドラ ----
@@ -235,6 +242,7 @@ export function addPlayButton(postEl: HTMLElement): void {
     getTextareaInitialized, setTextareaInitialized,
     getIsPlayingFromHistory, setIsPlayingFromHistory,
     getSelectedMode,
+    getPendingPlay, setPendingPlay,
     handleError, handleVoicevoxError, handleSurgextError, handleMixError,
     clearPortErrorRows, clearErrorToast,
     showStatusToast, clearStatusToast,

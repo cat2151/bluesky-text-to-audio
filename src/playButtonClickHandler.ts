@@ -34,6 +34,8 @@ export interface PlayButtonClickHandlerDeps {
   getIsPlayingFromHistory: () => boolean;
   setIsPlayingFromHistory: (v: boolean) => void;
   getSelectedMode: () => PlayMode;
+  getPendingPlay: () => boolean;
+  setPendingPlay: (v: boolean) => void;
   handleError: ErrorHandler;
   handleVoicevoxError: ErrorHandler;
   handleSurgextError: ErrorHandler;
@@ -53,6 +55,7 @@ export function wirePlayButtonClickHandler(deps: PlayButtonClickHandlerDeps): vo
     getTextareaInitialized, setTextareaInitialized,
     getIsPlayingFromHistory, setIsPlayingFromHistory,
     getSelectedMode,
+    getPendingPlay, setPendingPlay,
     handleError, handleVoicevoxError, handleSurgextError, handleMixError,
     clearPortErrorRows, clearErrorToast,
     showStatusToast, clearStatusToast,
@@ -61,6 +64,13 @@ export function wirePlayButtonClickHandler(deps: PlayButtonClickHandlerDeps): vo
 
   function getMode(): PlayMode {
     return (playBtn.dataset.btaMode as PlayMode) || getSelectedMode();
+  }
+
+  function triggerPendingPlayIfNeeded(): void {
+    if (getPendingPlay()) {
+      setPendingPlay(false);
+      playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    }
   }
 
   playBtn.addEventListener('click', async e => {
@@ -129,6 +139,7 @@ export function wirePlayButtonClickHandler(deps: PlayButtonClickHandlerDeps): vo
       } finally {
         clearStatusToast();
         playBtn.disabled = false;
+        triggerPendingPlayIfNeeded();
       }
       return;
     }
@@ -159,6 +170,7 @@ export function wirePlayButtonClickHandler(deps: PlayButtonClickHandlerDeps): vo
       } finally {
         clearStatusToast();
         playBtn.disabled = false;
+        triggerPendingPlayIfNeeded();
       }
       return;
     }
@@ -174,6 +186,7 @@ export function wirePlayButtonClickHandler(deps: PlayButtonClickHandlerDeps): vo
       } finally {
         clearStatusToast();
         playBtn.disabled = false;
+        triggerPendingPlayIfNeeded();
       }
       return;
     }
@@ -189,6 +202,7 @@ export function wirePlayButtonClickHandler(deps: PlayButtonClickHandlerDeps): vo
       } finally {
         clearStatusToast();
         playBtn.disabled = false;
+        triggerPendingPlayIfNeeded();
       }
     }
   });
