@@ -101,6 +101,12 @@ export function addPlayButton(postEl: HTMLElement): void {
   const getSelectedMode = () => selectedMode;
   const getPendingPlay = () => pendingPlay;
   const setPendingPlay = (v: boolean) => { pendingPlay = v; };
+  const triggerPendingPlayIfNeeded = () => {
+    if (getPendingPlay()) {
+      setPendingPlay(false);
+      playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    }
+  };
 
   // ---- エラートーストを表示する ----
   const { show: showErrorToast, clear: clearErrorToast } = createErrorToast(row);
@@ -232,7 +238,7 @@ export function addPlayButton(postEl: HTMLElement): void {
     clearPortErrorRows, clearErrorToast,
     showStatusToast, clearStatusToast,
     handleMixError, getSelectedMode,
-    getPendingPlay, setPendingPlay,
+    triggerPendingPlayIfNeeded,
   });
 
   // ---- playボタンのクリックハンドラ ----
@@ -242,7 +248,7 @@ export function addPlayButton(postEl: HTMLElement): void {
     getTextareaInitialized, setTextareaInitialized,
     getIsPlayingFromHistory, setIsPlayingFromHistory,
     getSelectedMode,
-    getPendingPlay, setPendingPlay,
+    triggerPendingPlayIfNeeded,
     handleError, handleVoicevoxError, handleSurgextError, handleMixError,
     clearPortErrorRows, clearErrorToast,
     showStatusToast, clearStatusToast,

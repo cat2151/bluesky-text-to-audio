@@ -15,8 +15,7 @@ export interface TextareaInputHandlersDeps {
   clearStatusToast: () => void;
   handleMixError: ErrorHandler;
   getSelectedMode: () => PlayMode;
-  getPendingPlay: () => boolean;
-  setPendingPlay: (v: boolean) => void;
+  triggerPendingPlayIfNeeded: () => void;
 }
 
 export function wireTextareaInputHandlers(deps: TextareaInputHandlersDeps): void {
@@ -25,7 +24,7 @@ export function wireTextareaInputHandlers(deps: TextareaInputHandlersDeps): void
     clearPortErrorRows, clearErrorToast,
     showStatusToast, clearStatusToast,
     handleMixError, getSelectedMode,
-    getPendingPlay, setPendingPlay,
+    triggerPendingPlayIfNeeded,
   } = deps;
 
   function getMode(): PlayMode {
@@ -77,10 +76,7 @@ export function wireTextareaInputHandlers(deps: TextareaInputHandlersDeps): void
     } finally {
       clearStatusToast();
       playBtn.disabled = false;
-      if (getPendingPlay()) {
-        setPendingPlay(false);
-        playBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-      }
+      triggerPendingPlayIfNeeded();
     }
   }
 
