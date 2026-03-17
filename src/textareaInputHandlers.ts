@@ -72,7 +72,7 @@ export function wireTextareaInputHandlers(deps: TextareaInputHandlersDeps): void
     playBtn.disabled = true;
     showStatusToast('prerendering...');
     try {
-      await playMixModeHandler(textarea2.value, handleMixError, clearStatusToast);
+      await playMixModeHandler(textarea2.value, handleMixError, () => showStatusToast('Mix playing...'));
     } finally {
       clearStatusToast();
       playBtn.disabled = false;

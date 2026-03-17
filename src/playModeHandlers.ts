@@ -54,10 +54,32 @@ export async function playChord2mmlMode(
   abcjsPlayer.renderAndPlay(scoreDiv, abcText);
 }
 
+// ---- Tone.js シーケンスの演奏終了時刻を秒単位で推定する ----
+// triggerAttackRelease イベントの args[2]（開始時刻）と args[1]（音長）から
+// 最後の音の終了時刻を推定する。値が数値の場合のみ使用し、それ以外は無視する。
+const TONEJS_PLAYBACK_TAIL_MS = 1000;
+
+function estimateSequenceDurationSecs(sequence: import('./types').SequenceEvent[]): number {
+  let maxEndSecs = 0;
+  for (const event of sequence) {
+    if (event.eventType === 'triggerAttackRelease' && Array.isArray(event.args)) {
+      const duration = event.args[1];
+      const time = event.args.length >= 3 ? event.args[2] : 0;
+      const timeSecs = typeof time === 'number' ? time : 0;
+      const durationSecs = typeof duration === 'number' ? duration : 0;
+      const endSecs = timeSecs + durationSecs;
+      if (endSecs > maxEndSecs) maxEndSecs = endSecs;
+    }
+  }
+  return maxEndSecs;
+}
+
 export async function playToneJsMode(
   mml: string,
   tonejsRef: TonejsRef,
-  handleError: ErrorHandler
+  handleError: ErrorHandler,
+  onPlayStart?: () => void,
+  onPlayEnd?: () => void,
 ): Promise<void> {
   let Tone;
   let sequencer;
@@ -82,7 +104,17 @@ export async function playToneJsMode(
       tonejsRef.nodes = new sequencer.SequencerNodes();
     }
     await sequencer.playSequence(Tone, tonejsRef.nodes, sequence);
+    const durationSecs = estimateSequenceDurationSecs(sequence);
     Tone.Transport.start();
+    try { onPlayStart?.(); } catch { /* UI callback must not break playback */ }
+    // 演奏終了を待つ: 推定終了時刻 + テール（最低テール分は待つ）
+    const waitMs = Math.max(TONEJS_PLAYBACK_TAIL_MS, durationSecs * 1000 + TONEJS_PLAYBACK_TAIL_MS);
+    await new Promise<void>(resolve => {
+      setTimeout(() => {
+        try { onPlayEnd?.(); } catch { /* UI callback must not break playback */ }
+        resolve();
+      }, waitMs);
+    });
   } catch (e2: unknown) {
     handleError('Tone.js play error:', 'Tone.js play error', e2);
   }
