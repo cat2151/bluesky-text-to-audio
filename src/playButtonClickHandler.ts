@@ -34,6 +34,7 @@ export interface PlayButtonClickHandlerDeps {
   getIsPlayingFromHistory: () => boolean;
   setIsPlayingFromHistory: (v: boolean) => void;
   getSelectedMode: () => PlayMode;
+  triggerPendingPlayIfNeeded: () => void;
   handleError: ErrorHandler;
   handleVoicevoxError: ErrorHandler;
   handleSurgextError: ErrorHandler;
@@ -53,6 +54,7 @@ export function wirePlayButtonClickHandler(deps: PlayButtonClickHandlerDeps): vo
     getTextareaInitialized, setTextareaInitialized,
     getIsPlayingFromHistory, setIsPlayingFromHistory,
     getSelectedMode,
+    triggerPendingPlayIfNeeded,
     handleError, handleVoicevoxError, handleSurgextError, handleMixError,
     clearPortErrorRows, clearErrorToast,
     showStatusToast, clearStatusToast,
@@ -129,6 +131,7 @@ export function wirePlayButtonClickHandler(deps: PlayButtonClickHandlerDeps): vo
       } finally {
         clearStatusToast();
         playBtn.disabled = false;
+        triggerPendingPlayIfNeeded();
       }
       return;
     }
@@ -159,6 +162,7 @@ export function wirePlayButtonClickHandler(deps: PlayButtonClickHandlerDeps): vo
       } finally {
         clearStatusToast();
         playBtn.disabled = false;
+        triggerPendingPlayIfNeeded();
       }
       return;
     }
@@ -174,6 +178,7 @@ export function wirePlayButtonClickHandler(deps: PlayButtonClickHandlerDeps): vo
       } finally {
         clearStatusToast();
         playBtn.disabled = false;
+        triggerPendingPlayIfNeeded();
       }
       return;
     }
@@ -189,6 +194,7 @@ export function wirePlayButtonClickHandler(deps: PlayButtonClickHandlerDeps): vo
       } finally {
         clearStatusToast();
         playBtn.disabled = false;
+        triggerPendingPlayIfNeeded();
       }
     }
   });

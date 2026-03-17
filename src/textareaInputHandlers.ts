@@ -15,6 +15,7 @@ export interface TextareaInputHandlersDeps {
   clearStatusToast: () => void;
   handleMixError: ErrorHandler;
   getSelectedMode: () => PlayMode;
+  triggerPendingPlayIfNeeded: () => void;
 }
 
 export function wireTextareaInputHandlers(deps: TextareaInputHandlersDeps): void {
@@ -23,6 +24,7 @@ export function wireTextareaInputHandlers(deps: TextareaInputHandlersDeps): void
     clearPortErrorRows, clearErrorToast,
     showStatusToast, clearStatusToast,
     handleMixError, getSelectedMode,
+    triggerPendingPlayIfNeeded,
   } = deps;
 
   function getMode(): PlayMode {
@@ -74,6 +76,7 @@ export function wireTextareaInputHandlers(deps: TextareaInputHandlersDeps): void
     } finally {
       clearStatusToast();
       playBtn.disabled = false;
+      triggerPendingPlayIfNeeded();
     }
   }
 
