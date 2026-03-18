@@ -21,7 +21,7 @@
   "content_scripts": [
     {
       "js": [
-        "assets/content.ts-loader-C18O4uaz.js"
+        "assets/content.ts-loader-AfN1F7xk.js"
       ],
       "matches": [
         "https://bsky.app/*"
@@ -38,13 +38,13 @@
         "assets/tonejs_mml_to_json_bg-Z4r-jVMi.wasm",
         "assets/web-tree-sitter-Bgri87aM.wasm",
         "assets/tree-sitter-mml-5WI6aSUq.wasm",
-        "assets/mmlabc_to_smf_wasm_bg-BB-KmDE0.wasm",
-        "assets/smf_to_ym2151log_bg-BE_GsBy_.wasm",
+        "assets/mmlabc_to_smf_wasm_bg-DbGrloiI.wasm",
+        "assets/smf_to_ym2151log_bg-BP3Ax9T1.wasm",
         "assets/tree-sitter-mml-DQvQg2JC.wasm",
         "assets/ym2151-Ccu-8unz.wasm",
         "assets/ym2151_wasm_bg-DeTzcM8u.wasm",
         "assets/__vite-browser-external-BIHI7g3E.js",
-        "assets/content.ts-DuZJeaYq.js"
+        "assets/content.ts-BbUHxlKh.js"
       ],
       "use_dynamic_url": false
     }
