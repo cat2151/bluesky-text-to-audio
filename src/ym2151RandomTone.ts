@@ -6,9 +6,9 @@
 //
 // Rust is the SSoT for all YM2151 logic. Do NOT port Rust logic to JS/TS.
 // Chrome extension CSP prevents loading WASM from external URLs, so the WASM
-// binary is vendored locally in src/ym2151-tone-editor/pkg/.
+// binary is vendored locally in src/vendor/ym2151-tone-editor/pkg/.
 
-import ym2151ToneEditorInit, { generate_random_tone_registers } from './ym2151-tone-editor/pkg/ym2151_wasm.js';
+import ym2151ToneEditorInit, { generate_random_tone_registers } from './vendor/ym2151-tone-editor/pkg/ym2151_wasm.js';
 
 // ---- WASM initialization (lazy singleton) ----
 
