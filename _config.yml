@@ -1,0 +1,8 @@
+title: "bluesky-text-to-audio"
+description: "bluesky-text-to-audio"
+theme: jekyll-theme-slate
+github:
+  is_project_page: true
+  repository_url: https://github.com/cat2151/bluesky-text-to-audio
+plugins:
+  - jekyll-sitemap
