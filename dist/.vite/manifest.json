@@ -41,36 +41,36 @@
       "assets/ym2151_wasm_bg-DeTzcM8u.wasm"
     ]
   },
-  "src/mmlabc-to-smf-wasm/pkg/mmlabc_to_smf_wasm_bg.wasm": {
+  "src/vendor/mmlabc-to-smf-wasm/pkg/mmlabc_to_smf_wasm_bg.wasm": {
     "file": "assets/mmlabc_to_smf_wasm_bg-BnYUs44d.wasm",
-    "src": "src/mmlabc-to-smf-wasm/pkg/mmlabc_to_smf_wasm_bg.wasm"
+    "src": "src/vendor/mmlabc-to-smf-wasm/pkg/mmlabc_to_smf_wasm_bg.wasm"
   },
-  "src/mmlabc-tree-sitter-mml/tree-sitter-mml.wasm": {
+  "src/vendor/mmlabc-tree-sitter-mml/tree-sitter-mml.wasm": {
     "file": "assets/tree-sitter-mml-BXM1i9-f.wasm",
-    "src": "src/mmlabc-tree-sitter-mml/tree-sitter-mml.wasm"
+    "src": "src/vendor/mmlabc-tree-sitter-mml/tree-sitter-mml.wasm"
   },
-  "src/smf-to-ym2151log-rust/pkg/smf_to_ym2151log_bg.wasm": {
+  "src/vendor/smf-to-ym2151log-rust/pkg/smf_to_ym2151log_bg.wasm": {
     "file": "assets/smf_to_ym2151log_bg-l3EHLG40.wasm",
-    "src": "src/smf-to-ym2151log-rust/pkg/smf_to_ym2151log_bg.wasm"
+    "src": "src/vendor/smf-to-ym2151log-rust/pkg/smf_to_ym2151log_bg.wasm"
   },
-  "src/tonejs-mml-to-json/dist/tree-sitter-mml/tree-sitter-mml.wasm": {
+  "src/vendor/tonejs-mml-to-json/dist/tree-sitter-mml/tree-sitter-mml.wasm": {
     "file": "assets/tree-sitter-mml-5WI6aSUq.wasm",
-    "src": "src/tonejs-mml-to-json/dist/tree-sitter-mml/tree-sitter-mml.wasm"
+    "src": "src/vendor/tonejs-mml-to-json/dist/tree-sitter-mml/tree-sitter-mml.wasm"
   },
-  "src/tonejs-mml-to-json/dist/web-tree-sitter.wasm": {
+  "src/vendor/tonejs-mml-to-json/dist/web-tree-sitter.wasm": {
     "file": "assets/web-tree-sitter-Bgri87aM.wasm",
-    "src": "src/tonejs-mml-to-json/dist/web-tree-sitter.wasm"
+    "src": "src/vendor/tonejs-mml-to-json/dist/web-tree-sitter.wasm"
   },
-  "src/tonejs-mml-to-json/pkg/tonejs_mml_to_json_bg.wasm": {
+  "src/vendor/tonejs-mml-to-json/pkg/tonejs_mml_to_json_bg.wasm": {
     "file": "assets/tonejs_mml_to_json_bg-Z4r-jVMi.wasm",
-    "src": "src/tonejs-mml-to-json/pkg/tonejs_mml_to_json_bg.wasm"
+    "src": "src/vendor/tonejs-mml-to-json/pkg/tonejs_mml_to_json_bg.wasm"
   },
-  "src/web-ym2151/ym2151.wasm": {
+  "src/vendor/web-ym2151/ym2151.wasm": {
     "file": "assets/ym2151-Ccu-8unz.wasm",
-    "src": "src/web-ym2151/ym2151.wasm"
+    "src": "src/vendor/web-ym2151/ym2151.wasm"
   },
-  "src/ym2151-tone-editor/pkg/ym2151_wasm_bg.wasm": {
+  "src/vendor/ym2151-tone-editor/pkg/ym2151_wasm_bg.wasm": {
     "file": "assets/ym2151_wasm_bg-DeTzcM8u.wasm",
-    "src": "src/ym2151-tone-editor/pkg/ym2151_wasm_bg.wasm"
+    "src": "src/vendor/ym2151-tone-editor/pkg/ym2151_wasm_bg.wasm"
   }
 }
