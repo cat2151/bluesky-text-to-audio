@@ -13,14 +13,14 @@ import {
   createFavoritesExportImportBar,
   createFavoritesCollapseHeader,
 } from './favoritesDom';
-import { loadHistory } from './historyStorage';
+import { loadHistory } from '../storage/historyStorage';
 import {
   addToFavorites,
   loadFavorites,
   removeFromFavorites,
   exportFavoritesAsJson,
   importFavoritesFromJson,
-} from './favoritesStorage';
+} from '../storage/favoritesStorage';
 
 const LOG_PREFIX = '[BTA:historyAndFavorites]';
 

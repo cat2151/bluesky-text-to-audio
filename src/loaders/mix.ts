@@ -16,11 +16,11 @@ import type { ToneLib } from '../types';
 import { renderYm2151AudioBuffer } from './ym2151';
 import { loadSequencer } from './sequencer';
 import { parseMmlViaLibrary } from './mmlToJson';
-import { getAudioContext } from '../audioContext';
-import { parseTracks } from '../mixParser';
-import { audioBufferToWavBlob } from '../wavEncoder';
-import { chordToMml } from '../chordToMml';
-import { applyRandomToneToMmlIfNeeded } from '../tonejsRandomTone';
+import { getAudioContext } from '../audio/audioContext';
+import { parseTracks } from '../parsers/mixParser';
+import { audioBufferToWavBlob } from '../audio/wavEncoder';
+import { chordToMml } from '../parsers/chordToMml';
+import { applyRandomToneToMmlIfNeeded } from '../audio/tonejsRandomTone';
 
 export { parseTracks };
 
@@ -104,7 +104,7 @@ async function renderMmlabcAudioBuffer(mml: string): Promise<AudioBuffer> {
 }
 
 // ---- chord: コード進行 → MML → (ターゲットエンジン) → AudioBuffer ----
-async function renderChordAudioBuffer(chord: string, targetEngine?: import('../mixParser').ChordTargetEngine, renderers?: TrackRenderers): Promise<AudioBuffer> {
+async function renderChordAudioBuffer(chord: string, targetEngine?: import('../parsers/mixParser').ChordTargetEngine, renderers?: TrackRenderers): Promise<AudioBuffer> {
   console.log(LOG_PREFIX, '[chord] offline rendering:', chord.substring(0, 50), targetEngine ? `→ ${targetEngine}` : '→ MMLABC');
   const mml = await chordToMml(chord);
   if (targetEngine === 'YM2151') {

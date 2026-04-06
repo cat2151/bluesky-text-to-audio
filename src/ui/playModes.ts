@@ -1,6 +1,6 @@
-import { mmlTemplates } from './mmlTemplates';
-import { chordTemplates } from './chordTemplates';
-import { tonejsTemplates } from './tonejsTemplates';
+import { mmlTemplates } from '../mmlTemplates';
+import { chordTemplates } from '../chordTemplates';
+import { tonejsTemplates } from '../tonejsTemplates';
 
 export type PlayMode = 'voicevox' | 'mmlabc' | 'chord2mml' | 'tonejs' | 'ym2151' | 'mix' | 'surgext' | 'textarea';
 

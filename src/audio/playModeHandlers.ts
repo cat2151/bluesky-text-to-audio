@@ -1,14 +1,14 @@
-import { parse as mml2abcParse } from './vendor/mml2abc.mjs';
-import type { SequencerNodes } from './types';
-import { loadTone } from './loaders/tone';
-import { loadSequencer } from './loaders/sequencer';
-import { parseMmlViaLibrary } from './loaders/mmlToJson';
-import { playWithYm2151, renderYm2151AudioBuffer } from './loaders/ym2151';
-import { playWithVoicevox, renderVoicevoxAudioBuffer } from './loaders/voicevox';
-import { playWithSurgeXt, renderSurgeXtAudioBuffer } from './loaders/surgext';
-import { playMixMode as playMixModeImpl } from './loaders/mix';
-import type { AbcjsPlayer } from './loaders/abcjsPlayer';
-import { chordToMml, chordPreprocessMixText } from './chordToMml';
+import { parse as mml2abcParse } from '../vendor/mml2abc.mjs';
+import type { SequencerNodes } from '../types';
+import { loadTone } from '../loaders/tone';
+import { loadSequencer } from '../loaders/sequencer';
+import { parseMmlViaLibrary } from '../loaders/mmlToJson';
+import { playWithYm2151, renderYm2151AudioBuffer } from '../loaders/ym2151';
+import { playWithVoicevox, renderVoicevoxAudioBuffer } from '../loaders/voicevox';
+import { playWithSurgeXt, renderSurgeXtAudioBuffer } from '../loaders/surgext';
+import { playMixMode as playMixModeImpl } from '../loaders/mix';
+import type { AbcjsPlayer } from '../loaders/abcjsPlayer';
+import { chordToMml, chordPreprocessMixText } from '../parsers/chordToMml';
 import { audioBufferToWavBlob } from './wavEncoder';
 import { applyRandomToneToMmlIfNeeded } from './tonejsRandomTone';
 import { Time as ToneTime } from 'tone';
@@ -72,7 +72,7 @@ function toSeconds(value: unknown): number {
   return 0;
 }
 
-function estimateSequenceDurationSecs(sequence: import('./types').SequenceEvent[]): number {
+function estimateSequenceDurationSecs(sequence: import('../types').SequenceEvent[]): number {
   let maxEndSecs = 0;
   for (const event of sequence) {
     if (event.eventType === 'triggerAttackRelease' && Array.isArray(event.args)) {

@@ -1,7 +1,7 @@
 // ---- textarea / textarea2 の入力デバウンス・自動再生ハンドラ ----
 
 import { type PlayMode } from './playModes';
-import { playMixMode as playMixModeHandler } from './playModeHandlers';
+import { playMixMode as playMixModeHandler } from '../audio/playModeHandlers';
 
 type ErrorHandler = (logLabel: string, message: string, error: unknown) => void;
 

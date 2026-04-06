@@ -1,4 +1,4 @@
-import { parseChordViaLibrary } from './loaders/chord2mml';
+import { parseChordViaLibrary } from '../loaders/chord2mml';
 import { parseTracks, type ChordTargetEngine } from './mixParser';
 
 // ---- コード進行テキストをMMLに変換（方言を正規化しつつパース、成功したMMLを直接返す） ----

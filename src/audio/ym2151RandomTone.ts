@@ -8,7 +8,7 @@
 // Chrome extension CSP prevents loading WASM from external URLs, so the WASM
 // binary is vendored locally in src/vendor/ym2151-tone-editor/pkg/.
 
-import ym2151ToneEditorInit, { generate_random_tone_registers } from './vendor/ym2151-tone-editor/pkg/ym2151_wasm.js';
+import ym2151ToneEditorInit, { generate_random_tone_registers } from '../vendor/ym2151-tone-editor/pkg/ym2151_wasm.js';
 
 // ---- WASM initialization (lazy singleton) ----
 

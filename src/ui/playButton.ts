@@ -1,9 +1,9 @@
-import { AbcjsPlayer } from './loaders/abcjsPlayer';
-import { getPostText } from './postText';
-import { detectModeFromText } from './detectModeFromText';
+import { AbcjsPlayer } from '../loaders/abcjsPlayer';
+import { getPostText } from '../parsers/postText';
+import { detectModeFromText } from '../parsers/detectModeFromText';
 import { type PlayMode, menuItems } from './playModes';
 import { createErrorToast, createStatusToast } from './toast';
-import { type TonejsRef } from './playModeHandlers';
+import { type TonejsRef } from '../audio/playModeHandlers';
 import {
   createPlayBtn,
   createDropBtn,

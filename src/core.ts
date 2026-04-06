@@ -33,7 +33,7 @@
 
 export { playMixMode } from './loaders/mix';
 export type { TrackRenderers, PlayMixModeOptions } from './loaders/mix';
-export { detectModeFromText } from './detectModeFromText';
-export { parseTracks } from './mixParser';
-export type { PlayMode } from './playModes';
-export type { Track, TrackType, ChordTargetEngine } from './mixParser';
+export { detectModeFromText } from './parsers/detectModeFromText';
+export { parseTracks } from './parsers/mixParser';
+export type { PlayMode } from './ui/playModes';
+export type { Track, TrackType, ChordTargetEngine } from './parsers/mixParser';

@@ -1,8 +1,8 @@
 // ---- playボタンのクリックハンドラ ----
 
-import { AbcjsPlayer } from './loaders/abcjsPlayer';
+import { AbcjsPlayer } from '../loaders/abcjsPlayer';
 import { type PlayMode } from './playModes';
-import { addToHistory } from './historyStorage';
+import { addToHistory } from '../storage/historyStorage';
 import {
   type TonejsRef,
   playMmlabcMode,
@@ -13,7 +13,7 @@ import {
   playVoicevoxMode,
   playSurgeXtMode,
   chordPreprocessMixText,
-} from './playModeHandlers';
+} from '../audio/playModeHandlers';
 
 const LOG_PREFIX = '[BTA:playButtonClickHandler]';
 

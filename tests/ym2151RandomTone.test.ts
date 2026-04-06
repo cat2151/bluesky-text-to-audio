@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import {
   generateRandomToneAttachment,
   applyRandomToneAttachmentToMml,
-} from '../src/ym2151RandomTone';
+} from '../src/audio/ym2151RandomTone';
 
 describe('ym2151RandomTone', () => {
   describe('generateRandomToneAttachment', () => {

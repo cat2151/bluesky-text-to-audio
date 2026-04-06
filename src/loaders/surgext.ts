@@ -1,4 +1,4 @@
-import { getAudioContext } from '../audioContext';
+import { getAudioContext } from '../audio/audioContext';
 
 // ---- 現在再生中のソースノード（多重再生防止） ----
 let currentSource: AudioBufferSourceNode | null = null;
