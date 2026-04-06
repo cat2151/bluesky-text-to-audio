@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { detectModeFromText } from '../src/detectModeFromText';
+import { detectModeFromText } from '../src/parsers/detectModeFromText';
 
 describe('detectModeFromText', () => {
   it('空テキストはvoicevoxを返す', () => {

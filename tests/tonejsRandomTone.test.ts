@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   generateRandomTonejsMmlPrefix,
   applyRandomToneToMmlIfNeeded,
-} from '../src/tonejsRandomTone';
+} from '../src/audio/tonejsRandomTone';
 
 describe('tonejsRandomTone', () => {
   describe('generateRandomTonejsMmlPrefix', () => {

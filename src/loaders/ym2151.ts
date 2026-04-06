@@ -16,7 +16,7 @@ import mmlabcInit, { parse_tree_json_to_smf } from '../vendor/mmlabc-to-smf-wasm
 import smfYm2151Init, { smf_to_ym2151_json_with_attachment } from '../vendor/smf-to-ym2151log-rust/pkg/smf_to_ym2151log.js';
 import treeSitterMmlUrl from '../vendor/mmlabc-tree-sitter-mml/tree-sitter-mml.wasm?url';
 import ym2151WasmUrl from '../vendor/web-ym2151/ym2151.wasm?url';
-import { applyRandomToneAttachmentToMml, type ToneAttachmentEntry } from '../ym2151RandomTone';
+import { applyRandomToneAttachmentToMml, type ToneAttachmentEntry } from '../audio/ym2151RandomTone';
 
 const LOG_PREFIX = '[BTA:loaders/ym2151]';
 

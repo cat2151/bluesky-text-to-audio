@@ -1,4 +1,4 @@
-import type { PlayMode } from './playModes';
+import type { PlayMode } from '../ui/playModes';
 
 // ---- 投稿テキストからモードを自動検出 ----
 export function detectModeFromText(text: string): { mode: PlayMode; cleanedText: string } {

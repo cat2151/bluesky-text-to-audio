@@ -1,4 +1,4 @@
-import { addPlayButton } from './playButton';
+import { addPlayButton } from './ui/playButton';
 
 // ---- 投稿要素のセレクター（フィード・プロフィール・スレッド共通） ----
 const POST_SELECTOR = '[data-testid^="feedItem-"], [data-testid^="postThreadItem-"]';

@@ -1,7 +1,7 @@
 // ---- テンプレートプルダウン・WAVエクスポートボタンの表示管理 ----
 
 import { type PlayMode, modeTemplates } from './playModes';
-import { exportWavHandler } from './playModeHandlers';
+import { exportWavHandler } from '../audio/playModeHandlers';
 
 export interface ModeUiManagerDeps {
   playBtn: HTMLButtonElement;

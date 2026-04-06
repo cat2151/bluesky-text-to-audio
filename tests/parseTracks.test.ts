@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseTracks } from '../src/mixParser';
+import { parseTracks } from '../src/parsers/mixParser';
 
 describe('parseTracks', () => {
   it('VOICEVOXトラックを解析する', () => {
