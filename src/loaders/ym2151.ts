@@ -9,13 +9,13 @@
 //       → (ym2151.wasm via WebAssembly.instantiate + Web Audio API) → audio
 //
 // cat2151ライブラリは常に最新mainを使用、バージョン固定しない。
-// 最新版への追従: 各 src/ サブディレクトリのファイルをアップストリームから再ダウンロードする。
+// 最新版への追従: 各 src/vendor/ サブディレクトリのファイルをアップストリームから再ダウンロードする。
 
-import { Parser, Language, type SyntaxNode } from '../tonejs-mml-to-json/dist/web-tree-sitter.js';
-import mmlabcInit, { parse_tree_json_to_smf } from '../mmlabc-to-smf-wasm/pkg/mmlabc_to_smf_wasm.js';
-import smfYm2151Init, { smf_to_ym2151_json_with_attachment } from '../smf-to-ym2151log-rust/pkg/smf_to_ym2151log.js';
-import treeSitterMmlUrl from '../mmlabc-tree-sitter-mml/tree-sitter-mml.wasm?url';
-import ym2151WasmUrl from '../web-ym2151/ym2151.wasm?url';
+import { Parser, Language, type SyntaxNode } from '../vendor/tonejs-mml-to-json/dist/web-tree-sitter.js';
+import mmlabcInit, { parse_tree_json_to_smf } from '../vendor/mmlabc-to-smf-wasm/pkg/mmlabc_to_smf_wasm.js';
+import smfYm2151Init, { smf_to_ym2151_json_with_attachment } from '../vendor/smf-to-ym2151log-rust/pkg/smf_to_ym2151log.js';
+import treeSitterMmlUrl from '../vendor/mmlabc-tree-sitter-mml/tree-sitter-mml.wasm?url';
+import ym2151WasmUrl from '../vendor/web-ym2151/ym2151.wasm?url';
 import { applyRandomToneAttachmentToMml, type ToneAttachmentEntry } from '../ym2151RandomTone';
 
 const LOG_PREFIX = '[BTA:loaders/ym2151]';

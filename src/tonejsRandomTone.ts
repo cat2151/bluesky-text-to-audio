@@ -3,7 +3,7 @@
 // textareaに@～によるinstrument/effect指定がない場合にランダムな音色を適用する（issue #165）
 // cat2151/tonejs-mml-to-json のランダム音色ライブラリを使用（issue #173）
 
-import { randomInstrumentAndEffectMml } from './tonejs-mml-to-json/dist/random-instrument.js';
+import { randomInstrumentAndEffectMml } from './vendor/tonejs-mml-to-json/dist/random-instrument.js';
 
 /**
  * ランダムなTone.js音色（MMLプレフィックス）を生成する。

@@ -1,4 +1,4 @@
-import { parse as mml2abcParse } from './mml2abc.mjs';
+import { parse as mml2abcParse } from './vendor/mml2abc.mjs';
 import type { SequencerNodes } from './types';
 import { loadTone } from './loaders/tone';
 import { loadSequencer } from './loaders/sequencer';

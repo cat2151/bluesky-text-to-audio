@@ -11,7 +11,7 @@
 
 import * as ToneModule from 'tone';
 import * as ABCJS from 'abcjs';
-import { parse as mml2abcParse } from '../mml2abc.mjs';
+import { parse as mml2abcParse } from '../vendor/mml2abc.mjs';
 import type { ToneLib } from '../types';
 import { renderYm2151AudioBuffer } from './ym2151';
 import { loadSequencer } from './sequencer';
