@@ -23,7 +23,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python .github/scripts/sync_vendor.py \
-            cat2151/chord2mml dist/chord2mml.mjs src/chord2mml.mjs 12
+            cat2151/chord2mml dist/chord2mml.mjs src/vendor/chord2mml.mjs 12
 
       - name: Check and update mml2abc
         id: mml2abc
@@ -31,7 +31,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python .github/scripts/sync_vendor.py \
-            cat2151/obsidian-plugin-mmlabc mml/mml2abc.mjs src/mml2abc.mjs 9
+            cat2151/obsidian-plugin-mmlabc mml/mml2abc.mjs src/vendor/mml2abc.mjs 9
 
       - name: Check and update tonejs-json-sequencer
         id: sequencer
@@ -39,7 +39,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python .github/scripts/sync_vendor_sequencer.py \
-            src/tonejs-json-sequencer.mjs
+            src/vendor/tonejs-json-sequencer.mjs
 
       - name: Check and update tonejs-mml-to-json templates
         id: tonejs_templates

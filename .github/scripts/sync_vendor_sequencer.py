@@ -8,7 +8,7 @@ sync_vendor.py とは別スクリプトとして実装する。
   python sync_vendor_sequencer.py <local_file>
 
 引数:
-  local_file     : ローカルのファイルパス (例: src/tonejs-json-sequencer.mjs)
+  local_file     : ローカルのファイルパス (例: src/vendor/tonejs-json-sequencer.mjs)
 
 環境変数:
   GH_TOKEN       : GitHub API トークン (必須)
