@@ -8,7 +8,7 @@
 引数:
   upstream_repo  : GitHubリポジトリ名 (例: cat2151/chord2mml)
   upstream_file  : アップストリームのファイルパス (例: dist/chord2mml.mjs)
-  local_file     : ローカルのファイルパス (例: src/chord2mml.mjs)
+  local_file     : ローカルのファイルパス (例: src/vendor/chord2mml.mjs)
   header_lines   : ローカルファイルの保持するヘッダー行数 (例: 12)
 
 環境変数:

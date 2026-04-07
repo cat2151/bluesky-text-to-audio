@@ -31,17 +31,17 @@ LIBRARIES = [
     {
         "name": "web-ym2151",
         "upstream_repo": "cat2151/web-ym2151",
-        "js_file": "src/web-ym2151/ym2151.js",
+        "js_file": "src/vendor/web-ym2151/ym2151.js",
         "header_lines": 11,
         "downloads": [
             {
                 "url": "https://cat2151.github.io/web-ym2151/ym2151.js",
-                "local": "src/web-ym2151/ym2151.js",
+                "local": "src/vendor/web-ym2151/ym2151.js",
                 "binary": False,
             },
             {
                 "url": "https://cat2151.github.io/web-ym2151/ym2151.wasm",
-                "local": "src/web-ym2151/ym2151.wasm",
+                "local": "src/vendor/web-ym2151/ym2151.wasm",
                 "binary": True,
             },
         ],
@@ -49,22 +49,22 @@ LIBRARIES = [
     {
         "name": "smf-to-ym2151log-rust",
         "upstream_repo": "cat2151/smf-to-ym2151log-rust",
-        "js_file": "src/smf-to-ym2151log-rust/pkg/smf_to_ym2151log.js",
+        "js_file": "src/vendor/smf-to-ym2151log-rust/pkg/smf_to_ym2151log.js",
         "header_lines": 11,
         "downloads": [
             {
                 "url": "https://cat2151.github.io/smf-to-ym2151log-rust/pkg/smf_to_ym2151log.js",
-                "local": "src/smf-to-ym2151log-rust/pkg/smf_to_ym2151log.js",
+                "local": "src/vendor/smf-to-ym2151log-rust/pkg/smf_to_ym2151log.js",
                 "binary": False,
             },
             {
                 "url": "https://cat2151.github.io/smf-to-ym2151log-rust/pkg/smf_to_ym2151log_bg.wasm",
-                "local": "src/smf-to-ym2151log-rust/pkg/smf_to_ym2151log_bg.wasm",
+                "local": "src/vendor/smf-to-ym2151log-rust/pkg/smf_to_ym2151log_bg.wasm",
                 "binary": True,
             },
             {
                 "url": "https://cat2151.github.io/smf-to-ym2151log-rust/pkg/smf_to_ym2151log.d.ts",
-                "local": "src/smf-to-ym2151log-rust/pkg/smf_to_ym2151log.d.ts",
+                "local": "src/vendor/smf-to-ym2151log-rust/pkg/smf_to_ym2151log.d.ts",
                 "binary": False,
             },
         ],
@@ -72,27 +72,27 @@ LIBRARIES = [
     {
         "name": "mmlabc-to-smf-wasm",
         "upstream_repo": "cat2151/mmlabc-to-smf-rust",
-        "js_file": "src/mmlabc-to-smf-wasm/pkg/mmlabc_to_smf_wasm.js",
+        "js_file": "src/vendor/mmlabc-to-smf-wasm/pkg/mmlabc_to_smf_wasm.js",
         "header_lines": 11,
         "downloads": [
             {
                 "url": "https://cat2151.github.io/mmlabc-to-smf-rust/mmlabc-to-smf-wasm/pkg/mmlabc_to_smf_wasm.js",
-                "local": "src/mmlabc-to-smf-wasm/pkg/mmlabc_to_smf_wasm.js",
+                "local": "src/vendor/mmlabc-to-smf-wasm/pkg/mmlabc_to_smf_wasm.js",
                 "binary": False,
             },
             {
                 "url": "https://cat2151.github.io/mmlabc-to-smf-rust/mmlabc-to-smf-wasm/pkg/mmlabc_to_smf_wasm_bg.wasm",
-                "local": "src/mmlabc-to-smf-wasm/pkg/mmlabc_to_smf_wasm_bg.wasm",
+                "local": "src/vendor/mmlabc-to-smf-wasm/pkg/mmlabc_to_smf_wasm_bg.wasm",
                 "binary": True,
             },
             {
                 "url": "https://cat2151.github.io/mmlabc-to-smf-rust/mmlabc-to-smf-wasm/pkg/mmlabc_to_smf_wasm.d.ts",
-                "local": "src/mmlabc-to-smf-wasm/pkg/mmlabc_to_smf_wasm.d.ts",
+                "local": "src/vendor/mmlabc-to-smf-wasm/pkg/mmlabc_to_smf_wasm.d.ts",
                 "binary": False,
             },
             {
                 "url": "https://cat2151.github.io/mmlabc-to-smf-rust/tree-sitter-mml/tree-sitter-mml.wasm",
-                "local": "src/mmlabc-tree-sitter-mml/tree-sitter-mml.wasm",
+                "local": "src/vendor/mmlabc-tree-sitter-mml/tree-sitter-mml.wasm",
                 "binary": True,
             },
         ],
