@@ -1,8 +1,11 @@
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-const repoRoot = join(import.meta.dirname, "..");
+const currentFilePath = fileURLToPath(import.meta.url);
+const currentDir = dirname(currentFilePath);
+const repoRoot = join(currentDir, "..");
 
 describe("Sync Vendored Libraries paths", () => {
   it("workflow uses the current vendored file locations", () => {
