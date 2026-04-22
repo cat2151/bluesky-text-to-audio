@@ -11,9 +11,9 @@
     "src": "__vite-browser-external",
     "isDynamicEntry": true
   },
-  "_content.ts-loader-BSOCveiN.js": {
-    "file": "assets/content.ts-loader-BSOCveiN.js",
-    "src": "_content.ts-loader-BSOCveiN.js"
+  "_content.ts-loader-1DJhiGoL.js": {
+    "file": "assets/content.ts-loader-1DJhiGoL.js",
+    "src": "_content.ts-loader-1DJhiGoL.js"
   },
   "src/background.ts": {
     "file": "assets/background.ts-BCDKgwlJ.js",
@@ -22,7 +22,7 @@
     "isEntry": true
   },
   "src/content.ts": {
-    "file": "assets/content.ts-DFrHTsSB.js",
+    "file": "assets/content.ts-cxvjZK2P.js",
     "name": "content.ts",
     "src": "src/content.ts",
     "isEntry": true,
@@ -34,7 +34,7 @@
       "assets/tonejs_mml_to_json_bg-Z4r-jVMi.wasm",
       "assets/web-tree-sitter-Bgri87aM.wasm",
       "assets/tree-sitter-mml-5WI6aSUq.wasm",
-      "assets/mmlabc_to_smf_wasm_bg-bmA-Eado.wasm",
+      "assets/mmlabc_to_smf_wasm_bg-tpIJKqjf.wasm",
       "assets/smf_to_ym2151log_bg-D8_v8ziq.wasm",
       "assets/tree-sitter-mml-BXM1i9-f.wasm",
       "assets/ym2151-Ccu-8unz.wasm",
@@ -42,7 +42,7 @@
     ]
   },
   "src/vendor/mmlabc-to-smf-wasm/pkg/mmlabc_to_smf_wasm_bg.wasm": {
-    "file": "assets/mmlabc_to_smf_wasm_bg-bmA-Eado.wasm",
+    "file": "assets/mmlabc_to_smf_wasm_bg-tpIJKqjf.wasm",
     "src": "src/vendor/mmlabc-to-smf-wasm/pkg/mmlabc_to_smf_wasm_bg.wasm"
   },
   "src/vendor/mmlabc-tree-sitter-mml/tree-sitter-mml.wasm": {
